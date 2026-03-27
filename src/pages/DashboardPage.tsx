@@ -175,6 +175,27 @@ export function DashboardPage() {
         </div>
       )}
 
+      {/* News Feed */}
+      <div className="px-4 mb-6">
+        <div className="flex items-center gap-2 mb-4">
+          <Newspaper size={14} className="text-zinc-400" />
+          <h2 className="text-[11px] font-bold uppercase tracking-wider text-zinc-400">
+            News Feed
+          </h2>
+        </div>
+        {feed.length > 0 ? (
+          <div className="flex flex-col gap-3">
+            {feed.map((item, i) => (
+              <FeedCard key={item.id} item={item} index={i} />
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-8 text-zinc-400 text-sm">
+            No news yet — check back when events start getting decided.
+          </div>
+        )}
+      </div>
+
       {/* Upcoming Events */}
       {upcomingEvents.length > 0 && (
         <div className="px-4 mb-6">
@@ -218,27 +239,6 @@ export function DashboardPage() {
           </div>
         </div>
       )}
-
-      {/* News Feed */}
-      <div className="px-4">
-        <div className="flex items-center gap-2 mb-4">
-          <Newspaper size={14} className="text-zinc-400" />
-          <h2 className="text-[11px] font-bold uppercase tracking-wider text-zinc-400">
-            News Feed
-          </h2>
-        </div>
-        {feed.length > 0 ? (
-          <div className="flex flex-col gap-3">
-            {feed.map((item, i) => (
-              <FeedCard key={item.id} item={item} index={i} />
-            ))}
-          </div>
-        ) : (
-          <div className="text-center py-8 text-zinc-400 text-sm">
-            No news yet — check back when events start getting decided.
-          </div>
-        )}
-      </div>
     </motion.div>
   );
 }
