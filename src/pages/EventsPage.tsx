@@ -62,7 +62,7 @@ export function EventsPage() {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.3 }}
-      className="pb-24"
+      className="pb-6"
     >
       {/* Summary */}
       <div className="flex items-center justify-between px-4 pt-4 pb-2">
@@ -90,7 +90,7 @@ export function EventsPage() {
       {/* Category tabs */}
       <div
         ref={scrollRef}
-        className="flex gap-1.5 px-4 py-2 overflow-x-auto scrollbar-none sticky top-14 z-30 bg-white/90 backdrop-blur-xl"
+        className="flex gap-1.5 px-4 py-2 overflow-x-auto scrollbar-none sticky top-0 z-30 bg-white/90 backdrop-blur-xl"
       >
         {categories.map((cat) => {
           const isActive = cat === selectedCategory;

@@ -63,7 +63,11 @@ export function FeedCard({ item, index }: FeedCardProps) {
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.04, duration: 0.3 }}
+      role="button"
+      tabIndex={0}
       onClick={handleClick}
+      onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); handleClick(); } }}
+      aria-label={item.headline}
       className={cn(
         "rounded-2xl border p-4 cursor-pointer transition-all duration-200",
         "hover:shadow-md hover:-translate-y-0.5 active:scale-[0.98]",
