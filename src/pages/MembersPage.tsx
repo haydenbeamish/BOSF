@@ -40,7 +40,7 @@ export function MembersPage() {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.3 }}
-      className="pb-24"
+      className="pb-6"
     >
       <div className="px-4 pt-4 pb-3">
         <h2 className="font-display font-extrabold text-base text-zinc-900">Members</h2>

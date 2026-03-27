@@ -23,7 +23,7 @@ export function Header() {
   }
 
   return (
-    <header className="sticky top-0 z-40 border-b border-zinc-200/60 bg-white/80 backdrop-blur-xl">
+    <header className="shrink-0 border-b border-zinc-200/60 bg-white/80 backdrop-blur-xl">
       <div className="flex items-center h-14 px-4 max-w-2xl mx-auto">
         {isSubPage ? (
           <>

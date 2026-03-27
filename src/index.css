@@ -53,9 +53,12 @@ html {
 }
 
 html, body, #root {
-  min-height: 100dvh;
+  height: 100dvh;
   -webkit-tap-highlight-color: transparent;
-  overscroll-behavior-y: contain;
+}
+
+#root {
+  overflow: hidden;
 }
 
 body {
@@ -125,4 +128,13 @@ body {
 /* Safe area spacing */
 .pb-safe {
   padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* Desktop side borders for the constrained layout */
+@media (min-width: 672px) {
+  .app-shell {
+    border-left: 1px solid var(--color-surface-200);
+    border-right: 1px solid var(--color-surface-200);
+    box-shadow: 0 0 40px rgba(0, 0, 0, 0.04);
+  }
 }

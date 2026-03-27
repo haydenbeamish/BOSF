@@ -66,7 +66,7 @@ export function LeaderboardPage() {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.3 }}
-      className="pb-24"
+      className="pb-6"
     >
       {/* Quick stats */}
       <div className="grid grid-cols-3 gap-2 px-4 pt-4">

@@ -60,7 +60,7 @@ export function PlayerPage() {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.3 }}
-      className="pb-24"
+      className="pb-6"
     >
       {/* Profile header */}
       <div className="px-4 pt-6 pb-2">
