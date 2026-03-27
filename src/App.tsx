@@ -4,7 +4,6 @@ import { Header } from "./components/layout/Header";
 import { BottomNav } from "./components/layout/BottomNav";
 import { DashboardPage } from "./pages/DashboardPage";
 import { LeaderboardPage } from "./pages/LeaderboardPage";
-import { EventsPage } from "./pages/EventsPage";
 import { EventDetailPage } from "./pages/EventDetailPage";
 import { PlayerPage } from "./pages/PlayerPage";
 import { MembersPage } from "./pages/MembersPage";
@@ -29,7 +28,6 @@ export default function App() {
           <Routes>
             <Route path="/" element={<DashboardPage />} />
             <Route path="/leaderboard" element={<LeaderboardPage />} />
-            <Route path="/events" element={<EventsPage />} />
             <Route path="/events/:id" element={<EventDetailPage />} />
             <Route path="/player/:id" element={<PlayerPage />} />
             <Route path="/members" element={<MembersPage />} />
