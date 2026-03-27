@@ -21,9 +21,23 @@ async function fetchJson<T>(path: string): Promise<T> {
   return res.json();
 }
 
+function toArray<T>(data: unknown, ...keys: string[]): T[] {
+  if (Array.isArray(data)) return data as T[];
+  if (data && typeof data === "object") {
+    for (const key of keys) {
+      const val = (data as Record<string, unknown>)[key];
+      if (Array.isArray(val)) return val as T[];
+    }
+    const firstArray = Object.values(data as object).find(Array.isArray);
+    if (firstArray) return firstArray as T[];
+  }
+  return [];
+}
+
 export async function getEvents(status?: string): Promise<CompetitionEvent[]> {
   const query = status ? `?status=${status}` : "";
-  return fetchJson<CompetitionEvent[]>(`/events${query}`);
+  const data = await fetchJson<unknown>(`/events${query}`);
+  return toArray<CompetitionEvent>(data, "events", "data", "results");
 }
 
 export async function getEvent(id: number): Promise<EventWithPredictions> {
@@ -31,11 +45,13 @@ export async function getEvent(id: number): Promise<EventWithPredictions> {
 }
 
 export async function getLeaderboard(): Promise<LeaderboardEntry[]> {
-  return fetchJson<LeaderboardEntry[]>("/leaderboard");
+  const data = await fetchJson<unknown>("/leaderboard");
+  return toArray<LeaderboardEntry>(data, "leaderboard", "data", "results");
 }
 
 export async function getParticipants(): Promise<Participant[]> {
-  return fetchJson<Participant[]>("/participants");
+  const data = await fetchJson<unknown>("/participants");
+  return toArray<Participant>(data, "participants", "data", "results");
 }
 
 export async function getParticipant(id: number): Promise<{
