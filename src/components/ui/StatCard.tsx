@@ -13,11 +13,11 @@ interface StatCardProps {
 }
 
 export function StatCard({ label, value, trend, trendLabel, icon, accent = "default", delay = 0 }: StatCardProps) {
-  const trendColor = !trend ? "text-surface-500" : trend > 0 ? "text-accent" : "text-loss";
+  const trendColor = !trend ? "text-zinc-400" : trend > 0 ? "text-accent" : "text-loss";
   const TrendIcon = !trend ? Minus : trend > 0 ? TrendingUp : TrendingDown;
 
   const valueColor = {
-    default: "text-zinc-100",
+    default: "text-zinc-900",
     accent: "text-accent",
     gold: "text-gradient-gold",
     loss: "text-loss",
@@ -28,13 +28,13 @@ export function StatCard({ label, value, trend, trendLabel, icon, accent = "defa
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay, duration: 0.4, ease: [0.25, 0.46, 0.45, 0.94] }}
-      className="rounded-2xl border border-surface-200/50 bg-surface-50/80 p-4"
+      className="rounded-2xl border border-zinc-200/60 bg-white p-4 shadow-sm"
     >
       <div className="flex items-center justify-between mb-3">
-        <span className="text-[11px] font-semibold uppercase tracking-wider text-surface-500">
+        <span className="text-[11px] font-semibold uppercase tracking-wider text-zinc-400">
           {label}
         </span>
-        {icon && <span className="text-surface-400">{icon}</span>}
+        {icon && <span className="text-zinc-400">{icon}</span>}
       </div>
       <p className={cn("font-display font-extrabold text-2xl tracking-tight", valueColor)}>
         {value}
@@ -46,7 +46,7 @@ export function StatCard({ label, value, trend, trendLabel, icon, accent = "defa
             {trend > 0 ? "+" : ""}{trend}%
           </span>
           {trendLabel && (
-            <span className="text-[10px] text-surface-500 ml-1">{trendLabel}</span>
+            <span className="text-[10px] text-zinc-400 ml-1">{trendLabel}</span>
           )}
         </div>
       )}

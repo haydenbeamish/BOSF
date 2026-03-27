@@ -58,11 +58,11 @@ export function PlayerPage() {
           <div className="flex items-center gap-4">
             <Avatar name={participant.name} id={participant.id} size="xl" ringColor="accent" />
             <div className="flex-1 min-w-0">
-              <h1 className="font-display font-extrabold text-xl text-zinc-100 truncate">
+              <h1 className="font-display font-extrabold text-xl text-zinc-900 truncate">
                 {participant.name}
               </h1>
               <p className="text-3xl font-display font-extrabold text-gradient-accent mt-1">
-                {total_points} <span className="text-sm text-surface-500 font-body font-normal">pts</span>
+                {total_points} <span className="text-sm text-zinc-400 font-body font-normal">pts</span>
               </p>
             </div>
           </div>
@@ -72,21 +72,21 @@ export function PlayerPage() {
       {/* Stats row */}
       <div className="grid grid-cols-4 gap-2 px-4 mb-4">
         {[
-          { label: "Won", value: wins, icon: <Trophy size={12} />, color: "text-accent" },
-          { label: "Lost", value: losses, icon: <X size={12} />, color: "text-red-400" },
-          { label: "Pending", value: pending, icon: <Clock size={12} />, color: "text-surface-500" },
-          { label: "Win %", value: `${winRate}%`, icon: <Target size={12} />, color: winRate >= 50 ? "text-accent" : "text-surface-500" },
+          { label: "Won", value: wins, icon: <Trophy size={12} />, color: "text-emerald-600" },
+          { label: "Lost", value: losses, icon: <X size={12} />, color: "text-red-500" },
+          { label: "Pending", value: pending, icon: <Clock size={12} />, color: "text-zinc-400" },
+          { label: "Win %", value: `${winRate}%`, icon: <Target size={12} />, color: winRate >= 50 ? "text-emerald-600" : "text-zinc-400" },
         ].map((stat, i) => (
           <motion.div
             key={stat.label}
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 + i * 0.05 }}
-            className="rounded-2xl border border-surface-200/50 bg-surface-50/80 p-3 text-center"
+            className="rounded-2xl border border-zinc-200/60 bg-white p-3 text-center shadow-sm"
           >
-            <div className="flex justify-center mb-1.5 text-surface-400">{stat.icon}</div>
+            <div className="flex justify-center mb-1.5 text-zinc-400">{stat.icon}</div>
             <p className={cn("font-display font-extrabold text-lg", stat.color)}>{stat.value}</p>
-            <p className="text-[9px] font-semibold uppercase tracking-wider text-surface-500 mt-0.5">{stat.label}</p>
+            <p className="text-[9px] font-semibold uppercase tracking-wider text-zinc-400 mt-0.5">{stat.label}</p>
           </motion.div>
         ))}
       </div>
@@ -94,7 +94,7 @@ export function PlayerPage() {
       {/* Decided picks */}
       {decided.length > 0 && (
         <div className="px-4 mb-6">
-          <h3 className="text-[11px] font-bold uppercase tracking-wider text-surface-500 mb-3 px-1">
+          <h3 className="text-[11px] font-bold uppercase tracking-wider text-zinc-400 mb-3 px-1">
             Decided ({decided.length})
           </h3>
           <div className="flex flex-col gap-2">
@@ -108,25 +108,25 @@ export function PlayerPage() {
                 className={cn(
                   "flex items-center gap-3 px-3 py-2.5 rounded-2xl border cursor-pointer active:scale-[0.98] transition-all",
                   pred.is_correct
-                    ? "border-accent/15 bg-accent/[0.03]"
-                    : "border-red-500/10 bg-red-500/[0.02]"
+                    ? "border-emerald-200/40 bg-emerald-50/50"
+                    : "border-red-200/30 bg-red-50/30"
                 )}
               >
                 <SportIcon sport={pred.sport || "AFL"} size="sm" />
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm text-zinc-200 truncate font-medium">{pred.event_name}</p>
-                  <p className="text-xs text-surface-500 truncate mt-0.5">
-                    Picked: <span className="text-surface-600">{pred.prediction}</span>
+                  <p className="text-sm text-zinc-800 truncate font-medium">{pred.event_name}</p>
+                  <p className="text-xs text-zinc-400 truncate mt-0.5">
+                    Picked: <span className="text-zinc-600">{pred.prediction}</span>
                     {pred.correct_answer && (
-                      <> &middot; <span className={pred.is_correct ? "text-accent" : "text-red-400"}>{pred.correct_answer}</span></>
+                      <> &middot; <span className={pred.is_correct ? "text-emerald-600" : "text-red-500"}>{pred.correct_answer}</span></>
                     )}
                   </p>
                 </div>
                 <div className={cn(
                   "w-7 h-7 rounded-lg flex items-center justify-center shrink-0",
-                  pred.is_correct ? "bg-accent/10" : "bg-red-500/10"
+                  pred.is_correct ? "bg-emerald-100" : "bg-red-100"
                 )}>
-                  {pred.is_correct ? <Check size={14} className="text-accent" /> : <X size={14} className="text-red-400" />}
+                  {pred.is_correct ? <Check size={14} className="text-emerald-600" /> : <X size={14} className="text-red-400" />}
                 </div>
               </motion.div>
             ))}
@@ -137,7 +137,7 @@ export function PlayerPage() {
       {/* Pending picks */}
       {pendingList.length > 0 && (
         <div className="px-4">
-          <h3 className="text-[11px] font-bold uppercase tracking-wider text-surface-500 mb-3 px-1">
+          <h3 className="text-[11px] font-bold uppercase tracking-wider text-zinc-400 mb-3 px-1">
             Pending ({pendingList.length})
           </h3>
           <div className="flex flex-col gap-2">
@@ -148,16 +148,16 @@ export function PlayerPage() {
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.15 + i * 0.02 }}
                 onClick={() => navigate(`/events/${pred.event_id}`)}
-                className="flex items-center gap-3 px-3 py-2.5 rounded-2xl border border-surface-200/30 bg-surface-50/30 cursor-pointer active:scale-[0.98] transition-all"
+                className="flex items-center gap-3 px-3 py-2.5 rounded-2xl border border-zinc-200/60 bg-white cursor-pointer active:scale-[0.98] transition-all shadow-sm"
               >
                 <SportIcon sport={pred.sport || "AFL"} size="sm" />
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm text-zinc-300 truncate font-medium">{pred.event_name}</p>
-                  <p className="text-xs text-surface-500 truncate mt-0.5">
-                    Picked: <span className="text-surface-600">{pred.prediction}</span>
+                  <p className="text-sm text-zinc-700 truncate font-medium">{pred.event_name}</p>
+                  <p className="text-xs text-zinc-400 truncate mt-0.5">
+                    Picked: <span className="text-zinc-600">{pred.prediction}</span>
                   </p>
                 </div>
-                <Clock size={12} className="text-surface-400 shrink-0" />
+                <Clock size={12} className="text-zinc-300 shrink-0" />
               </motion.div>
             ))}
           </div>

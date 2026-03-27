@@ -26,16 +26,16 @@ export function RankRow({ entry, isSpud, index }: RankRowProps) {
       onClick={() => navigate(`/player/${entry.id}`)}
       className={cn(
         "flex items-center gap-3 px-4 py-3 rounded-2xl cursor-pointer transition-all duration-200",
-        "border border-surface-200/30 bg-surface-50/40",
-        "active:scale-[0.98] hover:bg-surface-100/60 hover:border-surface-300/40",
-        isSpud && "border-red-500/15 bg-red-500/[0.03]"
+        "border border-zinc-200/60 bg-white shadow-sm",
+        "active:scale-[0.98] hover:shadow-md hover:-translate-y-0.5",
+        isSpud && "border-red-200/50 bg-red-50/50"
       )}
     >
       {/* Rank */}
       <div className="w-7 flex items-center justify-center shrink-0">
         <span className={cn(
           "font-display font-extrabold text-sm",
-          entry.rank <= 3 ? "text-amber-400" : isSpud ? "text-red-400" : "text-surface-500"
+          entry.rank <= 3 ? "text-amber-600" : isSpud ? "text-red-500" : "text-zinc-400"
         )}>
           {entry.rank}
         </span>
@@ -47,7 +47,7 @@ export function RankRow({ entry, isSpud, index }: RankRowProps) {
       {/* Name + win rate */}
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
-          <span className="font-display font-bold text-sm text-zinc-100 truncate">
+          <span className="font-display font-bold text-sm text-zinc-900 truncate">
             {entry.name}
           </span>
           {isSpud && (
@@ -55,11 +55,11 @@ export function RankRow({ entry, isSpud, index }: RankRowProps) {
           )}
         </div>
         <div className="flex items-center gap-2 mt-0.5">
-          <span className="text-[11px] text-surface-500">
+          <span className="text-[11px] text-zinc-400">
             {entry.correct_predictions}/{entry.total_predictions} correct
           </span>
-          <span className="text-[11px] text-surface-400">&middot;</span>
-          <span className={cn("text-[11px] font-semibold", winRate >= 50 ? "text-accent" : "text-surface-500")}>
+          <span className="text-[11px] text-zinc-300">&middot;</span>
+          <span className={cn("text-[11px] font-semibold", winRate >= 50 ? "text-emerald-600" : "text-zinc-400")}>
             {winRate}%
           </span>
         </div>
@@ -69,14 +69,14 @@ export function RankRow({ entry, isSpud, index }: RankRowProps) {
       <div className="text-right shrink-0 mr-1">
         <span className={cn(
           "font-display font-extrabold text-base tabular-nums",
-          entry.rank === 1 ? "text-amber-400" : isSpud ? "text-red-400" : "text-zinc-200"
+          entry.rank === 1 ? "text-amber-600" : isSpud ? "text-red-500" : "text-zinc-800"
         )}>
           {entry.total_points}
         </span>
-        <p className="text-[9px] font-semibold uppercase tracking-wider text-surface-500">pts</p>
+        <p className="text-[9px] font-semibold uppercase tracking-wider text-zinc-400">pts</p>
       </div>
 
-      <ChevronRight size={14} className="text-surface-400 shrink-0" />
+      <ChevronRight size={14} className="text-zinc-300 shrink-0" />
     </motion.div>
   );
 }
