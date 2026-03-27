@@ -46,6 +46,7 @@ export function Avatar({ name, id, size = "md", showRing = false, ringColor = nu
 
   return (
     <div
+      aria-label={`${name} avatar`}
       className={cn(
         "rounded-full flex items-center justify-center font-display font-bold shrink-0",
         pair.bg, pair.text,
