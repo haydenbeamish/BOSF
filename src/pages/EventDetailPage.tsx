@@ -293,3 +293,5 @@ export function EventDetailPage() {
     </motion.div>
   );
 }
+
+export default EventDetailPage;

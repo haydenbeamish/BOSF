@@ -148,3 +148,4 @@ export function EventsPage() {
     </motion.div>
   );
 }
+export default EventsPage;

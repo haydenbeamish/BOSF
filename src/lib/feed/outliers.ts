@@ -1,0 +1,62 @@
+import type { CompetitionEvent, Prediction, Participant } from "../../types";
+
+const MAX_OUTLIERS = 6;
+
+export { MAX_OUTLIERS };
+
+export interface OutlierInfo {
+  participant: Participant;
+  prediction: Prediction;
+  event: CompetitionEvent;
+  popularPick: string;
+  pickCount: number;
+  totalPicks: number;
+}
+
+export function findOutliers(
+  events: CompetitionEvent[],
+  allPredictions: Prediction[],
+  participants: Participant[]
+): OutlierInfo[] {
+  const outliers: OutlierInfo[] = [];
+  const upcomingEvents = events.filter((e) => e.status !== "completed");
+
+  for (const event of upcomingEvents) {
+    const eventPreds = allPredictions.filter((p) => Number(p.event_id) === Number(event.id));
+    if (eventPreds.length < 3) continue;
+
+    const counts: Record<string, number> = {};
+    const originalCase: Record<string, string> = {};
+    for (const p of eventPreds) {
+      const key = p.prediction.toLowerCase().trim();
+      counts[key] = (counts[key] || 0) + 1;
+      if (!originalCase[key]) originalCase[key] = p.prediction.trim();
+    }
+
+    const sorted = Object.entries(counts).sort((a, b) => b[1] - a[1]);
+    const popularPick = sorted[0]?.[0] ?? "";
+    const popularPickDisplay = originalCase[popularPick] ?? popularPick;
+    const popularCount = sorted[0]?.[1] ?? 0;
+    const groupHasConsensus = popularCount >= eventPreds.length - 2;
+
+    for (const pred of eventPreds) {
+      const key = pred.prediction.toLowerCase().trim();
+      const count = counts[key] ?? 0;
+      if (count <= 2 && key !== popularPick && groupHasConsensus) {
+        const participant = participants.find((p) => Number(p.id) === Number(pred.participant_id));
+        if (participant) {
+          outliers.push({
+            participant,
+            prediction: pred,
+            event,
+            popularPick: popularPickDisplay,
+            pickCount: count,
+            totalPicks: eventPreds.length,
+          });
+        }
+      }
+    }
+  }
+
+  return outliers;
+}

@@ -1,13 +1,28 @@
-import { useEffect, useRef } from "react";
+import { lazy, Suspense, useEffect, useRef } from "react";
 import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import { Header } from "./components/layout/Header";
 import { BottomNav } from "./components/layout/BottomNav";
-import { DashboardPage } from "./pages/DashboardPage";
-import { LeaderboardPage } from "./pages/LeaderboardPage";
-import { EventDetailPage } from "./pages/EventDetailPage";
-import { PlayerPage } from "./pages/PlayerPage";
-import { MembersPage } from "./pages/MembersPage";
-import { EventsPage } from "./pages/EventsPage";
+import { ErrorBoundary } from "./components/ErrorBoundary";
+import { Skeleton } from "./components/ui/Skeleton";
+
+const DashboardPage = lazy(() => import("./pages/DashboardPage"));
+const LeaderboardPage = lazy(() => import("./pages/LeaderboardPage"));
+const EventDetailPage = lazy(() => import("./pages/EventDetailPage"));
+const PlayerPage = lazy(() => import("./pages/PlayerPage"));
+const MembersPage = lazy(() => import("./pages/MembersPage"));
+const EventsPage = lazy(() => import("./pages/EventsPage"));
+const NotFoundPage = lazy(() => import("./pages/NotFoundPage"));
+
+function PageSkeleton() {
+  return (
+    <div className="px-4 pt-6 flex flex-col gap-4">
+      <Skeleton className="h-8 w-48" />
+      <Skeleton className="h-40 w-full rounded-2xl" />
+      <Skeleton className="h-24 w-full rounded-2xl" />
+      <Skeleton className="h-24 w-full rounded-2xl" />
+    </div>
+  );
+}
 
 function ScrollToTop({ scrollRef }: { scrollRef: React.RefObject<HTMLElement | null> }) {
   const { pathname } = useLocation();
@@ -26,14 +41,19 @@ export default function App() {
         <ScrollToTop scrollRef={mainRef} />
         <Header />
         <main ref={mainRef} className="flex-1 overflow-y-auto overscroll-contain scroll-smooth-ios">
-          <Routes>
-            <Route path="/" element={<DashboardPage />} />
-            <Route path="/events" element={<EventsPage />} />
-            <Route path="/leaderboard" element={<LeaderboardPage />} />
-            <Route path="/events/:id" element={<EventDetailPage />} />
-            <Route path="/player/:id" element={<PlayerPage />} />
-            <Route path="/members" element={<MembersPage />} />
-          </Routes>
+          <ErrorBoundary>
+            <Suspense fallback={<PageSkeleton />}>
+              <Routes>
+                <Route path="/" element={<DashboardPage />} />
+                <Route path="/events" element={<EventsPage />} />
+                <Route path="/leaderboard" element={<LeaderboardPage />} />
+                <Route path="/events/:id" element={<EventDetailPage />} />
+                <Route path="/player/:id" element={<PlayerPage />} />
+                <Route path="/members" element={<MembersPage />} />
+                <Route path="*" element={<NotFoundPage />} />
+              </Routes>
+            </Suspense>
+          </ErrorBoundary>
         </main>
         <BottomNav />
       </div>

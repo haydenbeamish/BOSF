@@ -140,3 +140,5 @@ export function LeaderboardPage() {
     </motion.div>
   );
 }
+
+export default LeaderboardPage;

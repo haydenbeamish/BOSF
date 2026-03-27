@@ -1,69 +1,77 @@
 import { useState, useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { getResults, getLeaderboard, getEvents } from "../data/api";
 import { generateNewsFeed, type FeedItem } from "../lib/newsfeed";
 import { enhanceBanter } from "../data/ai";
 import type { LeaderboardEntry, CompetitionEvent } from "../types";
 
+interface NewsFeedData {
+  feedItems: FeedItem[];
+  leaderboard: LeaderboardEntry[];
+  events: CompetitionEvent[];
+}
+
+async function fetchNewsFeedData(): Promise<NewsFeedData> {
+  const [results, lb, allEvents] = await Promise.all([
+    getResults(),
+    getLeaderboard(),
+    getEvents(),
+  ]);
+
+  const allPredictions = results.predictions ?? [];
+
+  const feedItems = generateNewsFeed(
+    results.events ?? [],
+    results.participants ?? [],
+    allPredictions,
+    lb
+  );
+
+  return { feedItems, leaderboard: lb, events: allEvents };
+}
+
 export function useNewsFeed() {
-  const [feed, setFeed] = useState<FeedItem[]>([]);
-  const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
-  const [events, setEvents] = useState<CompetitionEvent[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [enhancedFeed, setEnhancedFeed] = useState<FeedItem[] | null>(null);
+  const [banterKey, setBanterKey] = useState<string | null>(null);
 
+  const { data, isLoading: loading, error, refetch } = useQuery({
+    queryKey: ["newsfeed"],
+    queryFn: fetchNewsFeedData,
+  });
+
+  // Track which data we've already enhanced to avoid re-running
+  const dataKey = data?.feedItems.map(f => f.id).join(",") ?? null;
+
+  // Async AI banter enhancement (non-blocking)
   useEffect(() => {
+    if (!data?.feedItems.length || dataKey === banterKey) return;
+
     let cancelled = false;
+    const toEnhance = data.feedItems.slice(0, 15);
 
-    Promise.all([getResults(), getLeaderboard(), getEvents()])
-      .then(async ([results, lb, allEvents]) => {
-        if (cancelled) return;
-
-        // getResults() now returns a flat Prediction[] already normalized
-        const allPredictions = results.predictions ?? [];
-
-        const feedItems = generateNewsFeed(
-          results.events ?? [],
-          results.participants ?? [],
-          allPredictions,
-          lb
-        );
-
-        // Show template-based feed immediately
-        setFeed(feedItems);
-        setLeaderboard(lb);
-        setEvents(allEvents);
-        setLoading(false);
-
-        // Then try to enhance with AI banter (non-blocking)
-        if (feedItems.length > 0) {
-          const toEnhance = feedItems.slice(0, 15);
-          const enhanced = await enhanceBanter(toEnhance);
-
-          if (cancelled) return;
-
-          if (enhanced && enhanced.length === toEnhance.length) {
-            const enhancedFeed = feedItems.map((item, i) => {
-              if (i < enhanced.length && enhanced[i]?.headline && enhanced[i]?.subtext) {
-                return {
-                  ...item,
-                  headline: enhanced[i].headline,
-                  subtext: enhanced[i].subtext,
-                };
-              }
-              return item;
-            });
-            setFeed(enhancedFeed);
+    enhanceBanter(toEnhance).then((enhanced) => {
+      if (cancelled) return;
+      if (enhanced && enhanced.length === toEnhance.length) {
+        const merged = data.feedItems.map((item, i) => {
+          if (i < enhanced.length && enhanced[i]?.headline && enhanced[i]?.subtext) {
+            return { ...item, headline: enhanced[i].headline, subtext: enhanced[i].subtext };
           }
-        }
-      })
-      .catch((err) => {
-        if (cancelled) return;
-        setError(err instanceof Error ? err.message : String(err));
-        setLoading(false);
-      });
+          return item;
+        });
+        setEnhancedFeed(merged);
+        setBanterKey(dataKey);
+      }
+    });
 
     return () => { cancelled = true; };
-  }, []);
+  }, [data, dataKey, banterKey]);
 
-  return { feed, leaderboard, events, loading, error };
+  return {
+    feed: enhancedFeed ?? data?.feedItems ?? [],
+    leaderboard: data?.leaderboard ?? [],
+    events: data?.events ?? [],
+    loading,
+    error: error ? (error instanceof Error ? error.message : String(error)) : null,
+    retry: () => { refetch(); },
+  };
 }

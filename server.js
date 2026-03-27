@@ -178,6 +178,19 @@ app.post("/api/ai/chat", async (req, res) => {
   }
 });
 
+// --- Health check ---
+
+app.get("/api/health", (_req, res) => {
+  res.json({
+    status: "ok",
+    timestamp: new Date().toISOString(),
+    services: {
+      openrouter: Boolean(OPENROUTER_API_KEY),
+      brave: Boolean(BRAVE_API_KEY),
+    },
+  });
+});
+
 // --- Static file serving (production) ---
 app.use(express.static(join(__dirname, "dist")));
 app.get(/.*/, (_req, res) => {

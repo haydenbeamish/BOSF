@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useQuery } from "@tanstack/react-query";
 import type { Participant, Prediction } from "../types";
 import { getParticipant } from "../data/api";
 
@@ -9,27 +9,15 @@ interface PlayerData {
 }
 
 export function usePlayer(id: number) {
-  const [data, setData] = useState<PlayerData | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { data = null, isLoading: loading, error, refetch } = useQuery<PlayerData>({
+    queryKey: ["player", id],
+    queryFn: () => getParticipant(id),
+  });
 
-  const fetchData = useCallback(() => {
-    setLoading(true);
-    setError(null);
-    getParticipant(id)
-      .then((result) => {
-        setData(result);
-        setLoading(false);
-      })
-      .catch((err) => {
-        setError(err instanceof Error ? err.message : String(err));
-        setLoading(false);
-      });
-  }, [id]);
-
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
-
-  return { data, loading, error, retry: fetchData };
+  return {
+    data,
+    loading,
+    error: error ? (error instanceof Error ? error.message : String(error)) : null,
+    retry: () => { refetch(); },
+  };
 }
