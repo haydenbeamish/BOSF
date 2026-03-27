@@ -3,6 +3,7 @@ import { ChevronLeft } from "lucide-react";
 
 const PAGE_TITLES: Record<string, string> = {
   "/": "BOSF Punting",
+  "/events": "Events",
   "/leaderboard": "Leaderboard",
   "/members": "Members",
 };
@@ -18,7 +19,7 @@ export function Header() {
       if (window.history.state?.idx > 0) {
         navigate(-1);
       } else {
-        navigate("/");
+        navigate("/events");
       }
     } else if (location.pathname.startsWith("/player/")) {
       // Try to go back in history; if we came from somewhere within the app it'll work.
