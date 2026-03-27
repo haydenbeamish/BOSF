@@ -1,6 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Trophy, ChevronRight, Zap, Newspaper, ScrollText, Target, Flame, Radio } from "lucide-react";
+import { getEventDisplayDate, formatEventDate } from "../lib/dates";
 import { useNewsFeed } from "../hooks/useNewsFeed";
 import { GlassCard } from "../components/ui/GlassCard";
 import { Avatar } from "../components/ui/Avatar";
@@ -269,11 +270,11 @@ export function DashboardPage() {
                 <SportIcon sport={evt.sport} />
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-zinc-800 truncate">{evt.event_name}</p>
-                  {evt.event_date ? (
+                  {formatEventDate(getEventDisplayDate(evt.event_date, evt.close_date)) && (
                     <p className="text-xs text-zinc-400 mt-0.5">
-                      {new Date(evt.event_date).toLocaleDateString("en-AU", { day: "numeric", month: "short" })}
+                      {formatEventDate(getEventDisplayDate(evt.event_date, evt.close_date))}
                     </p>
-                  ) : null}
+                  )}
                 </div>
                 {evt.points_value > 1 && (
                   <span className="text-[10px] font-bold text-amber-600 bg-amber-50 rounded-full px-1.5 py-0.5 shrink-0">

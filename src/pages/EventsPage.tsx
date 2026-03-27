@@ -2,6 +2,7 @@ import { useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { ScrollText, ChevronRight, Check, RefreshCw, Radio } from "lucide-react";
+import { getEventDisplayDate, formatEventDate } from "../lib/dates";
 import { useEvents } from "../hooks/useEvents";
 import { SportIcon } from "../components/ui/SportIcon";
 import { StatusPill } from "../components/ui/StatusPill";
@@ -181,9 +182,9 @@ export function EventsPage() {
                           <Check size={10} className="text-emerald-600 shrink-0" />
                           <p className="text-xs text-emerald-600 truncate">{evt.correct_answer}</p>
                         </div>
-                      ) : evt.event_date ? (
+                      ) : formatEventDate(getEventDisplayDate(evt.event_date, evt.close_date)) ? (
                         <p className="text-xs text-zinc-400">
-                          {new Date(evt.event_date).toLocaleDateString("en-AU", { day: "numeric", month: "short", year: "numeric" })}
+                          {formatEventDate(getEventDisplayDate(evt.event_date, evt.close_date))}
                         </p>
                       ) : null}
                       {evt.points_value > 1 && (
