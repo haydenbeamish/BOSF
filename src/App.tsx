@@ -11,13 +11,13 @@ import { MembersPage } from "./pages/MembersPage";
 export default function App() {
   return (
     <BrowserRouter>
-      <div className="min-h-dvh bg-surface-0 text-zinc-200 max-w-2xl mx-auto relative">
+      <div className="min-h-dvh bg-surface-50 text-zinc-800 max-w-2xl mx-auto relative">
         <Header />
         <main>
           <Routes>
             <Route path="/" element={<DashboardPage />} />
             <Route path="/leaderboard" element={<LeaderboardPage />} />
-            <Route path="/bets" element={<EventsPage />} />
+            <Route path="/events" element={<EventsPage />} />
             <Route path="/events/:id" element={<EventDetailPage />} />
             <Route path="/player/:id" element={<PlayerPage />} />
             <Route path="/members" element={<MembersPage />} />

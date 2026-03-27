@@ -8,12 +8,12 @@ interface BadgeProps {
 }
 
 const variants: Record<string, string> = {
-  default: "bg-surface-200/50 text-surface-600",
-  accent: "bg-accent/10 text-accent border border-accent/20",
-  gold: "bg-amber-500/10 text-amber-400 border border-amber-500/20",
-  loss: "bg-red-500/10 text-red-400 border border-red-500/20",
-  void: "bg-indigo-500/10 text-indigo-400 border border-indigo-500/20",
-  outline: "border border-surface-300 text-surface-600",
+  default: "bg-zinc-100 text-zinc-600",
+  accent: "bg-emerald-50 text-emerald-700 border border-emerald-200/50",
+  gold: "bg-amber-50 text-amber-700 border border-amber-200/50",
+  loss: "bg-red-50 text-red-600 border border-red-200/50",
+  void: "bg-indigo-50 text-indigo-600 border border-indigo-200/50",
+  outline: "border border-zinc-300 text-zinc-600",
 };
 
 export function Badge({ children, variant = "default", size = "sm", className }: BadgeProps) {

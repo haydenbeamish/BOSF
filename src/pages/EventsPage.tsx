@@ -60,21 +60,21 @@ export function EventsPage() {
       {/* Summary */}
       <div className="flex items-center justify-between px-4 pt-4 pb-2">
         <div>
-          <h2 className="font-display font-extrabold text-base text-zinc-100">Events</h2>
-          <p className="text-xs text-surface-500 mt-0.5">{completed} of {total} decided</p>
+          <h2 className="font-display font-extrabold text-base text-zinc-900">Events</h2>
+          <p className="text-xs text-zinc-400 mt-0.5">{completed} of {total} decided</p>
         </div>
         {/* Progress ring */}
         <div className="relative w-11 h-11">
           <svg className="w-11 h-11 -rotate-90" viewBox="0 0 36 36">
-            <circle cx="18" cy="18" r="14" fill="none" stroke="currentColor" strokeWidth="2.5" className="text-surface-200" />
+            <circle cx="18" cy="18" r="14" fill="none" stroke="currentColor" strokeWidth="2.5" className="text-zinc-200" />
             <circle
               cx="18" cy="18" r="14" fill="none" stroke="currentColor" strokeWidth="2.5"
-              className="text-accent"
+              className="text-emerald-500"
               strokeDasharray={`${(completed / Math.max(total, 1)) * 87.96} 87.96`}
               strokeLinecap="round"
             />
           </svg>
-          <span className="absolute inset-0 flex items-center justify-center text-[9px] font-display font-extrabold text-accent">
+          <span className="absolute inset-0 flex items-center justify-center text-[9px] font-display font-extrabold text-emerald-600">
             {progress}%
           </span>
         </div>
@@ -83,7 +83,7 @@ export function EventsPage() {
       {/* Category tabs */}
       <div
         ref={scrollRef}
-        className="flex gap-1.5 px-4 py-2 overflow-x-auto scrollbar-none sticky top-14 z-30 bg-surface-0/90 backdrop-blur-xl"
+        className="flex gap-1.5 px-4 py-2 overflow-x-auto scrollbar-none sticky top-14 z-30 bg-white/90 backdrop-blur-xl"
       >
         {categories.map((cat) => {
           const isActive = cat === selectedCategory;
@@ -96,8 +96,8 @@ export function EventsPage() {
               className={cn(
                 "flex items-center gap-1.5 whitespace-nowrap rounded-full px-3.5 py-2 text-xs font-semibold transition-all shrink-0 active:scale-95",
                 isActive
-                  ? "bg-accent/10 text-accent border border-accent/20"
-                  : "bg-surface-100 text-surface-500 border border-surface-200/50"
+                  ? "bg-emerald-50 text-emerald-700 border border-emerald-200/50"
+                  : "bg-zinc-100 text-zinc-500 border border-zinc-200/50"
               )}
             >
               {info && <span className="text-[11px]">{info.emoji}</span>}
@@ -123,24 +123,24 @@ export function EventsPage() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.025, duration: 0.3 }}
               onClick={() => navigate(`/events/${evt.id}`)}
-              className="flex items-center gap-3 px-4 py-3 rounded-2xl border border-surface-200/30 bg-surface-50/40 cursor-pointer active:scale-[0.98] hover:bg-surface-100/50 transition-all"
+              className="flex items-center gap-3 px-4 py-3 rounded-2xl border border-zinc-200/60 bg-white cursor-pointer active:scale-[0.98] hover:shadow-md hover:-translate-y-0.5 transition-all shadow-sm"
             >
               <SportIcon sport={evt.sport} />
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-zinc-200 truncate">{evt.event_name}</p>
+                <p className="text-sm font-medium text-zinc-800 truncate">{evt.event_name}</p>
                 {evt.correct_answer ? (
                   <div className="flex items-center gap-1 mt-0.5">
-                    <Check size={10} className="text-accent" />
-                    <p className="text-xs text-accent truncate">{evt.correct_answer}</p>
+                    <Check size={10} className="text-emerald-600" />
+                    <p className="text-xs text-emerald-600 truncate">{evt.correct_answer}</p>
                   </div>
                 ) : evt.event_date ? (
-                  <p className="text-xs text-surface-500 mt-0.5">
+                  <p className="text-xs text-zinc-400 mt-0.5">
                     {new Date(evt.event_date).toLocaleDateString("en-AU", { day: "numeric", month: "short" })}
                   </p>
                 ) : null}
               </div>
               <StatusPill status={evt.status} />
-              <ChevronRight size={14} className="text-surface-400 shrink-0" />
+              <ChevronRight size={14} className="text-zinc-300 shrink-0" />
             </motion.div>
           ))}
         </div>

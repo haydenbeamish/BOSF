@@ -50,8 +50,8 @@ export function MembersPage() {
       className="pb-24"
     >
       <div className="px-4 pt-4 pb-3">
-        <h2 className="font-display font-extrabold text-base text-zinc-100">Members</h2>
-        <p className="text-xs text-surface-500 mt-0.5">{members.length} punters in the syndicate</p>
+        <h2 className="font-display font-extrabold text-base text-zinc-900">Members</h2>
+        <p className="text-xs text-zinc-400 mt-0.5">{members.length} punters in the syndicate</p>
       </div>
 
       <div className="flex flex-col gap-2 px-4">
@@ -67,14 +67,14 @@ export function MembersPage() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.04, duration: 0.3 }}
               onClick={() => navigate(`/player/${member.id}`)}
-              className="flex items-center gap-3 px-4 py-4 rounded-2xl border border-surface-200/30 bg-surface-50/40 cursor-pointer active:scale-[0.98] hover:bg-surface-100/50 transition-all"
+              className="flex items-center gap-3 px-4 py-4 rounded-2xl border border-zinc-200/60 bg-white cursor-pointer active:scale-[0.98] hover:shadow-md hover:-translate-y-0.5 transition-all shadow-sm"
             >
               <div className="relative">
                 <Avatar name={member.name} id={member.id} size="lg" />
-                <div className="absolute -top-0.5 -right-0.5 w-5 h-5 rounded-full bg-surface-0 flex items-center justify-center">
+                <div className="absolute -top-0.5 -right-0.5 w-5 h-5 rounded-full bg-white shadow-sm border border-zinc-200/60 flex items-center justify-center">
                   <span className={cn(
                     "text-[9px] font-display font-extrabold",
-                    member.rank <= 3 ? "text-amber-400" : "text-surface-500"
+                    member.rank <= 3 ? "text-amber-600" : "text-zinc-400"
                   )}>
                     {member.rank}
                   </span>
@@ -82,12 +82,12 @@ export function MembersPage() {
               </div>
 
               <div className="flex-1 min-w-0">
-                <p className="font-display font-bold text-sm text-zinc-100 truncate">{member.name}</p>
+                <p className="font-display font-bold text-sm text-zinc-900 truncate">{member.name}</p>
                 <div className="flex items-center gap-2 mt-1">
                   <Badge variant={winRate >= 50 ? "accent" : "default"} size="sm">
                     {winRate}% win rate
                   </Badge>
-                  <span className="text-[11px] text-surface-500">
+                  <span className="text-[11px] text-zinc-400">
                     {member.correct_predictions} correct
                   </span>
                 </div>
@@ -96,13 +96,13 @@ export function MembersPage() {
               <div className="text-right shrink-0">
                 <p className={cn(
                   "font-display font-extrabold text-base tabular-nums",
-                  member.rank === 1 ? "text-amber-400" : "text-zinc-200"
+                  member.rank === 1 ? "text-amber-600" : "text-zinc-800"
                 )}>
                   {member.total_points}
                 </p>
-                <p className="text-[9px] font-semibold uppercase tracking-wider text-surface-500">pts</p>
+                <p className="text-[9px] font-semibold uppercase tracking-wider text-zinc-400">pts</p>
               </div>
-              <ChevronRight size={14} className="text-surface-400 shrink-0" />
+              <ChevronRight size={14} className="text-zinc-300 shrink-0" />
             </motion.div>
           );
         })}

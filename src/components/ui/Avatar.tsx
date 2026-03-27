@@ -1,20 +1,20 @@
 import { cn } from "../../lib/cn";
 
 const colorPairs = [
-  { bg: "bg-rose-500/20", text: "text-rose-300", ring: "ring-rose-500/30" },
-  { bg: "bg-blue-500/20", text: "text-blue-300", ring: "ring-blue-500/30" },
-  { bg: "bg-emerald-500/20", text: "text-emerald-300", ring: "ring-emerald-500/30" },
-  { bg: "bg-purple-500/20", text: "text-purple-300", ring: "ring-purple-500/30" },
-  { bg: "bg-cyan-500/20", text: "text-cyan-300", ring: "ring-cyan-500/30" },
-  { bg: "bg-orange-500/20", text: "text-orange-300", ring: "ring-orange-500/30" },
-  { bg: "bg-pink-500/20", text: "text-pink-300", ring: "ring-pink-500/30" },
-  { bg: "bg-teal-500/20", text: "text-teal-300", ring: "ring-teal-500/30" },
-  { bg: "bg-indigo-500/20", text: "text-indigo-300", ring: "ring-indigo-500/30" },
-  { bg: "bg-amber-500/20", text: "text-amber-300", ring: "ring-amber-500/30" },
-  { bg: "bg-lime-500/20", text: "text-lime-300", ring: "ring-lime-500/30" },
-  { bg: "bg-fuchsia-500/20", text: "text-fuchsia-300", ring: "ring-fuchsia-500/30" },
-  { bg: "bg-sky-500/20", text: "text-sky-300", ring: "ring-sky-500/30" },
-  { bg: "bg-red-500/20", text: "text-red-300", ring: "ring-red-500/30" },
+  { bg: "bg-rose-100", text: "text-rose-700", ring: "ring-rose-300" },
+  { bg: "bg-blue-100", text: "text-blue-700", ring: "ring-blue-300" },
+  { bg: "bg-emerald-100", text: "text-emerald-700", ring: "ring-emerald-300" },
+  { bg: "bg-purple-100", text: "text-purple-700", ring: "ring-purple-300" },
+  { bg: "bg-cyan-100", text: "text-cyan-700", ring: "ring-cyan-300" },
+  { bg: "bg-orange-100", text: "text-orange-700", ring: "ring-orange-300" },
+  { bg: "bg-pink-100", text: "text-pink-700", ring: "ring-pink-300" },
+  { bg: "bg-teal-100", text: "text-teal-700", ring: "ring-teal-300" },
+  { bg: "bg-indigo-100", text: "text-indigo-700", ring: "ring-indigo-300" },
+  { bg: "bg-amber-100", text: "text-amber-700", ring: "ring-amber-300" },
+  { bg: "bg-lime-100", text: "text-lime-700", ring: "ring-lime-300" },
+  { bg: "bg-fuchsia-100", text: "text-fuchsia-700", ring: "ring-fuchsia-300" },
+  { bg: "bg-sky-100", text: "text-sky-700", ring: "ring-sky-300" },
+  { bg: "bg-red-100", text: "text-red-700", ring: "ring-red-300" },
 ];
 
 interface AvatarProps {
@@ -34,7 +34,7 @@ const sizes = {
 };
 
 const ringColors = {
-  accent: "ring-2 ring-accent/50",
+  accent: "ring-2 ring-emerald-500/50",
   gold: "ring-2 ring-amber-400/60",
   silver: "ring-2 ring-zinc-400/50",
   bronze: "ring-2 ring-amber-600/50",
