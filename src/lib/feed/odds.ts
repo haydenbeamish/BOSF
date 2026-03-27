@@ -1,5 +1,5 @@
 import type { CompetitionEvent, Prediction, Participant } from "../../types";
-import type { FeedItem } from "./index";
+import type { FeedItem } from "./types";
 import {
   hashPick,
   ODDS_ALERT_TEMPLATES,

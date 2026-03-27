@@ -34,7 +34,7 @@ export function useNewsFeed() {
   const [enhancedFeed, setEnhancedFeed] = useState<FeedItem[] | null>(null);
   const [banterKey, setBanterKey] = useState<string | null>(null);
 
-  const { data, isLoading: loading, error } = useQuery({
+  const { data, isLoading: loading, error, refetch } = useQuery({
     queryKey: ["newsfeed"],
     queryFn: fetchNewsFeedData,
   });
@@ -72,5 +72,6 @@ export function useNewsFeed() {
     events: data?.events ?? [],
     loading,
     error: error ? (error instanceof Error ? error.message : String(error)) : null,
+    retry: () => { refetch(); },
   };
 }
