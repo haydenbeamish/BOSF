@@ -107,7 +107,7 @@ const EVERYONE_WRONG_TEMPLATES = [
 const OUTLIER_TEMPLATES = [
   (name: string, prediction: string, event: string, popular: string) => ({
     headline: `Bold call from ${name}`,
-    subtext: `Picked "${prediction}" for ${event} — everyone else went "${popular}".`,
+    subtext: `Picked "${prediction}" for ${event} — most others went "${popular}".`,
   }),
   (name: string, prediction: string, event: string, _popular: string) => ({
     headline: `${name} going rogue on ${event}`,
@@ -215,13 +215,16 @@ function findOutliers(
     if (eventPreds.length < 3) continue;
 
     const counts: Record<string, number> = {};
+    const originalCase: Record<string, string> = {};
     for (const p of eventPreds) {
       const key = p.prediction.toLowerCase().trim();
       counts[key] = (counts[key] || 0) + 1;
+      if (!originalCase[key]) originalCase[key] = p.prediction.trim();
     }
 
     const sorted = Object.entries(counts).sort((a, b) => b[1] - a[1]);
     const popularPick = sorted[0]?.[0] ?? "";
+    const popularPickDisplay = originalCase[popularPick] ?? popularPick;
     const threshold = Math.max(1, Math.floor(eventPreds.length * OUTLIER_PERCENTAGE));
 
     for (const pred of eventPreds) {
@@ -234,7 +237,7 @@ function findOutliers(
             participant,
             prediction: pred,
             event,
-            popularPick: sorted[0]?.[0] ?? "",
+            popularPick: popularPickDisplay,
             pickCount: count,
             totalPicks: eventPreds.length,
           });
