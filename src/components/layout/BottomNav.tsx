@@ -1,10 +1,9 @@
 import { NavLink } from "react-router-dom";
-import { LayoutDashboard, Trophy, ScrollText, Users } from "lucide-react";
+import { LayoutDashboard, Trophy, Users } from "lucide-react";
 import { cn } from "../../lib/cn";
 
 const tabs = [
   { to: "/", label: "Home", icon: LayoutDashboard },
-  { to: "/events", label: "Events", icon: ScrollText },
   { to: "/leaderboard", label: "Board", icon: Trophy },
   { to: "/members", label: "Members", icon: Users },
 ];
