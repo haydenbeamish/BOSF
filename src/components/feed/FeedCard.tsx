@@ -1,72 +1,83 @@
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
+import {
+  Trophy,
+  Target,
+  XCircle,
+  TrendingUp,
+  TrendingDown,
+  Eye,
+  Swords,
+  Lightbulb,
+  BarChart3,
+  ArrowRightLeft,
+  Ticket,
+} from "lucide-react";
 import { cn } from "../../lib/cn";
 import type { FeedItem } from "../../lib/newsfeed";
 
-// High-impact types get stronger visual treatment
-const HIGH_IMPACT_TYPES = new Set(["everyone_wrong", "perfect_pick", "close_race", "winning_streak"]);
-
-const TYPE_STYLES: Record<string, { bg: string; border: string; accent: string; glow?: string }> = {
+const TYPE_CONFIG: Record<
+  string,
+  { icon: React.ElementType; accent: string; stripe: string }
+> = {
   event_result: {
-    bg: "bg-emerald-50/60",
-    border: "border-emerald-200/40",
-    accent: "text-emerald-700",
+    icon: Trophy,
+    accent: "text-emerald-600",
+    stripe: "bg-emerald-500",
   },
   perfect_pick: {
-    bg: "bg-amber-50/80",
-    border: "border-amber-300/50",
-    accent: "text-amber-700",
-    glow: "shadow-[0_0_16px_rgba(217,119,6,0.1)]",
+    icon: Target,
+    accent: "text-amber-600",
+    stripe: "bg-amber-500",
   },
   everyone_wrong: {
-    bg: "bg-red-50/80",
-    border: "border-red-300/50",
-    accent: "text-red-600",
-    glow: "shadow-[0_0_16px_rgba(220,38,38,0.1)]",
+    icon: XCircle,
+    accent: "text-red-500",
+    stripe: "bg-red-500",
   },
   winning_streak: {
-    bg: "bg-orange-50/80",
-    border: "border-orange-300/50",
-    accent: "text-orange-700",
-    glow: "shadow-[0_0_16px_rgba(234,88,12,0.08)]",
+    icon: TrendingUp,
+    accent: "text-emerald-600",
+    stripe: "bg-emerald-500",
   },
   losing_streak: {
-    bg: "bg-red-50/50",
-    border: "border-red-200/30",
-    accent: "text-red-600",
+    icon: TrendingDown,
+    accent: "text-zinc-500",
+    stripe: "bg-zinc-400",
   },
   outlier_alert: {
-    bg: "bg-violet-50/60",
-    border: "border-violet-200/40",
-    accent: "text-violet-700",
+    icon: Eye,
+    accent: "text-violet-600",
+    stripe: "bg-violet-500",
   },
   close_race: {
-    bg: "bg-amber-50/80",
-    border: "border-amber-300/50",
-    accent: "text-amber-700",
-    glow: "shadow-[0_0_16px_rgba(217,119,6,0.08)]",
+    icon: Swords,
+    accent: "text-amber-600",
+    stripe: "bg-amber-500",
   },
   hot_take: {
-    bg: "bg-sky-50/60",
-    border: "border-sky-200/40",
-    accent: "text-sky-700",
+    icon: Lightbulb,
+    accent: "text-sky-600",
+    stripe: "bg-sky-500",
   },
   odds_alert: {
-    bg: "bg-blue-50/60",
-    border: "border-blue-200/40",
-    accent: "text-blue-700",
+    icon: BarChart3,
+    accent: "text-blue-600",
+    stripe: "bg-blue-500",
   },
   contrarian_pick: {
-    bg: "bg-fuchsia-50/60",
-    border: "border-fuchsia-200/40",
-    accent: "text-fuchsia-700",
+    icon: ArrowRightLeft,
+    accent: "text-fuchsia-600",
+    stripe: "bg-fuchsia-500",
   },
   underdog_backer: {
-    bg: "bg-teal-50/60",
-    border: "border-teal-200/40",
-    accent: "text-teal-700",
+    icon: Ticket,
+    accent: "text-teal-600",
+    stripe: "bg-teal-500",
   },
 };
+
+const DEFAULT_CONFIG = TYPE_CONFIG.event_result;
 
 interface FeedCardProps {
   item: FeedItem;
@@ -75,8 +86,8 @@ interface FeedCardProps {
 
 export function FeedCard({ item, index }: FeedCardProps) {
   const navigate = useNavigate();
-  const styles = TYPE_STYLES[item.type] ?? TYPE_STYLES.event_result;
-  const isHighImpact = HIGH_IMPACT_TYPES.has(item.type);
+  const config = TYPE_CONFIG[item.type] ?? DEFAULT_CONFIG;
+  const Icon = config.icon;
 
   const handleClick = () => {
     if (item.eventId) {
@@ -94,32 +105,44 @@ export function FeedCard({ item, index }: FeedCardProps) {
       role="button"
       tabIndex={0}
       onClick={handleClick}
-      onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); handleClick(); } }}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          handleClick();
+        }
+      }}
       aria-label={item.headline}
       className={cn(
-        "rounded-2xl border cursor-pointer transition-all duration-200",
+        "relative overflow-hidden rounded-2xl border border-zinc-200/60 bg-white shadow-sm",
+        "cursor-pointer transition-all duration-200",
         "hover:shadow-md hover:-translate-y-0.5 active:scale-[0.98]",
-        isHighImpact ? "p-5 border-2" : "p-4",
-        styles.bg,
-        styles.border,
-        styles.glow
+        "pl-0 pr-4 py-3.5"
       )}
     >
-      <div className="flex items-start gap-3">
-        <span className={cn("leading-none mt-0.5 shrink-0", isHighImpact ? "text-2xl" : "text-xl")}>{item.emoji}</span>
+      {/* Left accent stripe */}
+      <div
+        className={cn("absolute left-0 top-0 bottom-0 w-1 rounded-l-2xl", config.stripe)}
+      />
+
+      <div className="flex items-start gap-3 pl-4">
+        <div
+          className={cn(
+            "mt-0.5 shrink-0 flex items-center justify-center w-8 h-8 rounded-xl bg-zinc-50",
+            config.accent
+          )}
+        >
+          <Icon size={16} />
+        </div>
+
         <div className="flex-1 min-w-0">
-          <p className={cn(
-            "font-display font-bold leading-snug",
-            isHighImpact ? "text-[15px]" : "text-sm",
-            styles.accent
-          )}>
+          <p className="font-display font-bold text-sm leading-snug text-zinc-800">
             {item.headline}
           </p>
-          <p className="text-[13px] text-zinc-500 mt-1 leading-relaxed">
+          <p className="text-[13px] text-zinc-500 mt-0.5 leading-relaxed">
             {item.subtext}
           </p>
           {item.sport && (
-            <span className="inline-block mt-2 text-[10px] font-semibold uppercase tracking-wider text-zinc-400 bg-zinc-100 rounded-full px-2 py-0.5">
+            <span className="inline-block mt-1.5 text-[10px] font-semibold uppercase tracking-wider text-zinc-400 bg-zinc-100 rounded-full px-2 py-0.5">
               {item.sport}
             </span>
           )}
