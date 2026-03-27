@@ -13,7 +13,7 @@ export function EmptyState({ icon, title, description, children }: EmptyStatePro
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
-      className="flex flex-col items-center justify-center py-20 px-6 text-center"
+      className="flex flex-col items-center justify-center py-16 px-6 text-center min-h-[50dvh]"
     >
       <div className="w-16 h-16 rounded-2xl bg-zinc-100 border border-zinc-200 flex items-center justify-center mb-4 text-zinc-400">
         {icon}

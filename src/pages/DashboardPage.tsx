@@ -56,7 +56,7 @@ export function DashboardPage() {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.3 }}
-      className="pb-24"
+      className="pb-6"
     >
       {/* Welcome header */}
       <div className="px-4 pt-5 pb-2 flex items-center gap-3">

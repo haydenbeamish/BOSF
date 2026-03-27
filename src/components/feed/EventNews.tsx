@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { ExternalLink, Globe, Loader2 } from "lucide-react";
+import { ExternalLink, Globe, Loader2, AlertCircle } from "lucide-react";
 import { useEventNews } from "../../hooks/useEventNews";
 
 interface EventNewsProps {
@@ -8,13 +8,22 @@ interface EventNewsProps {
 }
 
 export function EventNews({ eventName, sport }: EventNewsProps) {
-  const { news, loading } = useEventNews(eventName, sport);
+  const { news, loading, error } = useEventNews(eventName, sport);
 
   if (loading) {
     return (
       <div className="flex items-center gap-2 py-4 text-zinc-400 text-sm">
         <Loader2 size={14} className="animate-spin" />
         <span>Searching for latest news...</span>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center gap-2 py-4 text-zinc-400 text-sm">
+        <AlertCircle size={14} />
+        <span>News unavailable right now</span>
       </div>
     );
   }
@@ -36,6 +45,7 @@ export function EventNews({ eventName, sport }: EventNewsProps) {
             href={item.url}
             target="_blank"
             rel="noopener noreferrer"
+            aria-label={`${item.title} (opens in new tab)`}
             initial={{ opacity: 0, y: 6 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: i * 0.05, duration: 0.25 }}
@@ -55,7 +65,7 @@ export function EventNews({ eventName, sport }: EventNewsProps) {
                   </span>
                 )}
               </div>
-              <ExternalLink size={12} className="text-zinc-300 shrink-0 mt-1" />
+              <ExternalLink size={12} className="text-zinc-300 shrink-0 mt-1" aria-hidden="true" />
             </div>
           </motion.a>
         ))}

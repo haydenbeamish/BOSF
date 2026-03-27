@@ -15,6 +15,7 @@ interface PlayerInsightProps {
 export function PlayerInsight({ name, wins, losses, pending, totalPoints, winRate }: PlayerInsightProps) {
   const [insight, setInsight] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -27,25 +28,29 @@ export function PlayerInsight({ name, wins, losses, pending, totalPoints, winRat
       if (reply) setInsight(reply);
       setLoading(false);
     }).catch(() => {
-      if (!cancelled) setLoading(false);
+      if (!cancelled) {
+        setError(true);
+        setLoading(false);
+      }
     });
 
     return () => { cancelled = true; };
   }, [name, wins, losses, pending, totalPoints, winRate]);
 
-  if (!loading && !insight) return null;
+  if (!loading && !insight && !error) return null;
+  if (error) return null;
 
   return (
     <motion.div
       initial={{ opacity: 0, y: 6 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.3, duration: 0.3 }}
-      className="mt-3 mx-4 rounded-xl bg-gradient-to-r from-violet-50 to-sky-50 border border-violet-200/30 px-4 py-3"
+      className="mt-3 mx-4 mb-4 rounded-xl bg-gradient-to-r from-violet-50 to-sky-50 border border-violet-200/30 px-4 py-3"
     >
       <div className="flex items-start gap-2">
-        <Bot size={14} className="text-violet-400 shrink-0 mt-0.5" />
+        <Bot size={14} className="text-violet-400 shrink-0 mt-0.5" aria-hidden="true" />
         {loading ? (
-          <p className="text-xs text-violet-400 italic animate-pulse">Generating roast...</p>
+          <p className="text-xs text-violet-400 italic animate-pulse" aria-live="polite">Generating roast...</p>
         ) : (
           <p className="text-sm text-violet-700 font-medium leading-snug">{insight}</p>
         )}

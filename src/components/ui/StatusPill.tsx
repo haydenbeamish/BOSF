@@ -4,7 +4,7 @@ import type { EventStatus } from "../../types";
 const config: Record<EventStatus, { label: string; dot: string; text: string; bg: string }> = {
   completed: { label: "Decided", dot: "bg-emerald-500", text: "text-emerald-700", bg: "bg-emerald-50" },
   in_progress: { label: "Live", dot: "bg-amber-500 animate-pulse", text: "text-amber-700", bg: "bg-amber-50" },
-  upcoming: { label: "Pending", dot: "bg-zinc-400", text: "text-zinc-500", bg: "bg-zinc-100" },
+  upcoming: { label: "Pending", dot: "bg-zinc-400", text: "text-zinc-600", bg: "bg-zinc-100" },
 };
 
 export function StatusPill({ status }: { status: EventStatus }) {

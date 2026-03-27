@@ -1,4 +1,5 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { useEffect, useRef } from "react";
+import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import { Header } from "./components/layout/Header";
 import { BottomNav } from "./components/layout/BottomNav";
 import { DashboardPage } from "./pages/DashboardPage";
@@ -8,12 +9,23 @@ import { EventDetailPage } from "./pages/EventDetailPage";
 import { PlayerPage } from "./pages/PlayerPage";
 import { MembersPage } from "./pages/MembersPage";
 
+function ScrollToTop({ scrollRef }: { scrollRef: React.RefObject<HTMLElement | null> }) {
+  const { pathname } = useLocation();
+  useEffect(() => {
+    scrollRef.current?.scrollTo(0, 0);
+  }, [pathname, scrollRef]);
+  return null;
+}
+
 export default function App() {
+  const mainRef = useRef<HTMLElement>(null);
+
   return (
     <BrowserRouter>
-      <div className="min-h-dvh bg-surface-50 text-zinc-800 max-w-2xl mx-auto relative">
+      <div className="flex flex-col h-dvh bg-surface-50 text-zinc-800 max-w-2xl mx-auto app-shell">
+        <ScrollToTop scrollRef={mainRef} />
         <Header />
-        <main>
+        <main ref={mainRef} className="flex-1 overflow-y-auto overscroll-contain scroll-smooth-ios">
           <Routes>
             <Route path="/" element={<DashboardPage />} />
             <Route path="/leaderboard" element={<LeaderboardPage />} />
