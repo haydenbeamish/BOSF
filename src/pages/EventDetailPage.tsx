@@ -1,14 +1,73 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Check, X, Clock } from "lucide-react";
+import { Check, X, Clock, Sparkles } from "lucide-react";
 import { useEvent } from "../hooks/useEvent";
 import { SportIcon } from "../components/ui/SportIcon";
 import { StatusPill } from "../components/ui/StatusPill";
 import { Avatar } from "../components/ui/Avatar";
 import { GlassCard } from "../components/ui/GlassCard";
+import { Badge } from "../components/ui/Badge";
 import { Skeleton } from "../components/ui/Skeleton";
 import { EmptyState } from "../components/ui/EmptyState";
 import { cn } from "../lib/cn";
+
+interface PredictionGroup {
+  answer: string;
+  predictions: Array<{
+    id?: number;
+    participant_id: number;
+    participant_name?: string;
+    prediction: string;
+    is_correct: boolean | null;
+    points_earned: number;
+  }>;
+  isCorrect: boolean | null;
+  isOutlier: boolean;
+  percentage: number;
+}
+
+function groupPredictions(predictions: Array<{
+  id?: number;
+  participant_id: number;
+  participant_name?: string;
+  prediction: string;
+  is_correct: boolean | null;
+  points_earned: number;
+}>): PredictionGroup[] {
+  const groups: Record<string, PredictionGroup> = {};
+
+  for (const pred of predictions) {
+    const key = pred.prediction.toLowerCase().trim();
+    if (!groups[key]) {
+      groups[key] = {
+        answer: pred.prediction,
+        predictions: [],
+        isCorrect: pred.is_correct,
+        isOutlier: false,
+        percentage: 0,
+      };
+    }
+    groups[key].predictions.push(pred);
+  }
+
+  const total = predictions.length;
+  const threshold = Math.max(1, Math.floor(total * 0.2));
+
+  const sorted = Object.values(groups)
+    .map((g) => ({
+      ...g,
+      percentage: total > 0 ? Math.round((g.predictions.length / total) * 100) : 0,
+      isOutlier: g.predictions.length <= threshold && total >= 3,
+    }))
+    .sort((a, b) => {
+      // Correct answer first, then by count
+      if (a.isCorrect === true && b.isCorrect !== true) return -1;
+      if (b.isCorrect === true && a.isCorrect !== true) return 1;
+      return b.predictions.length - a.predictions.length;
+    });
+
+  return sorted;
+}
 
 export function EventDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -36,6 +95,7 @@ export function EventDetailPage() {
   const isDecided = event.status === "completed";
   const predictions = event.predictions ?? [];
   const correctCount = predictions.filter((p) => p.is_correct === true).length;
+  const groups = groupPredictions(predictions);
 
   return (
     <motion.div
@@ -49,14 +109,14 @@ export function EventDetailPage() {
         <div className="flex items-start gap-3">
           <SportIcon sport={event.sport} size="lg" />
           <div className="flex-1 min-w-0">
-            <h1 className="font-display font-extrabold text-lg text-zinc-100 leading-tight">
+            <h1 className="font-display font-extrabold text-lg text-zinc-900 leading-tight">
               {event.event_name}
             </h1>
             <div className="flex items-center gap-2 mt-2 flex-wrap">
               <StatusPill status={event.status} />
-              <span className="text-xs text-surface-500">{event.sport}</span>
+              <span className="text-xs text-zinc-400">{event.sport}</span>
               {event.points_value > 1 && (
-                <span className="text-xs text-amber-400 font-bold">{event.points_value} pts</span>
+                <span className="text-xs text-amber-600 font-bold">{event.points_value} pts</span>
               )}
             </div>
           </div>
@@ -66,16 +126,16 @@ export function EventDetailPage() {
         {isDecided && event.correct_answer && (
           <GlassCard glow="accent" className="mt-4 p-4">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center shrink-0">
-                <Check size={20} className="text-accent" />
+              <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center shrink-0">
+                <Check size={20} className="text-emerald-600" />
               </div>
               <div>
-                <p className="text-[10px] font-bold uppercase tracking-wider text-accent mb-0.5">Result</p>
-                <p className="font-display font-extrabold text-base text-zinc-100">{event.correct_answer}</p>
+                <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-600 mb-0.5">Result</p>
+                <p className="font-display font-extrabold text-base text-zinc-900">{event.correct_answer}</p>
               </div>
             </div>
             {predictions.length > 0 && (
-              <p className="text-xs text-surface-500 mt-3 pt-3 border-t border-surface-200/30">
+              <p className="text-xs text-zinc-400 mt-3 pt-3 border-t border-zinc-100">
                 {correctCount} of {predictions.length} got it right
               </p>
             )}
@@ -83,63 +143,102 @@ export function EventDetailPage() {
         )}
       </div>
 
-      {/* Predictions */}
+      {/* Grouped Predictions */}
       <div className="px-4">
-        <h3 className="text-[11px] font-bold uppercase tracking-wider text-surface-500 mb-3 px-1">
+        <h3 className="text-[11px] font-bold uppercase tracking-wider text-zinc-400 mb-3 px-1">
           All Picks ({predictions.length})
         </h3>
-        <div className="flex flex-col gap-2">
-          {predictions.map((pred, i) => {
-            const isCorrect = pred.is_correct === true;
-            const isWrong = pred.is_correct === false;
 
-            return (
-              <motion.div
-                key={pred.id ?? `${pred.participant_name}-${i}`}
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.03, duration: 0.3 }}
-                onClick={() => navigate(`/player/${pred.participant_id}`)}
-                className={cn(
-                  "flex items-center gap-3 px-4 py-3 rounded-2xl border cursor-pointer active:scale-[0.98] transition-all",
-                  isCorrect
-                    ? "border-accent/15 bg-accent/[0.04]"
-                    : isWrong
-                    ? "border-red-500/10 bg-red-500/[0.02]"
-                    : "border-surface-200/30 bg-surface-50/40"
-                )}
-              >
-                <Avatar name={pred.participant_name ?? "?"} id={pred.participant_id} size="md" />
-                <div className="flex-1 min-w-0">
-                  <p className="font-display font-bold text-sm text-zinc-200 truncate">
-                    {pred.participant_name}
-                  </p>
-                  <p className={cn(
-                    "text-xs mt-0.5 truncate",
-                    isCorrect ? "text-accent" : isWrong ? "text-red-400" : "text-surface-500"
+        <div className="flex flex-col gap-4">
+          {groups.map((group, gi) => (
+            <motion.div
+              key={group.answer}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: gi * 0.05, duration: 0.3 }}
+            >
+              {/* Group header */}
+              <div className={cn(
+                "flex items-center gap-2 mb-2 px-1",
+              )}>
+                <div className={cn(
+                  "flex-1 flex items-center gap-2 min-w-0",
+                )}>
+                  <span className={cn(
+                    "font-display font-bold text-sm truncate",
+                    group.isCorrect === true ? "text-emerald-700" :
+                    group.isCorrect === false ? "text-red-500" :
+                    "text-zinc-700"
                   )}>
-                    {pred.prediction}
-                  </p>
+                    {group.answer}
+                  </span>
+                  {group.isCorrect === true && (
+                    <Check size={14} className="text-emerald-600 shrink-0" />
+                  )}
+                  {group.isOutlier && (
+                    <Badge variant="void" size="sm" className="shrink-0">
+                      <Sparkles size={8} /> Outlier
+                    </Badge>
+                  )}
                 </div>
+                <span className="text-xs text-zinc-400 shrink-0">
+                  {group.predictions.length} pick{group.predictions.length !== 1 ? "s" : ""} ({group.percentage}%)
+                </span>
+              </div>
 
-                {isDecided && (
-                  <div className={cn(
-                    "w-8 h-8 rounded-xl flex items-center justify-center shrink-0",
-                    isCorrect ? "bg-accent/10" : "bg-red-500/10"
-                  )}>
-                    {isCorrect ? (
-                      <Check size={16} className="text-accent" />
-                    ) : (
-                      <X size={16} className="text-red-400" />
+              {/* Consensus bar */}
+              <div className="h-1.5 rounded-full bg-zinc-100 mb-2 mx-1 overflow-hidden">
+                <div
+                  className={cn(
+                    "h-full rounded-full transition-all",
+                    group.isCorrect === true ? "bg-emerald-400" :
+                    group.isCorrect === false ? "bg-red-300" :
+                    "bg-zinc-300"
+                  )}
+                  style={{ width: `${group.percentage}%` }}
+                />
+              </div>
+
+              {/* Participants in this group */}
+              <div className="flex flex-col gap-1.5">
+                {group.predictions.map((pred, i) => (
+                  <div
+                    key={pred.id ?? `${pred.participant_id}-${i}`}
+                    onClick={() => navigate(`/player/${pred.participant_id}`)}
+                    className={cn(
+                      "flex items-center gap-3 px-3 py-2.5 rounded-xl border cursor-pointer active:scale-[0.98] transition-all",
+                      group.isCorrect === true
+                        ? "border-emerald-200/40 bg-emerald-50/50"
+                        : group.isCorrect === false
+                        ? "border-red-200/30 bg-red-50/30"
+                        : "border-zinc-200/60 bg-white"
+                    )}
+                  >
+                    <Avatar name={pred.participant_name ?? "?"} id={pred.participant_id} size="sm" />
+                    <span className="font-display font-semibold text-sm text-zinc-800 flex-1 truncate">
+                      {pred.participant_name}
+                    </span>
+
+                    {isDecided && (
+                      <div className={cn(
+                        "w-6 h-6 rounded-lg flex items-center justify-center shrink-0",
+                        pred.is_correct ? "bg-emerald-100" : "bg-red-100"
+                      )}>
+                        {pred.is_correct ? (
+                          <Check size={12} className="text-emerald-600" />
+                        ) : (
+                          <X size={12} className="text-red-400" />
+                        )}
+                      </div>
+                    )}
+                    {!isDecided && (
+                      <Clock size={12} className="text-zinc-400 shrink-0" />
                     )}
                   </div>
-                )}
-                {!isDecided && (
-                  <Clock size={14} className="text-surface-400 shrink-0" />
-                )}
-              </motion.div>
-            );
-          })}
+                ))}
+              </div>
+            </motion.div>
+          ))}
         </div>
       </div>
     </motion.div>

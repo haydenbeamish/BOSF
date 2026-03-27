@@ -92,7 +92,7 @@ export function LeaderboardPage() {
 
       {/* Rest of rankings */}
       <div className="px-4 mt-2">
-        <h3 className="text-[11px] font-bold uppercase tracking-wider text-surface-500 mb-3 px-1">
+        <h3 className="text-[11px] font-bold uppercase tracking-wider text-zinc-400 mb-3 px-1">
           Full Standings
         </h3>
         <div className="flex flex-col gap-2">
