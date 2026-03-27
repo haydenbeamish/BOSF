@@ -7,6 +7,7 @@ import { GlassCard } from "../components/ui/GlassCard";
 import { SportIcon } from "../components/ui/SportIcon";
 import { Skeleton } from "../components/ui/Skeleton";
 import { EmptyState } from "../components/ui/EmptyState";
+import { PlayerInsight } from "../components/feed/PlayerInsight";
 import { cn } from "../lib/cn";
 
 export function PlayerPage() {
@@ -68,6 +69,16 @@ export function PlayerPage() {
           </div>
         </GlassCard>
       </div>
+
+      {/* AI-generated player insight */}
+      <PlayerInsight
+        name={participant.name}
+        wins={wins}
+        losses={losses}
+        pending={pending}
+        totalPoints={total_points}
+        winRate={winRate}
+      />
 
       {/* Stats row */}
       <div className="grid grid-cols-4 gap-2 px-4 mb-4">
