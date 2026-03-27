@@ -17,12 +17,12 @@ export const CATEGORIES: Record<string, CategoryInfo> = {
   Tennis:         { label: "Tennis",         emoji: "\u{1F3BE}",         color: "text-yellow-600",  bgColor: "bg-yellow-100" },
   "World Cup":    { label: "World Cup",     emoji: "\u{1F3C6}",         color: "text-amber-600",   bgColor: "bg-amber-100" },
   "Ice Hockey":   { label: "Ice Hockey",    emoji: "\u{1F3D2}",         color: "text-blue-600",    bgColor: "bg-blue-100" },
-  "Rugby League": { label: "NRL",           emoji: "\u{1F3C8}",         color: "text-lime-600",    bgColor: "bg-lime-100" },
+  "Rugby League": { label: "NRL",           emoji: "\u{1F3C9}",         color: "text-lime-600",    bgColor: "bg-lime-100" },
   Cricket:        { label: "Cricket",       emoji: "\u{1F3CF}",         color: "text-emerald-600", bgColor: "bg-emerald-100" },
   Cycling:        { label: "Cycling",       emoji: "\u{1F6B4}",         color: "text-yellow-600",  bgColor: "bg-yellow-100" },
   Poker:          { label: "Poker",         emoji: "\u{1F0CF}",         color: "text-purple-600",  bgColor: "bg-purple-100" },
   TV:             { label: "TV",            emoji: "\u{1F4FA}",         color: "text-pink-600",    bgColor: "bg-pink-100" },
-  AFL:            { label: "AFL",           emoji: "\u{1F3C8}",         color: "text-amber-600",   bgColor: "bg-amber-100" },
+  AFL:            { label: "AFL",           emoji: "\u{1F944}",         color: "text-amber-600",   bgColor: "bg-amber-100" },
   WAFL:           { label: "WAFL",          emoji: "\u{1F3C8}",         color: "text-amber-700",   bgColor: "bg-amber-100" },
 };
 

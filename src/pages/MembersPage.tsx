@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Users, ChevronRight, RefreshCw } from "lucide-react";
+import { Users, ChevronRight, RefreshCw, Trophy } from "lucide-react";
 import { useLeaderboard } from "../hooks/useLeaderboard";
 import { Avatar } from "../components/ui/Avatar";
 import { Badge } from "../components/ui/Badge";
@@ -35,6 +35,21 @@ export function MembersPage() {
     );
   }
 
+  if (members.length === 0) {
+    return (
+      <EmptyState
+        icon={<Users size={28} />}
+        title="No members yet"
+        description="Members will appear here once they join the competition."
+      />
+    );
+  }
+
+  // Group stats
+  const avgWinRate = members.filter(m => m.decided_predictions > 0).length > 0
+    ? Math.round(members.filter(m => m.decided_predictions > 0).reduce((s, m) => s + m.win_rate, 0) / members.filter(m => m.decided_predictions > 0).length)
+    : 0;
+
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -44,7 +59,10 @@ export function MembersPage() {
     >
       <div className="px-4 pt-4 pb-3">
         <h2 className="font-display font-extrabold text-base text-zinc-900">Members</h2>
-        <p className="text-xs text-zinc-400 mt-0.5">{members.length} punters in the syndicate</p>
+        <p className="text-xs text-zinc-400 mt-0.5">
+          {members.length} punter{members.length !== 1 ? "s" : ""} in the syndicate
+          {avgWinRate > 0 && <> &middot; Avg {avgWinRate}% win rate</>}
+        </p>
       </div>
 
       <div className="flex flex-col gap-2 px-4">
@@ -53,20 +71,33 @@ export function MembersPage() {
             key={member.id}
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: i * 0.04, duration: 0.3 }}
+            transition={{ delay: Math.min(i * 0.04, 0.5), duration: 0.3 }}
             onClick={() => navigate(`/player/${member.id}`)}
             className="flex items-center gap-3 px-4 py-4 rounded-2xl border border-zinc-200/60 bg-white cursor-pointer active:scale-[0.98] hover:shadow-md hover:-translate-y-0.5 transition-all shadow-sm"
           >
             <div className="relative">
               <Avatar name={member.name} id={member.id} size="lg" />
-              <div className="absolute -top-0.5 -right-0.5 w-5 h-5 rounded-full bg-white shadow-sm border border-zinc-200/60 flex items-center justify-center">
-                <span className={cn(
-                  "text-[9px] font-display font-extrabold",
-                  member.rank <= 3 ? "text-amber-600" : "text-zinc-400"
-                )}>
-                  {member.rank}
-                </span>
-              </div>
+              {member.rank <= 3 && (
+                <div className="absolute -top-0.5 -right-0.5 w-5 h-5 rounded-full bg-white shadow-sm border border-zinc-200/60 flex items-center justify-center">
+                  {member.rank === 1 ? (
+                    <Trophy size={10} className="text-amber-600" />
+                  ) : (
+                    <span className={cn(
+                      "text-[9px] font-display font-extrabold",
+                      member.rank <= 3 ? "text-amber-600" : "text-zinc-400"
+                    )}>
+                      {member.rank}
+                    </span>
+                  )}
+                </div>
+              )}
+              {member.rank > 3 && (
+                <div className="absolute -top-0.5 -right-0.5 w-5 h-5 rounded-full bg-white shadow-sm border border-zinc-200/60 flex items-center justify-center">
+                  <span className="text-[9px] font-display font-extrabold text-zinc-400">
+                    {member.rank}
+                  </span>
+                </div>
+              )}
             </div>
 
             <div className="flex-1 min-w-0">
@@ -80,7 +111,7 @@ export function MembersPage() {
                   <Badge variant="default" size="sm">No results yet</Badge>
                 )}
                 <span className="text-[11px] text-zinc-400">
-                  {member.correct_predictions} correct
+                  {member.correct_predictions}/{member.decided_predictions} correct
                 </span>
               </div>
             </div>

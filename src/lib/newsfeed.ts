@@ -7,6 +7,7 @@ export type FeedItemType =
   | "losing_streak"
   | "perfect_pick"
   | "everyone_wrong"
+  | "close_race"
   | "hot_take";
 
 export interface FeedItem {
@@ -23,6 +24,11 @@ export interface FeedItem {
   timestamp?: string;
   priority: number; // higher = more important
 }
+
+// --- Constants ---
+const STREAK_THRESHOLD = 3;
+const OUTLIER_PERCENTAGE = 0.2;
+const MAX_OUTLIERS = 6;
 
 // --- Banter templates ---
 
@@ -43,6 +49,10 @@ const LOSING_STREAK_TEMPLATES = [
     headline: `${name} on a historic losing run`,
     subtext: `${n} consecutive wrong picks. Maybe try picking the opposite?`,
   }),
+  (name: string, n: number) => ({
+    headline: `${name} is the king of bad takes`,
+    subtext: `${n} wrong on the trot. Their crystal ball is well and truly broken.`,
+  }),
 ];
 
 const WINNING_STREAK_TEMPLATES = [
@@ -58,6 +68,10 @@ const WINNING_STREAK_TEMPLATES = [
     headline: `${name} on a tear`,
     subtext: `${n} in a row! The rest of you should be worried.`,
   }),
+  (name: string, n: number) => ({
+    headline: `${name} is seeing the Matrix`,
+    subtext: `${n} correct picks running. Everyone else is playing catch-up.`,
+  }),
 ];
 
 const PERFECT_PICK_TEMPLATES = [
@@ -68,6 +82,10 @@ const PERFECT_PICK_TEMPLATES = [
   (name: string, event: string) => ({
     headline: `${name} stood alone and was proven right`,
     subtext: `The only correct pick on ${event}. Respect.`,
+  }),
+  (name: string, event: string) => ({
+    headline: `${name} backed themselves on ${event}`,
+    subtext: `Sole correct pick. Sometimes the crowd is wrong.`,
   }),
 ];
 
@@ -80,6 +98,10 @@ const EVERYONE_WRONG_TEMPLATES = [
     headline: `A complete wipeout on ${event}`,
     subtext: `Zero correct picks. Should have asked a coin.`,
   }),
+  (event: string) => ({
+    headline: `${event} broke everyone's brain`,
+    subtext: `Not one correct pick across the board. Nobody saw it coming.`,
+  }),
 ];
 
 const OUTLIER_TEMPLATES = [
@@ -91,6 +113,10 @@ const OUTLIER_TEMPLATES = [
     headline: `${name} going rogue on ${event}`,
     subtext: `"${prediction}" — a lone wolf pick that could pay off big.`,
   }),
+  (name: string, prediction: string, event: string, _popular: string) => ({
+    headline: `${name} with the wildcard on ${event}`,
+    subtext: `Backing "${prediction}" against the pack. Fortune favours the bold?`,
+  }),
 ];
 
 const EVENT_RESULT_TEMPLATES = [
@@ -101,6 +127,21 @@ const EVENT_RESULT_TEMPLATES = [
   (event: string, answer: string, correct: number, total: number) => ({
     headline: `${event} is decided`,
     subtext: `${answer} was the answer. ${correct}/${total} correct picks.`,
+  }),
+  (event: string, answer: string, correct: number, total: number) => ({
+    headline: `${event}: ${answer} gets it done`,
+    subtext: `${correct === 0 ? "Nobody" : `${correct} of ${total}`} called it right.`,
+  }),
+];
+
+const CLOSE_RACE_TEMPLATES = [
+  (name1: string, name2: string, gap: number) => ({
+    headline: `It's neck and neck at the top`,
+    subtext: `${name1} leads ${name2} by just ${gap} point${gap === 1 ? "" : "s"}. Any event could flip it.`,
+  }),
+  (name1: string, name2: string, _gap: number) => ({
+    headline: `${name1} vs ${name2} — the race is on`,
+    subtext: `The gap at the top is razor thin. One big pick changes everything.`,
   }),
 ];
 
@@ -120,7 +161,6 @@ function computeStreaks(
   predictions: Prediction[],
   events: CompetitionEvent[]
 ): { winStreak: number; loseStreak: number } {
-  // Get completed event IDs sorted by display_order (most recent first)
   const completedEventIds = new Set(
     events.filter((e) => e.status === "completed").map((e) => e.id)
   );
@@ -172,19 +212,15 @@ function findOutliers(
     const eventPreds = allPredictions.filter((p) => p.event_id === event.id);
     if (eventPreds.length < 3) continue;
 
-    // Count predictions per answer
     const counts: Record<string, number> = {};
     for (const p of eventPreds) {
       const key = p.prediction.toLowerCase().trim();
       counts[key] = (counts[key] || 0) + 1;
     }
 
-    // Find the most popular pick
     const sorted = Object.entries(counts).sort((a, b) => b[1] - a[1]);
     const popularPick = sorted[0]?.[0] ?? "";
-
-    // Find outliers (unique or <= 20% of picks)
-    const threshold = Math.max(1, Math.floor(eventPreds.length * 0.2));
+    const threshold = Math.max(1, Math.floor(eventPreds.length * OUTLIER_PERCENTAGE));
 
     for (const pred of eventPreds) {
       const key = pred.prediction.toLowerCase().trim();
@@ -214,7 +250,7 @@ export function generateNewsFeed(
   events: CompetitionEvent[],
   participants: Participant[],
   allPredictions: Prediction[],
-  _leaderboard: LeaderboardEntry[]
+  leaderboard: LeaderboardEntry[]
 ): FeedItem[] {
   const feed: FeedItem[] = [];
 
@@ -300,7 +336,7 @@ export function generateNewsFeed(
       events
     );
 
-    if (winStreak >= 3) {
+    if (winStreak >= STREAK_THRESHOLD) {
       const t = hashPick(WINNING_STREAK_TEMPLATES, `wstreak-${participant.id}`);
       const { headline, subtext } = t(participant.name, winStreak);
       feed.push({
@@ -315,7 +351,7 @@ export function generateNewsFeed(
       });
     }
 
-    if (loseStreak >= 3) {
+    if (loseStreak >= STREAK_THRESHOLD) {
       const t = hashPick(LOSING_STREAK_TEMPLATES, `lstreak-${participant.id}`);
       const { headline, subtext } = t(participant.name, loseStreak);
       feed.push({
@@ -333,7 +369,7 @@ export function generateNewsFeed(
 
   // 3. Outlier alerts for upcoming events
   const outliers = findOutliers(events, allPredictions, participants);
-  for (const outlier of outliers.slice(0, 6)) {
+  for (const outlier of outliers.slice(0, MAX_OUTLIERS)) {
     const t = hashPick(OUTLIER_TEMPLATES, `outlier-${outlier.prediction.id}`);
     const { headline, subtext } = t(
       outlier.participant.name,
@@ -354,6 +390,26 @@ export function generateNewsFeed(
       sport: outlier.event.sport,
       priority: 5,
     });
+  }
+
+  // 4. Close race at the top of the leaderboard
+  if (leaderboard.length >= 2) {
+    const first = leaderboard[0];
+    const second = leaderboard[1];
+    const gap = first.total_points - second.total_points;
+
+    if (gap <= 3 && gap >= 0 && first.total_points > 0) {
+      const t = hashPick(CLOSE_RACE_TEMPLATES, `race-${first.id}-${second.id}`);
+      const { headline, subtext } = t(first.name, second.name, gap);
+      feed.push({
+        id: `close-race`,
+        type: "close_race",
+        emoji: "⚡",
+        headline,
+        subtext,
+        priority: 8,
+      });
+    }
   }
 
   // Sort: highest priority first, then by timestamp (newest first)

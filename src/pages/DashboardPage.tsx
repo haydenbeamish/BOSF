@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Trophy, ChevronRight, Zap, Newspaper, ScrollText } from "lucide-react";
+import { Trophy, ChevronRight, Zap, Newspaper, ScrollText, Target, Flame, Radio } from "lucide-react";
 import { useNewsFeed } from "../hooks/useNewsFeed";
 import { GlassCard } from "../components/ui/GlassCard";
 import { Avatar } from "../components/ui/Avatar";
@@ -38,11 +38,17 @@ export function DashboardPage() {
   }
 
   const leader = leaderboard[0];
+  const completedEvents = events.filter((e) => e.status === "completed").length;
+  const totalEvents = events.length;
+  const liveEvents = events.filter((e) => e.status === "in_progress");
 
   // Get next upcoming/in-progress events (not completed), sorted by date, limit 10
   const upcomingEvents = events
     .filter((e) => e.status !== "completed")
     .sort((a, b) => {
+      // Live events first
+      if (a.status === "in_progress" && b.status !== "in_progress") return -1;
+      if (b.status === "in_progress" && a.status !== "in_progress") return 1;
       // Sort by event_date, nulls last
       if (a.event_date && b.event_date) return a.event_date.localeCompare(b.event_date);
       if (a.event_date) return -1;
@@ -85,6 +91,40 @@ export function DashboardPage() {
             Punting Leaderboard
           </motion.p>
         </div>
+      </div>
+
+      {/* Quick stats row */}
+      <div className="grid grid-cols-3 gap-2 px-4 mb-4 mt-2">
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.05 }}
+          className="rounded-2xl border border-zinc-200/60 bg-white p-3 text-center shadow-sm"
+        >
+          <div className="flex justify-center mb-1 text-zinc-400"><Trophy size={12} /></div>
+          <p className="font-display font-extrabold text-lg text-zinc-900">{leaderboard.length}</p>
+          <p className="text-[9px] font-semibold uppercase tracking-wider text-zinc-400">Punters</p>
+        </motion.div>
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+          className="rounded-2xl border border-zinc-200/60 bg-white p-3 text-center shadow-sm"
+        >
+          <div className="flex justify-center mb-1 text-zinc-400"><Target size={12} /></div>
+          <p className="font-display font-extrabold text-lg text-emerald-600">{completedEvents}/{totalEvents}</p>
+          <p className="text-[9px] font-semibold uppercase tracking-wider text-zinc-400">Decided</p>
+        </motion.div>
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.15 }}
+          className="rounded-2xl border border-zinc-200/60 bg-white p-3 text-center shadow-sm"
+        >
+          <div className="flex justify-center mb-1 text-zinc-400"><Flame size={12} /></div>
+          <p className="font-display font-extrabold text-lg text-gradient-gold">{leader?.total_points ?? 0}</p>
+          <p className="text-[9px] font-semibold uppercase tracking-wider text-zinc-400">Top Score</p>
+        </motion.div>
       </div>
 
       {/* Podium - Top 3 */}
@@ -175,6 +215,38 @@ export function DashboardPage() {
         </div>
       )}
 
+      {/* Live Events Alert */}
+      {liveEvents.length > 0 && (
+        <div className="px-4 mb-4">
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+            className="rounded-2xl bg-amber-50 border border-amber-200/50 p-4"
+          >
+            <div className="flex items-center gap-2 mb-3">
+              <Radio size={14} className="text-amber-600 animate-pulse" />
+              <h2 className="text-[11px] font-bold uppercase tracking-wider text-amber-600">
+                Live Now
+              </h2>
+            </div>
+            <div className="flex flex-col gap-2">
+              {liveEvents.slice(0, 3).map((evt) => (
+                <div
+                  key={evt.id}
+                  onClick={() => navigate(`/events/${evt.id}`)}
+                  className="flex items-center gap-3 px-3 py-2 rounded-xl bg-white/80 cursor-pointer active:scale-[0.98] transition-all"
+                >
+                  <SportIcon sport={evt.sport} size="sm" />
+                  <p className="text-sm font-medium text-zinc-800 truncate flex-1">{evt.event_name}</p>
+                  <ChevronRight size={14} className="text-amber-400 shrink-0" />
+                </div>
+              ))}
+            </div>
+          </motion.div>
+        </div>
+      )}
+
       {/* News Feed */}
       <div className="px-4 mb-6">
         <div className="flex items-center gap-2 mb-4">
@@ -214,7 +286,7 @@ export function DashboardPage() {
             </button>
           </div>
           <div className="flex flex-col gap-2">
-            {upcomingEvents.map((evt, i) => (
+            {upcomingEvents.filter(e => e.status !== "in_progress").map((evt, i) => (
               <motion.div
                 key={evt.id}
                 initial={{ opacity: 0, y: 8 }}
@@ -232,6 +304,11 @@ export function DashboardPage() {
                     </p>
                   ) : null}
                 </div>
+                {evt.points_value > 1 && (
+                  <span className="text-[10px] font-bold text-amber-600 bg-amber-50 rounded-full px-1.5 py-0.5 shrink-0">
+                    {evt.points_value}pt
+                  </span>
+                )}
                 <StatusPill status={evt.status} />
                 <ChevronRight size={14} className="text-zinc-300 shrink-0" />
               </motion.div>
