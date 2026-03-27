@@ -8,7 +8,10 @@ export type FeedItemType =
   | "perfect_pick"
   | "everyone_wrong"
   | "close_race"
-  | "hot_take";
+  | "hot_take"
+  | "odds_alert"
+  | "contrarian_pick"
+  | "underdog_backer";
 
 export interface FeedItem {
   id: string;
@@ -142,6 +145,51 @@ const CLOSE_RACE_TEMPLATES = [
   (name1: string, name2: string, _gap: number) => ({
     headline: `${name1} vs ${name2} — the race is on`,
     subtext: `The gap at the top is razor thin. One big pick changes everything.`,
+  }),
+];
+
+const ODDS_ALERT_TEMPLATES = [
+  (event: string, favourite: string, odds: string) => ({
+    headline: `${event} is almost here`,
+    subtext: `${favourite} is the bookies' pick at ${odds}. Do you agree?`,
+  }),
+  (event: string, favourite: string, odds: string) => ({
+    headline: `The odds are in for ${event}`,
+    subtext: `${favourite} at ${odds} is the favourite. Let's see who called it.`,
+  }),
+  (event: string, favourite: string, odds: string) => ({
+    headline: `${event} tips off soon`,
+    subtext: `Bookmakers have ${favourite} at ${odds} to get it done.`,
+  }),
+];
+
+const CONTRARIAN_PICK_TEMPLATES = [
+  (event: string, favourite: string, favOdds: string, popularPick: string) => ({
+    headline: `The group is going against the bookies on ${event}`,
+    subtext: `${favourite} is the ${favOdds} favourite but most of you picked "${popularPick}". Someone's wrong.`,
+  }),
+  (event: string, favourite: string, favOdds: string, popularPick: string) => ({
+    headline: `Bookies vs the boys on ${event}`,
+    subtext: `The money says ${favourite} (${favOdds}) but the people say "${popularPick}". Spicy.`,
+  }),
+  (event: string, _favourite: string, _favOdds: string, popularPick: string) => ({
+    headline: `Bold move from the group on ${event}`,
+    subtext: `Most of you backed "${popularPick}" over the bookmaker favourite. Brave or foolish?`,
+  }),
+];
+
+const UNDERDOG_BACKER_TEMPLATES = [
+  (name: string, event: string, pick: string, odds: string) => ({
+    headline: `${name} is riding the long shot on ${event}`,
+    subtext: `Backing "${pick}" at ${odds}. Fortune favours the brave.`,
+  }),
+  (name: string, event: string, pick: string, odds: string) => ({
+    headline: `${name} loves an underdog`,
+    subtext: `Picked "${pick}" (${odds}) for ${event}. Big risk, big reward.`,
+  }),
+  (name: string, event: string, pick: string, odds: string) => ({
+    headline: `${name} going against the grain on ${event}`,
+    subtext: `"${pick}" at ${odds} — not for the faint-hearted.`,
   }),
 ];
 
@@ -414,6 +462,99 @@ export function generateNewsFeed(
         subtext,
         priority: 8,
       });
+    }
+  }
+
+  // 5. Odds-based alerts for upcoming events
+  const upcomingWithOdds = events.filter(
+    (e) => e.status !== "completed" && e.favourite && e.favourite_odds
+  );
+
+  for (const event of upcomingWithOdds) {
+    const favOdds = `$${event.favourite_odds!.toFixed(2)}`;
+
+    // 5a. Odds alert — show odds for events happening soon
+    const eventDate = event.event_date ?? event.close_date;
+    if (eventDate) {
+      const msUntil = new Date(eventDate).getTime() - Date.now();
+      const hoursUntil = msUntil / (1000 * 60 * 60);
+      if (hoursUntil > 0 && hoursUntil <= 48) {
+        const t = hashPick(ODDS_ALERT_TEMPLATES, `odds-${event.id}`);
+        const { headline, subtext } = t(event.event_name, event.favourite!, favOdds);
+        feed.push({
+          id: `odds-${event.id}`,
+          type: "odds_alert",
+          emoji: "📊",
+          headline,
+          subtext,
+          eventId: event.id,
+          eventName: event.event_name,
+          sport: event.sport,
+          timestamp: eventDate,
+          priority: 6,
+        });
+      }
+    }
+
+    // 5b. Contrarian pick — the group's most popular pick differs from the bookies' favourite
+    const eventPreds = allPredictions.filter((p) => Number(p.event_id) === Number(event.id));
+    if (eventPreds.length >= 3) {
+      const counts: Record<string, number> = {};
+      const originalCase: Record<string, string> = {};
+      for (const p of eventPreds) {
+        const key = p.prediction.toLowerCase().trim();
+        counts[key] = (counts[key] || 0) + 1;
+        if (!originalCase[key]) originalCase[key] = p.prediction.trim();
+      }
+      const sorted = Object.entries(counts).sort((a, b) => b[1] - a[1]);
+      const popularKey = sorted[0]?.[0] ?? "";
+      const popularDisplay = originalCase[popularKey] ?? popularKey;
+      const favouriteKey = event.favourite!.toLowerCase().trim();
+
+      if (popularKey && popularKey !== favouriteKey) {
+        const t = hashPick(CONTRARIAN_PICK_TEMPLATES, `contrarian-${event.id}`);
+        const { headline, subtext } = t(event.event_name, event.favourite!, favOdds, popularDisplay);
+        feed.push({
+          id: `contrarian-${event.id}`,
+          type: "contrarian_pick",
+          emoji: "🤔",
+          headline,
+          subtext,
+          eventId: event.id,
+          eventName: event.event_name,
+          sport: event.sport,
+          priority: 7,
+        });
+      }
+    }
+
+    // 5c. Underdog backer — someone picked the underdog
+    if (event.underdog && event.underdog_odds) {
+      const underdogKey = event.underdog.toLowerCase().trim();
+      const underdogOdds = `$${event.underdog_odds.toFixed(2)}`;
+      for (const pred of eventPreds) {
+        const pickKey = pred.prediction.toLowerCase().trim();
+        if (pickKey === underdogKey) {
+          const participant = participants.find((p) => Number(p.id) === Number(pred.participant_id));
+          if (participant) {
+            const t = hashPick(UNDERDOG_BACKER_TEMPLATES, `underdog-${pred.id}`);
+            const { headline, subtext } = t(participant.name, event.event_name, pred.prediction, underdogOdds);
+            feed.push({
+              id: `underdog-${pred.id}`,
+              type: "underdog_backer",
+              emoji: "🐴",
+              headline,
+              subtext,
+              playerName: participant.name,
+              playerId: participant.id,
+              eventId: event.id,
+              eventName: event.event_name,
+              sport: event.sport,
+              priority: 5,
+            });
+          }
+        }
+      }
     }
   }
 
