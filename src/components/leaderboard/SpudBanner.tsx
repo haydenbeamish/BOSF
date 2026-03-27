@@ -25,7 +25,7 @@ export function SpudBanner({ spud }: { spud: LeaderboardEntry }) {
           </p>
         </div>
         <p className="text-xs text-red-600/70 font-medium truncate mt-0.5">
-          {spud.name} &mdash; dead last with {spud.total_points} pts
+          {spud.name} {"\u2014"} dead last with {spud.total_points} pts
         </p>
       </div>
     </motion.div>

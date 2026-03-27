@@ -1,20 +1,21 @@
 import { useState, useEffect } from "react";
-import { getResults, getLeaderboard } from "../data/api";
+import { getResults, getLeaderboard, getEvents } from "../data/api";
 import { generateNewsFeed, type FeedItem } from "../lib/newsfeed";
 import { enhanceBanter } from "../data/ai";
-import type { LeaderboardEntry } from "../types";
+import type { LeaderboardEntry, CompetitionEvent } from "../types";
 
 export function useNewsFeed() {
   const [feed, setFeed] = useState<FeedItem[]>([]);
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
+  const [events, setEvents] = useState<CompetitionEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
 
-    Promise.all([getResults(), getLeaderboard()])
-      .then(async ([results, lb]) => {
+    Promise.all([getResults(), getLeaderboard(), getEvents()])
+      .then(async ([results, lb, allEvents]) => {
         if (cancelled) return;
 
         // Flatten predictions from the nested record
@@ -32,11 +33,11 @@ export function useNewsFeed() {
         // Show template-based feed immediately
         setFeed(feedItems);
         setLeaderboard(lb);
+        setEvents(allEvents);
         setLoading(false);
 
         // Then try to enhance with AI banter (non-blocking)
         if (feedItems.length > 0) {
-          // Only send up to 15 items to keep costs/latency reasonable
           const toEnhance = feedItems.slice(0, 15);
           const enhanced = await enhanceBanter(toEnhance);
 
@@ -66,5 +67,5 @@ export function useNewsFeed() {
     return () => { cancelled = true; };
   }, []);
 
-  return { feed, leaderboard, loading, error };
+  return { feed, leaderboard, events, loading, error };
 }

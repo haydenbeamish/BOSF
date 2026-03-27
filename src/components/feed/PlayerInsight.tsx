@@ -24,8 +24,10 @@ export function PlayerInsight({ name, wins, losses, pending, totalPoints, winRat
 
     askAI(message, context).then((reply) => {
       if (cancelled) return;
-      setInsight(reply);
+      if (reply) setInsight(reply);
       setLoading(false);
+    }).catch(() => {
+      if (!cancelled) setLoading(false);
     });
 
     return () => { cancelled = true; };

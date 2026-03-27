@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Trophy, Target, Flame } from "lucide-react";
+import { Trophy, Target, Flame, RefreshCw } from "lucide-react";
 import { useLeaderboard } from "../hooks/useLeaderboard";
 import { Podium } from "../components/leaderboard/Podium";
 import { RankRow } from "../components/leaderboard/RankRow";
@@ -10,7 +10,7 @@ import { Skeleton } from "../components/ui/Skeleton";
 import { EmptyState } from "../components/ui/EmptyState";
 
 export function LeaderboardPage() {
-  const { entries, spud, loading, error } = useLeaderboard();
+  const { entries, spud, loading, error, retry } = useLeaderboard();
   const navigate = useNavigate();
 
   if (error) {
@@ -19,7 +19,14 @@ export function LeaderboardPage() {
         icon={<Trophy size={28} />}
         title="Couldn't load standings"
         description={error}
-      />
+      >
+        <button
+          onClick={retry}
+          className="mt-4 flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-50 text-emerald-700 text-sm font-semibold active:scale-95 transition-transform"
+        >
+          <RefreshCw size={14} /> Try again
+        </button>
+      </EmptyState>
     );
   }
 
@@ -48,9 +55,10 @@ export function LeaderboardPage() {
     );
   }
 
+  // Use decided predictions for group win rate
+  const totalDecided = entries.reduce((s, e) => s + e.decided_predictions, 0);
   const totalCorrect = entries.reduce((s, e) => s + e.correct_predictions, 0);
-  const totalPredictions = entries.reduce((s, e) => s + e.total_predictions, 0);
-  const groupWinRate = totalPredictions > 0 ? Math.round((totalCorrect / totalPredictions) * 100) : 0;
+  const groupWinRate = totalDecided > 0 ? Math.round((totalCorrect / totalDecided) * 100) : 0;
   const topScore = entries[0]?.total_points ?? 0;
 
   return (

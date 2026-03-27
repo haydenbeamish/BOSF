@@ -1,6 +1,6 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Trophy, Target, Clock, Check, X, Flame } from "lucide-react";
+import { Trophy, Target, Clock, Check, X, Flame, RefreshCw } from "lucide-react";
 import { usePlayer } from "../hooks/usePlayer";
 import { Avatar } from "../components/ui/Avatar";
 import { GlassCard } from "../components/ui/GlassCard";
@@ -14,13 +14,22 @@ export function PlayerPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const numId = Number(id);
-  const { data, loading, error } = usePlayer(numId);
+  const { data, loading, error, retry } = usePlayer(numId);
 
   if (!id || isNaN(numId)) {
     return <EmptyState icon={<X size={28} />} title="Invalid player" description="This player doesn't exist." />;
   }
   if (error) {
-    return <EmptyState icon={<X size={28} />} title="Couldn't load player" description={error} />;
+    return (
+      <EmptyState icon={<X size={28} />} title="Couldn't load player" description={error}>
+        <button
+          onClick={retry}
+          className="mt-4 flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-50 text-emerald-700 text-sm font-semibold active:scale-95 transition-transform"
+        >
+          <RefreshCw size={14} /> Try again
+        </button>
+      </EmptyState>
+    );
   }
   if (loading || !data) {
     return (
