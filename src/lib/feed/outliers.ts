@@ -19,7 +19,21 @@ export function findOutliers(
   participants: Participant[]
 ): OutlierInfo[] {
   const outliers: OutlierInfo[] = [];
-  const upcomingEvents = events.filter((e) => e.status !== "completed");
+
+  // Only flag outliers for events that are genuinely coming up soon (within 90 days).
+  // Season-long events (e.g. AFL H&A resolving in August) are excluded so the
+  // news feed doesn't comment on picks that won't matter for months.
+  const cutoff = new Date();
+  cutoff.setDate(cutoff.getDate() + 90);
+
+  const upcomingEvents = events.filter((e) => {
+    if (e.status === "completed") return false;
+    const displayDate = e.close_date && e.close_date > (e.event_date ?? "")
+      ? e.close_date
+      : e.event_date;
+    if (!displayDate) return true; // no date info — include it
+    return new Date(displayDate) <= cutoff;
+  });
 
   for (const event of upcomingEvents) {
     const eventPreds = allPredictions.filter((p) => Number(p.event_id) === Number(event.id));
