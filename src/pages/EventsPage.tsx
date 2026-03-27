@@ -10,9 +10,22 @@ export function EventsPage() {
   if (error) {
     return (
       <div className="flex flex-col items-center justify-center py-20 px-4 text-center">
-        <p className="text-4xl mb-4">{"\u{1F6AB}"}</p>
+        <p className="text-4xl mb-4" role="img" aria-label="error">{"\u{1F6AB}"}</p>
         <p className="text-slate-400 text-sm">Failed to load events</p>
         <p className="text-slate-600 text-xs mt-1">{error}</p>
+      </div>
+    );
+  }
+
+  if (loading) {
+    return (
+      <div className="px-4 pt-4">
+        <h2 className="text-base font-bold text-slate-200 mb-4">Events</h2>
+        <div className="flex flex-col gap-2">
+          {Array.from({ length: 8 }).map((_, i) => (
+            <Skeleton key={i} className="h-14 rounded-xl" />
+          ))}
+        </div>
       </div>
     );
   }
@@ -49,22 +62,12 @@ export function EventsPage() {
         </div>
       </div>
 
-      {loading ? (
-        <div className="px-4 pt-4 flex flex-col gap-2">
-          {Array.from({ length: 8 }).map((_, i) => (
-            <Skeleton key={i} className="h-14 rounded-xl" />
-          ))}
-        </div>
-      ) : (
-        <>
-          <EventCategoryTabs
-            categories={categories}
-            selected={selectedCategory}
-            onSelect={setSelectedCategory}
-          />
-          <EventList events={events} />
-        </>
-      )}
+      <EventCategoryTabs
+        categories={categories}
+        selected={selectedCategory}
+        onSelect={setSelectedCategory}
+      />
+      <EventList events={events} />
     </motion.div>
   );
 }

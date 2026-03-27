@@ -8,12 +8,22 @@ import { Skeleton } from "../components/ui/Skeleton";
 
 export function EventDetailPage() {
   const { id } = useParams<{ id: string }>();
-  const { event, loading, error } = useEvent(Number(id));
+  const numId = Number(id);
+  const { event, loading, error } = useEvent(numId);
+
+  if (!id || isNaN(numId)) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20 px-4 text-center">
+        <p className="text-4xl mb-4" role="img" aria-label="error">{"\u{1F6AB}"}</p>
+        <p className="text-slate-400 text-sm">Invalid event ID</p>
+      </div>
+    );
+  }
 
   if (error) {
     return (
       <div className="flex flex-col items-center justify-center py-20 px-4 text-center">
-        <p className="text-4xl mb-4">{"\u{1F6AB}"}</p>
+        <p className="text-4xl mb-4" role="img" aria-label="error">{"\u{1F6AB}"}</p>
         <p className="text-slate-400 text-sm">Failed to load event</p>
         <p className="text-slate-600 text-xs mt-1">{error}</p>
       </div>
@@ -83,7 +93,7 @@ export function EventDetailPage() {
 
             return (
               <motion.div
-                key={pred.participant_name + i}
+                key={pred.id ?? `${pred.participant_name}-${i}`}
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: i * 0.04 }}

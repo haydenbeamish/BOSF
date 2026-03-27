@@ -14,6 +14,14 @@ function getStatusIcon(isCorrect: boolean | null) {
 }
 
 export function PlayerEventList({ predictions }: PlayerEventListProps) {
+  if (predictions.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center py-16 text-center px-4">
+        <p className="text-slate-500 text-sm">No predictions yet</p>
+      </div>
+    );
+  }
+
   const decided = predictions.filter((p) => p.is_correct !== null);
   const pending = predictions.filter((p) => p.is_correct === null);
 
@@ -29,7 +37,7 @@ export function PlayerEventList({ predictions }: PlayerEventListProps) {
               const status = getStatusIcon(pred.is_correct);
               return (
                 <motion.div
-                  key={pred.id || i}
+                  key={pred.id ?? `decided-${pred.event_id}-${i}`}
                   initial={{ opacity: 0, x: -10 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: i * 0.02 }}
@@ -73,7 +81,7 @@ export function PlayerEventList({ predictions }: PlayerEventListProps) {
           <div className="flex flex-col gap-2">
             {pending.map((pred, i) => (
               <motion.div
-                key={pred.id || i}
+                key={pred.id ?? `pending-${pred.event_id}-${i}`}
                 initial={{ opacity: 0, x: -10 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: i * 0.02 }}

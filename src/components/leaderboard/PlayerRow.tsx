@@ -40,7 +40,7 @@ interface PlayerRowProps {
 export function PlayerRow({ entry, isSpud, index }: PlayerRowProps) {
   const navigate = useNavigate();
   const { icon, bg } = getRankDisplay(entry.rank);
-  const colorIndex = (entry.id - 1) % avatarColors.length;
+  const colorIndex = Math.abs(entry.id) % avatarColors.length;
 
   return (
     <motion.div
@@ -84,7 +84,7 @@ export function PlayerRow({ entry, isSpud, index }: PlayerRowProps) {
           <span className="text-sm font-semibold text-slate-100 truncate">
             {entry.name}
           </span>
-          {isSpud && <span className="text-sm">{"\u{1F954}"}</span>}
+          {isSpud && <span className="text-sm" role="img" aria-label="last place">{"\u{1F954}"}</span>}
         </div>
         <p className="text-xs text-slate-500">
           {entry.correct_predictions} correct of {entry.total_predictions}

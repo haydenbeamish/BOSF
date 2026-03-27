@@ -35,7 +35,7 @@ export function EventCategoryTabs({ categories, selected, onSelect }: EventCateg
             ref={isActive ? activeRef : null}
             onClick={() => onSelect(cat)}
             className={cn(
-              "flex items-center gap-1.5 whitespace-nowrap rounded-full px-3 py-1.5 text-xs font-semibold transition-all shrink-0 active:scale-95",
+              "flex items-center gap-1.5 whitespace-nowrap rounded-full px-4 py-2 text-xs font-semibold transition-all shrink-0 active:scale-95",
               isActive
                 ? "bg-gold-500/20 text-gold-400 border border-gold-500/30"
                 : "bg-slate-800/50 text-slate-400 border border-slate-700/30"

@@ -10,7 +10,7 @@ export function LeaderboardPage() {
   if (error) {
     return (
       <div className="flex flex-col items-center justify-center py-20 px-4 text-center">
-        <p className="text-4xl mb-4">{"\u{1F6AB}"}</p>
+        <p className="text-4xl mb-4" role="img" aria-label="error">{"\u{1F6AB}"}</p>
         <p className="text-slate-400 text-sm">Failed to load leaderboard</p>
         <p className="text-slate-600 text-xs mt-1">{error}</p>
       </div>
@@ -47,8 +47,18 @@ export function LeaderboardPage() {
         )}
       </div>
 
-      {spud && <SpudBanner spud={spud} />}
-      <LeaderboardList entries={entries} />
+      {entries.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-16 text-center px-4">
+          <p className="text-4xl mb-4" role="img" aria-label="trophy">{"\u{1F3C6}"}</p>
+          <p className="text-slate-400 text-sm">No standings yet</p>
+          <p className="text-slate-600 text-xs mt-1">Results will appear once events are decided</p>
+        </div>
+      ) : (
+        <>
+          {spud && <SpudBanner spud={spud} />}
+          <LeaderboardList entries={entries} />
+        </>
+      )}
 
       <div className="h-24" />
     </motion.div>

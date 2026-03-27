@@ -19,7 +19,7 @@ export function useEvent(id: number) {
       })
       .catch((err) => {
         if (!cancelled) {
-          setError(err.message);
+          setError(err instanceof Error ? err.message : String(err));
           setLoading(false);
         }
       });

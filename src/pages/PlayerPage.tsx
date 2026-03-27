@@ -7,12 +7,22 @@ import { Skeleton } from "../components/ui/Skeleton";
 
 export function PlayerPage() {
   const { id } = useParams<{ id: string }>();
-  const { data, loading, error } = usePlayer(Number(id));
+  const numId = Number(id);
+  const { data, loading, error } = usePlayer(numId);
+
+  if (!id || isNaN(numId)) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20 px-4 text-center">
+        <p className="text-4xl mb-4" role="img" aria-label="error">{"\u{1F6AB}"}</p>
+        <p className="text-slate-400 text-sm">Invalid player ID</p>
+      </div>
+    );
+  }
 
   if (error) {
     return (
       <div className="flex flex-col items-center justify-center py-20 px-4 text-center">
-        <p className="text-4xl mb-4">{"\u{1F6AB}"}</p>
+        <p className="text-4xl mb-4" role="img" aria-label="error">{"\u{1F6AB}"}</p>
         <p className="text-slate-400 text-sm">Failed to load player</p>
         <p className="text-slate-600 text-xs mt-1">{error}</p>
       </div>

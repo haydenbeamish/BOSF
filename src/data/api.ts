@@ -37,7 +37,7 @@ export async function getParticipant(id: number): Promise<{
   predictions: Prediction[];
   total_points: number;
 }> {
-  return fetchJson(`/participants/${id}`);
+  return fetchJson<{ participant: Participant; predictions: Prediction[]; total_points: number }>(`/participants/${id}`);
 }
 
 export async function getResults(): Promise<{
@@ -45,7 +45,7 @@ export async function getResults(): Promise<{
   participants: Participant[];
   predictions: Record<string, Record<string, Prediction>>;
 }> {
-  return fetchJson("/results");
+  return fetchJson<{ events: CompetitionEvent[]; participants: Participant[]; predictions: Record<string, Record<string, Prediction>> }>("/results");
 }
 
 export async function getStats(): Promise<StatsOverview> {
