@@ -30,7 +30,6 @@ export interface FeedItem {
 
 // --- Constants ---
 const STREAK_THRESHOLD = 3;
-const OUTLIER_PERCENTAGE = 0.2;
 const MAX_OUTLIERS = 6;
 
 // --- Banter templates ---
@@ -273,12 +272,15 @@ function findOutliers(
     const sorted = Object.entries(counts).sort((a, b) => b[1] - a[1]);
     const popularPick = sorted[0]?.[0] ?? "";
     const popularPickDisplay = originalCase[popularPick] ?? popularPick;
-    const threshold = Math.max(1, Math.floor(eventPreds.length * OUTLIER_PERCENTAGE));
+    const popularCount = sorted[0]?.[1] ?? 0;
+    // Only flag when: pick has ≤2 people AND the popular pick accounts for
+    // everyone else (at most 2 people total deviated from the majority).
+    const groupHasConsensus = popularCount >= eventPreds.length - 2;
 
     for (const pred of eventPreds) {
       const key = pred.prediction.toLowerCase().trim();
       const count = counts[key] ?? 0;
-      if (count <= threshold && key !== popularPick) {
+      if (count <= 2 && key !== popularPick && groupHasConsensus) {
         const participant = participants.find((p) => Number(p.id) === Number(pred.participant_id));
         if (participant) {
           outliers.push({
