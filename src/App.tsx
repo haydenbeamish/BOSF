@@ -25,7 +25,7 @@ export default function App() {
       <div className="flex flex-col h-dvh bg-surface-50 text-zinc-800 max-w-2xl mx-auto app-shell">
         <ScrollToTop scrollRef={mainRef} />
         <Header />
-        <main ref={mainRef} className="flex-1 overflow-y-auto overscroll-contain">
+        <main ref={mainRef} className="flex-1 overflow-y-auto overscroll-contain scroll-smooth-ios">
           <Routes>
             <Route path="/" element={<DashboardPage />} />
             <Route path="/leaderboard" element={<LeaderboardPage />} />

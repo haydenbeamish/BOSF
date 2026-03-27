@@ -23,14 +23,14 @@ export function Header() {
   }
 
   return (
-    <header className="shrink-0 border-b border-zinc-200/60 bg-white/80 backdrop-blur-xl">
+    <header className="shrink-0 border-b border-zinc-200/60 bg-white/80 backdrop-blur-xl pt-safe">
       <div className="flex items-center h-14 px-4 max-w-2xl mx-auto">
         {isSubPage ? (
           <>
             <button
               onClick={handleBack}
               aria-label="Go back"
-              className="mr-3 flex items-center justify-center w-10 h-10 rounded-full bg-zinc-100 text-zinc-600 active:scale-95 transition-transform"
+              className="mr-3 flex items-center justify-center w-11 h-11 rounded-full bg-zinc-100 text-zinc-600 active:scale-95 transition-transform"
             >
               <ChevronLeft size={20} />
             </button>

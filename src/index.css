@@ -44,25 +44,31 @@
 * {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  box-sizing: border-box;
 }
 
 html {
   font-family: var(--font-body);
   background-color: var(--color-surface-50);
   color: #27272a;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
 }
 
 html, body, #root {
   height: 100dvh;
   -webkit-tap-highlight-color: transparent;
-}
-
-#root {
+  /* Prevent iOS rubber-band bounce on body */
   overflow: hidden;
+  overscroll-behavior: none;
 }
 
 body {
   margin: 0;
+  touch-action: manipulation;
+  /* Prevent iOS pull-to-refresh and overscroll on the outer shell */
+  position: fixed;
+  width: 100%;
 }
 
 ::-webkit-scrollbar {
@@ -126,8 +132,25 @@ body {
 }
 
 /* Safe area spacing */
+.pt-safe {
+  padding-top: env(safe-area-inset-top, 0px);
+}
+
 .pb-safe {
   padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* Smooth scrolling inside the app */
+.scroll-smooth-ios {
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
+}
+
+/* Prevent text selection on interactive elements */
+button, a, [role="button"] {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
 }
 
 /* Desktop side borders for the constrained layout */

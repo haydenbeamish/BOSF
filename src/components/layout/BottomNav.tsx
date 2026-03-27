@@ -22,7 +22,7 @@ export function BottomNav() {
             end={tab.to === "/"}
             className={({ isActive }) =>
               cn(
-                "flex flex-col items-center gap-1 px-4 py-2 rounded-xl transition-all duration-200 min-w-[64px]",
+                "flex flex-col items-center gap-0.5 px-5 py-2.5 rounded-xl transition-all duration-200 min-w-[64px] min-h-[44px]",
                 isActive
                   ? "text-emerald-700"
                   : "text-zinc-400 active:text-zinc-600"
