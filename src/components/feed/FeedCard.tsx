@@ -44,6 +44,21 @@ const TYPE_STYLES: Record<string, { bg: string; border: string; accent: string }
     border: "border-sky-200/40",
     accent: "text-sky-700",
   },
+  odds_alert: {
+    bg: "bg-blue-50/60",
+    border: "border-blue-200/40",
+    accent: "text-blue-700",
+  },
+  contrarian_pick: {
+    bg: "bg-fuchsia-50/60",
+    border: "border-fuchsia-200/40",
+    accent: "text-fuchsia-700",
+  },
+  underdog_backer: {
+    bg: "bg-teal-50/60",
+    border: "border-teal-200/40",
+    accent: "text-teal-700",
+  },
 };
 
 interface FeedCardProps {
