@@ -18,18 +18,17 @@ export function useNewsFeed() {
       .then(async ([results, lb, allEvents]) => {
         if (cancelled) return;
 
-        // Flatten predictions from the nested record, injecting keys as IDs
-        // API returns predictions[outerKey][innerKey] = Prediction
-        // Keys may be participant_id (outer) and event_id (inner), or vice versa.
-        // We preserve any existing IDs and fill missing ones from the keys.
+        // API returns predictions[event_id][participant_id] = Prediction
+        // (grid is "events × participants", so outer key = event_id)
         const allPredictions = Object.entries(results.predictions ?? {}).flatMap(
-          ([outerKey, byInner]) =>
-            Object.entries(byInner ?? {}).map(([innerKey, pred]) => ({
+          ([eventKey, byParticipant]) =>
+            Object.entries(byParticipant ?? {}).map(([participantKey, pred]) => ({
               ...pred,
-              participant_id: pred.participant_id ?? Number(outerKey),
-              event_id: pred.event_id ?? Number(innerKey),
+              event_id: pred.event_id ?? Number(eventKey),
+              participant_id: pred.participant_id ?? Number(participantKey),
               // Normalize is_correct: API may return 1/0 instead of true/false
-              is_correct: pred.is_correct === null || pred.is_correct === undefined ? null
+              is_correct: pred.is_correct === null || pred.is_correct === undefined
+                ? null
                 : Boolean(pred.is_correct),
             }))
         );
