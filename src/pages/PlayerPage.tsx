@@ -107,10 +107,10 @@ export function PlayerPage() {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.3 }}
-      className="pb-6"
+      className="pb-20"
     >
       {/* Profile header */}
-      <div className="px-4 pt-6 pb-2">
+      <div className="px-4 pt-4 pb-2">
         <GlassCard className="p-5">
           <div className="flex items-center gap-4">
             <Avatar name={participant.name} id={participant.id} size="xl" ringColor="accent" />
@@ -198,7 +198,7 @@ export function PlayerPage() {
               >
                 <SportIcon sport={pred.sport || "AFL"} size="sm" />
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm text-zinc-800 truncate font-medium">{pred.event_name}</p>
+                  <p className="text-sm text-zinc-800 line-clamp-2 leading-snug font-medium">{pred.event_name}</p>
                   <p className="text-xs text-zinc-400 truncate mt-0.5">
                     Picked: <span className="text-zinc-600">{pred.prediction}</span>
                     {pred.correct_answer && (
@@ -236,7 +236,7 @@ export function PlayerPage() {
               >
                 <SportIcon sport={pred.sport || "AFL"} size="sm" />
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm text-zinc-700 truncate font-medium">{pred.event_name}</p>
+                  <p className="text-sm text-zinc-700 line-clamp-2 leading-snug font-medium">{pred.event_name}</p>
                   <p className="text-xs text-zinc-400 truncate mt-0.5">
                     Picked: <span className="text-zinc-600">{pred.prediction}</span>
                   </p>
@@ -251,8 +251,8 @@ export function PlayerPage() {
       {data.predictions.length === 0 && (
         <EmptyState
           icon={<Flame size={24} />}
-          title="No predictions yet"
-          description={`${participant.name} hasn't made any picks yet.`}
+          title="No picks yet"
+          description={`${participant.name} hasn't had a punt yet. What are they waiting for?`}
         />
       )}
     </motion.div>

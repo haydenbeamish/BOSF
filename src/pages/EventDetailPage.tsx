@@ -93,10 +93,12 @@ export function EventDetailPage() {
   }
   if (loading || !event) {
     return (
-      <div className="px-4 pt-6 flex flex-col gap-3">
+      <div className="px-4 pt-4 flex flex-col gap-3">
         <Skeleton className="h-28 rounded-2xl" />
-        {Array.from({ length: 10 }).map((_, i) => (
-          <Skeleton key={i} className="h-16 rounded-2xl" />
+        <Skeleton className="h-20 rounded-2xl" />
+        <Skeleton className="h-16 rounded-2xl" />
+        {Array.from({ length: 3 }).map((_, i) => (
+          <Skeleton key={i} className="h-14 rounded-2xl" />
         ))}
       </div>
     );
@@ -114,10 +116,10 @@ export function EventDetailPage() {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.3 }}
-      className="pb-6"
+      className="pb-20"
     >
       {/* Event header */}
-      <div className="px-4 pt-6 pb-4">
+      <div className="px-4 pt-4 pb-4">
         <div className="flex items-start gap-3">
           <SportIcon sport={event.sport} size="lg" />
           <div className="flex-1 min-w-0">
@@ -189,8 +191,8 @@ export function EventDetailPage() {
         {predictions.length === 0 ? (
           <div className="text-center py-12">
             <Users size={24} className="mx-auto text-zinc-300 mb-3" />
-            <p className="text-sm text-zinc-400 font-medium">No predictions yet</p>
-            <p className="text-xs text-zinc-300 mt-1">Picks will appear here once members submit them.</p>
+            <p className="text-sm text-zinc-400 font-medium">No picks yet</p>
+            <p className="text-xs text-zinc-300 mt-1">The punters haven't had their say yet. Give 'em time.</p>
           </div>
         ) : (
           <div className="flex flex-col gap-4">
