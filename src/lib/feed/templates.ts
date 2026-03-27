@@ -2,90 +2,90 @@
 
 export const LOSING_STREAK_TEMPLATES = [
   (name: string, n: number) => ({
-    headline: `${name} has lost ${n} in a row`,
-    subtext: `Someone check on them... ${n} wrong picks and counting.`,
+    headline: `${name} has dropped ${n} in a row`,
+    subtext: `${n} wrong picks and counting. The form slump continues.`,
   }),
   (name: string, n: number) => ({
     headline: `${name} is ice cold`,
-    subtext: `${n} straight Ls. Couldn't pick their nose right now.`,
+    subtext: `${n} straight misses. The run has to turn eventually.`,
   }),
   (name: string, n: number) => ({
-    headline: `Thoughts and prayers for ${name}`,
-    subtext: `${n} wrong in a row. At this point it's a talent.`,
+    headline: `Rough patch for ${name}`,
+    subtext: `${n} wrong in a row. The ladder won't be kind.`,
   }),
   (name: string, n: number) => ({
     headline: `${name} on a historic losing run`,
-    subtext: `${n} consecutive wrong picks. Maybe try picking the opposite?`,
+    subtext: `${n} consecutive wrong picks. Due for a correction?`,
   }),
   (name: string, n: number) => ({
-    headline: `${name} is the king of bad takes`,
-    subtext: `${n} wrong on the trot. Their crystal ball is well and truly broken.`,
+    headline: `${name} can't buy a win`,
+    subtext: `${n} wrong on the trot. The crystal ball needs recalibrating.`,
   }),
 ];
 
 export const WINNING_STREAK_TEMPLATES = [
   (name: string, n: number) => ({
-    headline: `${name} is absolutely cooking`,
-    subtext: `${n} correct in a row. Hide your predictions.`,
+    headline: `${name} is in red-hot form`,
+    subtext: `${n} correct in a row. The streak keeps building.`,
   }),
   (name: string, n: number) => ({
-    headline: `${name} can't miss`,
-    subtext: `${n} straight wins. Is this person from the future?`,
+    headline: `${name} can't miss right now`,
+    subtext: `${n} straight wins. The rest of the field is on notice.`,
   }),
   (name: string, n: number) => ({
     headline: `${name} on a tear`,
-    subtext: `${n} in a row! The rest of you should be worried.`,
+    subtext: `${n} in a row. Serious momentum building.`,
   }),
   (name: string, n: number) => ({
-    headline: `${name} is seeing the Matrix`,
+    headline: `${name} reading the form guide perfectly`,
     subtext: `${n} correct picks running. Everyone else is playing catch-up.`,
   }),
 ];
 
 export const PERFECT_PICK_TEMPLATES = [
   (name: string, event: string) => ({
-    headline: `Big brain move from ${name}`,
-    subtext: `Only one to get ${event} right. Galaxy brain stuff.`,
+    headline: `${name} nailed it on ${event}`,
+    subtext: `The only one to get it right. That's a quality pick.`,
   }),
   (name: string, event: string) => ({
     headline: `${name} stood alone and was proven right`,
-    subtext: `The only correct pick on ${event}. Respect.`,
+    subtext: `The only correct pick on ${event}. Conviction rewarded.`,
   }),
   (name: string, event: string) => ({
     headline: `${name} backed themselves on ${event}`,
-    subtext: `Sole correct pick. Sometimes the crowd is wrong.`,
+    subtext: `Sole correct pick. Sometimes the crowd gets it wrong.`,
   }),
 ];
 
 export const EVERYONE_WRONG_TEMPLATES = [
   (event: string) => ({
     headline: `Nobody saw that coming`,
-    subtext: `Not a single correct pick on ${event}. The collective brain failed.`,
+    subtext: `Not a single correct pick on ${event}. A genuine upset.`,
   }),
   (event: string) => ({
-    headline: `A complete wipeout on ${event}`,
-    subtext: `Zero correct picks. Should have asked a coin.`,
+    headline: `A clean sweep of wrong picks on ${event}`,
+    subtext: `Zero correct. The result surprised everyone.`,
   }),
   (event: string) => ({
-    headline: `${event} broke everyone's brain`,
-    subtext: `Not one correct pick across the board. Nobody saw it coming.`,
+    headline: `${event} caught the whole field out`,
+    subtext: `Not one correct pick across the board. That's a rare one.`,
   }),
 ];
 
 export const OUTLIER_TEMPLATES = [
   (name: string, prediction: string, event: string, popular: string) => ({
-    headline: `Bold call from ${name}`,
-    subtext: `Picked "${prediction}" for ${event} — most others went "${popular}".`,
+    headline: `Bold call from ${name} on ${event}`,
+    subtext: `Picked "${prediction}" — most others went with "${popular}".`,
   }),
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   (name: string, prediction: string, event: string, _popular: string) => ({
-    headline: `${name} going rogue on ${event}`,
-    subtext: `"${prediction}" — a lone wolf pick that could pay off big.`,
+    headline: `${name} going against the grain on ${event}`,
+    subtext: `Backing "${prediction}" while the rest of the field went elsewhere.`,
   }),
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   (name: string, prediction: string, event: string, _popular: string) => ({
-    headline: `${name} with the wildcard on ${event}`,
-    subtext: `Backing "${prediction}" against the pack. Fortune favours the bold?`,
+    headline: `${name} with a contrarian pick on ${event}`,
+    subtext: `"${prediction}" — going against the pack. Could be the difference.`,
   }),
 ];
 
@@ -133,16 +133,16 @@ export const ODDS_ALERT_TEMPLATES = [
 
 export const CONTRARIAN_PICK_TEMPLATES = [
   (event: string, favourite: string, favOdds: string, popularPick: string) => ({
-    headline: `The group is going against the bookies on ${event}`,
-    subtext: `${favourite} is the ${favOdds} favourite but most of you picked "${popularPick}". Someone's wrong.`,
+    headline: `The group is going against the market on ${event}`,
+    subtext: `${favourite} is the ${favOdds} favourite but most picked "${popularPick}". Someone's wrong.`,
   }),
   (event: string, favourite: string, favOdds: string, popularPick: string) => ({
-    headline: `Bookies vs the boys on ${event}`,
-    subtext: `The money says ${favourite} (${favOdds}) but the people say "${popularPick}". Spicy.`,
+    headline: `Market vs the group on ${event}`,
+    subtext: `The money says ${favourite} (${favOdds}) but the popular pick is "${popularPick}".`,
   }),
   (event: string, _favourite: string, _favOdds: string, popularPick: string) => ({
     headline: `Bold move from the group on ${event}`,
-    subtext: `Most of you backed "${popularPick}" over the bookmaker favourite. Brave or foolish?`,
+    subtext: `Most backed "${popularPick}" over the bookmaker favourite. Conviction or hubris?`,
   }),
 ];
 
