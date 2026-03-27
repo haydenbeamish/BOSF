@@ -1,8 +1,10 @@
+import { useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Trophy, ChevronRight, Zap, Newspaper, ScrollText, Target, Flame, Radio } from "lucide-react";
+import { Trophy, ChevronRight, Zap, Newspaper, ScrollText, Target, Flame, Check } from "lucide-react";
 import { getEventDisplayDate, formatEventDate } from "../lib/dates";
 import { useNewsFeed } from "../hooks/useNewsFeed";
+import { useEvents } from "../hooks/useEvents";
 import { GlassCard } from "../components/ui/GlassCard";
 import { Avatar } from "../components/ui/Avatar";
 import { Skeleton } from "../components/ui/Skeleton";
@@ -11,10 +13,33 @@ import { FeedCard } from "../components/feed/FeedCard";
 import { Podium } from "../components/leaderboard/Podium";
 import { SportIcon } from "../components/ui/SportIcon";
 import { StatusPill } from "../components/ui/StatusPill";
+import { getCategoryInfo } from "../lib/categories";
+import { cn } from "../lib/cn";
 
 export function DashboardPage() {
   const navigate = useNavigate();
-  const { feed, leaderboard, events, loading, error } = useNewsFeed();
+  const { feed, leaderboard, loading, error } = useNewsFeed();
+  const {
+    events: filteredEvents,
+    allEvents,
+    categories,
+    selectedCategory,
+    setSelectedCategory,
+    statusCounts,
+    loading: eventsLoading,
+  } = useEvents();
+
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const activeTabRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    if (activeTabRef.current && scrollRef.current) {
+      const container = scrollRef.current;
+      const button = activeTabRef.current;
+      const scrollLeft = button.offsetLeft - container.offsetWidth / 2 + button.offsetWidth / 2;
+      container.scrollTo({ left: scrollLeft, behavior: "smooth" });
+    }
+  }, [selectedCategory]);
 
   if (error) {
     return (
@@ -26,7 +51,7 @@ export function DashboardPage() {
     );
   }
 
-  if (loading) {
+  if (loading || eventsLoading) {
     return (
       <div className="px-4 pt-4 flex flex-col gap-3">
         <Skeleton className="h-16 rounded-2xl" />
@@ -39,24 +64,8 @@ export function DashboardPage() {
   }
 
   const leader = leaderboard[0];
-  const completedEvents = events.filter((e) => e.status === "completed").length;
-  const totalEvents = events.length;
-  const liveEvents = events.filter((e) => e.status === "in_progress");
-
-  // Get next upcoming/in-progress events (not completed), sorted by date, limit 10
-  const upcomingEvents = events
-    .filter((e) => e.status !== "completed")
-    .sort((a, b) => {
-      // Live events first
-      if (a.status === "in_progress" && b.status !== "in_progress") return -1;
-      if (b.status === "in_progress" && a.status !== "in_progress") return 1;
-      // Sort by event_date, nulls last
-      if (a.event_date && b.event_date) return a.event_date.localeCompare(b.event_date);
-      if (a.event_date) return -1;
-      if (b.event_date) return 1;
-      return (a.display_order ?? 0) - (b.display_order ?? 0);
-    })
-    .slice(0, 10);
+  const completedEvents = allEvents.filter((e) => e.status === "completed").length;
+  const totalEvents = allEvents.length;
 
   return (
     <motion.div
@@ -187,38 +196,6 @@ export function DashboardPage() {
         </div>
       )}
 
-      {/* Live Events Alert */}
-      {liveEvents.length > 0 && (
-        <div className="px-4 mb-4">
-          <motion.div
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-            className="rounded-2xl bg-amber-50 border border-amber-200/50 p-4"
-          >
-            <div className="flex items-center gap-2 mb-3">
-              <Radio size={14} className="text-amber-600 animate-pulse" />
-              <h2 className="text-[11px] font-bold uppercase tracking-wider text-amber-600">
-                Live Now
-              </h2>
-            </div>
-            <div className="flex flex-col gap-2">
-              {liveEvents.slice(0, 3).map((evt) => (
-                <div
-                  key={evt.id}
-                  onClick={() => navigate(`/events/${evt.id}`)}
-                  className="flex items-center gap-3 px-3 py-2 rounded-xl bg-white/80 cursor-pointer active:scale-[0.98] transition-all"
-                >
-                  <SportIcon sport={evt.sport} size="sm" />
-                  <p className="text-sm font-medium text-zinc-800 truncate flex-1">{evt.event_name}</p>
-                  <ChevronRight size={14} className="text-amber-400 shrink-0" />
-                </div>
-              ))}
-            </div>
-          </motion.div>
-        </div>
-      )}
-
       {/* News Feed */}
       <div className="px-4 mb-6">
         <div className="flex items-center gap-2 mb-4">
@@ -240,54 +217,123 @@ export function DashboardPage() {
         )}
       </div>
 
-      {/* Upcoming Events */}
-      {upcomingEvents.length > 0 && (
-        <div className="px-4 mb-6">
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-2">
-              <ScrollText size={14} className="text-zinc-400" />
-              <h2 className="text-[11px] font-bold uppercase tracking-wider text-zinc-400">
-                Upcoming Events
-              </h2>
-            </div>
-            <button
-              onClick={() => navigate("/events")}
-              className="text-[11px] font-semibold text-emerald-600"
-            >
-              View all
-            </button>
+      {/* All Events */}
+      <div className="px-4 mb-6">
+        <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center gap-2">
+            <ScrollText size={14} className="text-zinc-400" />
+            <h2 className="text-[11px] font-bold uppercase tracking-wider text-zinc-400">
+              All Events
+            </h2>
           </div>
-          <div className="flex flex-col gap-2">
-            {upcomingEvents.filter(e => e.status !== "in_progress").map((evt, i) => (
-              <motion.div
-                key={evt.id}
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.1 + i * 0.03, duration: 0.3 }}
-                onClick={() => navigate(`/events/${evt.id}`)}
-                className="flex items-center gap-3 px-4 py-3 rounded-2xl border border-zinc-200/60 bg-white cursor-pointer active:scale-[0.98] hover:shadow-md hover:-translate-y-0.5 transition-all shadow-sm"
-              >
-                <SportIcon sport={evt.sport} />
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-zinc-800 truncate">{evt.event_name}</p>
-                  {formatEventDate(getEventDisplayDate(evt.event_date, evt.close_date)) && (
-                    <p className="text-xs text-zinc-400 mt-0.5">
-                      {formatEventDate(getEventDisplayDate(evt.event_date, evt.close_date))}
-                    </p>
-                  )}
-                </div>
-                {evt.points_value > 1 && (
-                  <span className="text-[10px] font-bold text-amber-600 bg-amber-50 rounded-full px-1.5 py-0.5 shrink-0">
-                    {evt.points_value}pt
-                  </span>
-                )}
-                <StatusPill status={evt.status} />
-                <ChevronRight size={14} className="text-zinc-300 shrink-0" />
-              </motion.div>
-            ))}
+          <div className="flex gap-1.5">
+            {statusCounts.upcoming > 0 && (
+              <span className="text-[10px] font-semibold text-zinc-500 bg-zinc-100 rounded-full px-2 py-0.5">
+                {statusCounts.upcoming} Upcoming
+              </span>
+            )}
+            <span className="text-[10px] font-semibold text-emerald-600 bg-emerald-50 rounded-full px-2 py-0.5">
+              {completedEvents}/{totalEvents} Decided
+            </span>
           </div>
         </div>
-      )}
+
+        {/* Category tabs */}
+        <div
+          ref={scrollRef}
+          className="flex gap-1.5 py-2 overflow-x-auto scrollbar-none"
+        >
+          {categories.map((cat) => {
+            const isActive = cat === selectedCategory;
+            const info = cat === "All" ? null : getCategoryInfo(cat);
+            return (
+              <button
+                key={cat}
+                ref={isActive ? activeTabRef : null}
+                onClick={() => setSelectedCategory(cat)}
+                className={cn(
+                  "flex items-center gap-1.5 whitespace-nowrap rounded-full px-3.5 py-2 text-xs font-semibold transition-all shrink-0 active:scale-95",
+                  isActive
+                    ? "bg-emerald-50 text-emerald-700 border border-emerald-200/50"
+                    : "bg-zinc-100 text-zinc-500 border border-zinc-200/50"
+                )}
+              >
+                {info && <span className="text-[11px]">{info.emoji}</span>}
+                {cat === "All" ? "All" : info?.label ?? cat}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Events list */}
+        {filteredEvents.length === 0 ? (
+          <div className="text-center py-8 text-zinc-400 text-sm">
+            No {selectedCategory === "All" ? "" : selectedCategory + " "}events to show.
+          </div>
+        ) : (
+          <div className="flex flex-col gap-2 pt-1">
+            {filteredEvents.map((evt, i) => {
+              const prevEvt = i > 0 ? filteredEvents[i - 1] : null;
+              const showHeader = !prevEvt || prevEvt.status !== evt.status;
+              const sectionLabel = evt.status === "in_progress" ? "Live Now" : evt.status === "upcoming" ? "Upcoming" : "Decided";
+
+              return (
+                <div key={evt.id}>
+                  {showHeader && (
+                    <motion.div
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      className={cn("text-[11px] font-bold uppercase tracking-wider px-1 mt-3 mb-2", i === 0 && "mt-1",
+                        evt.status === "in_progress" ? "text-amber-600" :
+                        evt.status === "upcoming" ? "text-zinc-400" :
+                        "text-emerald-600"
+                      )}
+                    >
+                      {sectionLabel}
+                    </motion.div>
+                  )}
+                  <motion.div
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: Math.min(i * 0.025, 0.5), duration: 0.3 }}
+                    onClick={() => navigate(`/events/${evt.id}`)}
+                    className={cn(
+                      "flex items-center gap-3 px-4 py-3 rounded-2xl border cursor-pointer active:scale-[0.98] hover:shadow-md hover:-translate-y-0.5 transition-all shadow-sm",
+                      evt.status === "in_progress"
+                        ? "border-amber-200/60 bg-amber-50/30"
+                        : "border-zinc-200/60 bg-white"
+                    )}
+                  >
+                    <SportIcon sport={evt.sport} />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-zinc-800 truncate">{evt.event_name}</p>
+                      <div className="flex items-center gap-2 mt-0.5">
+                        {evt.correct_answer ? (
+                          <div className="flex items-center gap-1 min-w-0">
+                            <Check size={10} className="text-emerald-600 shrink-0" />
+                            <p className="text-xs text-emerald-600 truncate">{evt.correct_answer}</p>
+                          </div>
+                        ) : formatEventDate(getEventDisplayDate(evt.event_date, evt.close_date)) ? (
+                          <p className="text-xs text-zinc-400">
+                            {formatEventDate(getEventDisplayDate(evt.event_date, evt.close_date))}
+                          </p>
+                        ) : null}
+                        {evt.points_value > 1 && (
+                          <span className="text-[10px] font-bold text-amber-600 bg-amber-50 rounded-full px-1.5 py-0.5 shrink-0">
+                            {evt.points_value}pt
+                          </span>
+                        )}
+                        <StatusPill status={evt.status} />
+                      </div>
+                    </div>
+                    <ChevronRight size={14} className="text-zinc-300 shrink-0" />
+                  </motion.div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
     </motion.div>
   );
 }
