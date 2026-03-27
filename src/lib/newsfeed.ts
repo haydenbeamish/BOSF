@@ -162,14 +162,14 @@ function computeStreaks(
   events: CompetitionEvent[]
 ): { winStreak: number; loseStreak: number } {
   const completedEventIds = new Set(
-    events.filter((e) => e.status === "completed").map((e) => e.id)
+    events.filter((e) => e.status === "completed").map((e) => Number(e.id))
   );
 
   const sorted = predictions
-    .filter((p) => p.participant_id === participantId && completedEventIds.has(p.event_id))
+    .filter((p) => Number(p.participant_id) === Number(participantId) && completedEventIds.has(Number(p.event_id)))
     .sort((a, b) => {
-      const eA = events.find((e) => e.id === a.event_id);
-      const eB = events.find((e) => e.id === b.event_id);
+      const eA = events.find((e) => Number(e.id) === Number(a.event_id));
+      const eB = events.find((e) => Number(e.id) === Number(b.event_id));
       return (eB?.display_order ?? 0) - (eA?.display_order ?? 0);
     });
 
@@ -211,7 +211,7 @@ function findOutliers(
   const upcomingEvents = events.filter((e) => e.status !== "completed");
 
   for (const event of upcomingEvents) {
-    const eventPreds = allPredictions.filter((p) => p.event_id === event.id);
+    const eventPreds = allPredictions.filter((p) => Number(p.event_id) === Number(event.id));
     if (eventPreds.length < 3) continue;
 
     const counts: Record<string, number> = {};
@@ -228,7 +228,7 @@ function findOutliers(
       const key = pred.prediction.toLowerCase().trim();
       const count = counts[key] ?? 0;
       if (count <= threshold && key !== popularPick) {
-        const participant = participants.find((p) => p.id === pred.participant_id);
+        const participant = participants.find((p) => Number(p.id) === Number(pred.participant_id));
         if (participant) {
           outliers.push({
             participant,
@@ -262,8 +262,8 @@ export function generateNewsFeed(
 
   // 1. Event results
   for (const event of completedEvents) {
-    const preds = allPredictions.filter((p) => p.event_id === event.id);
-    const correctCount = preds.filter((p) => p.is_correct === true || (p.is_correct as unknown) === 1).length;
+    const preds = allPredictions.filter((p) => Number(p.event_id) === Number(event.id));
+    const correctCount = preds.filter((p) => Boolean(p.is_correct)).length;
     const template = hashPick(EVENT_RESULT_TEMPLATES, `result-${event.id}`);
     const { headline, subtext } = template(
       event.event_name,
