@@ -9,9 +9,9 @@ export default function NotFoundPage() {
       <div className="w-14 h-14 rounded-2xl bg-surface-100 flex items-center justify-center mb-4">
         <MapPinOff className="w-7 h-7 text-zinc-400" />
       </div>
-      <h2 className="text-lg font-bold text-zinc-800 mb-1">Page not found</h2>
+      <h2 className="text-lg font-bold text-zinc-800 mb-1">You've gone walkabout</h2>
       <p className="text-sm text-zinc-500 mb-6 max-w-xs">
-        The page you're looking for doesn't exist or has been moved.
+        This page doesn't exist, mate. Reckon you took a wrong turn.
       </p>
       <button
         onClick={() => navigate("/")}

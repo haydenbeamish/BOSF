@@ -1,5 +1,8 @@
 import { useLocation, useNavigate } from "react-router-dom";
-import { ChevronLeft } from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
+import { ChevronLeft, RefreshCw } from "lucide-react";
+import { useState, useCallback } from "react";
+import { cn } from "../../lib/cn";
 
 const PAGE_TITLES: Record<string, string> = {
   "/": "BOSF Punting",
@@ -11,8 +14,16 @@ const PAGE_TITLES: Record<string, string> = {
 export function Header() {
   const location = useLocation();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const isSubPage = /^\/(player|events)\/\d+/.test(location.pathname);
   const pageTitle = PAGE_TITLES[location.pathname];
+
+  const handleRefresh = useCallback(async () => {
+    setIsRefreshing(true);
+    await queryClient.invalidateQueries();
+    setTimeout(() => setIsRefreshing(false), 600);
+  }, [queryClient]);
 
   function handleBack() {
     if (location.pathname.startsWith("/events/")) {
@@ -22,8 +33,6 @@ export function Header() {
         navigate("/events");
       }
     } else if (location.pathname.startsWith("/player/")) {
-      // Try to go back in history; if we came from somewhere within the app it'll work.
-      // If direct navigation, fallback to members page.
       if (window.history.state?.idx > 0) {
         navigate(-1);
       } else {
@@ -36,9 +45,9 @@ export function Header() {
 
   return (
     <header className="shrink-0 border-b border-zinc-200/60 bg-white/80 backdrop-blur-xl pt-safe">
-      <div className="flex items-center h-14 px-4 max-w-2xl mx-auto">
+      <div className="flex items-center justify-between h-14 px-4 max-w-3xl mx-auto">
         {isSubPage ? (
-          <>
+          <div className="flex items-center">
             <button
               onClick={handleBack}
               aria-label="Go back"
@@ -49,7 +58,7 @@ export function Header() {
             <h1 className="font-display font-bold text-sm text-zinc-900">
               {location.pathname.startsWith("/events/") ? "Event Details" : "Player Profile"}
             </h1>
-          </>
+          </div>
         ) : (
           <div className="flex items-center gap-2.5">
             <img
@@ -62,6 +71,15 @@ export function Header() {
             )}
           </div>
         )}
+
+        {/* Refresh button on all pages */}
+        <button
+          onClick={handleRefresh}
+          aria-label="Refresh data"
+          className="flex items-center justify-center w-9 h-9 rounded-full text-zinc-400 hover:bg-zinc-100 active:scale-95 transition-all"
+        >
+          <RefreshCw size={16} className={cn(isRefreshing && "animate-spin")} />
+        </button>
       </div>
     </header>
   );

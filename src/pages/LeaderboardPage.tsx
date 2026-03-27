@@ -50,7 +50,7 @@ export function LeaderboardPage() {
       <EmptyState
         icon={<Trophy size={28} />}
         title="No standings yet"
-        description="Results will appear here once events start getting decided. Stay tuned."
+        description="Nothing to see here yet, punter. Sit tight — the action's coming."
       />
     );
   }
@@ -69,7 +69,7 @@ export function LeaderboardPage() {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.3 }}
-      className="pb-6"
+      className="pb-20"
     >
       {/* Quick stats */}
       <div className="grid grid-cols-3 gap-2 px-4 pt-4">
