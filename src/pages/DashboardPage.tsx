@@ -64,35 +64,6 @@ export function DashboardPage() {
       transition={{ duration: 0.3 }}
       className="pb-6"
     >
-      {/* Welcome header */}
-      <div className="px-4 pt-5 pb-2 flex items-center gap-3">
-        <motion.img
-          src="/logo.png"
-          alt="BOSF Logo"
-          initial={{ opacity: 0, scale: 0.8 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.3 }}
-          className="h-14 w-14 object-contain rounded-xl"
-        />
-        <div>
-          <motion.h1
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="font-display font-extrabold text-xl text-zinc-900"
-          >
-            BOSF
-          </motion.h1>
-          <motion.p
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.05 }}
-            className="text-sm text-zinc-400 mt-0.5"
-          >
-            Punting Leaderboard
-          </motion.p>
-        </div>
-      </div>
-
       {/* Quick stats row */}
       <div className="grid grid-cols-3 gap-2 px-4 mb-4 mt-2">
         <motion.div
