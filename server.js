@@ -180,7 +180,7 @@ app.post("/api/ai/chat", async (req, res) => {
 
 // --- Static file serving (production) ---
 app.use(express.static(join(__dirname, "dist")));
-app.get("*", (_req, res) => {
+app.get(/.*/, (_req, res) => {
   res.sendFile(join(__dirname, "dist", "index.html"));
 });
 
