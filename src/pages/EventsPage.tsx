@@ -67,11 +67,13 @@ export function EventsPage() {
   const upcomingEvents = base
     .filter((e) => e.status === "upcoming" || e.status === "in_progress")
     .sort((a, b) => {
-      if (a.status === "in_progress" && b.status !== "in_progress") return -1;
-      if (b.status === "in_progress" && a.status !== "in_progress") return 1;
-      if (a.event_date && b.event_date) return a.event_date.localeCompare(b.event_date);
-      if (a.event_date) return -1;
-      if (b.event_date) return 1;
+      // Sort by display date (the later of event_date / close_date) so season-long
+      // in-progress events sit at their natural end-of-season position.
+      const dateA = a.close_date && a.close_date > (a.event_date ?? "") ? a.close_date : (a.event_date ?? "");
+      const dateB = b.close_date && b.close_date > (b.event_date ?? "") ? b.close_date : (b.event_date ?? "");
+      if (dateA && dateB) return dateA.localeCompare(dateB);
+      if (dateA) return -1;
+      if (dateB) return 1;
       return (a.display_order ?? 0) - (b.display_order ?? 0);
     });
 
@@ -202,7 +204,14 @@ export function EventsPage() {
                         <p className="text-xs text-emerald-600 truncate">{evt.correct_answer}</p>
                       </div>
                     ) : evt.status === "in_progress" ? (
-                      <StatusPill status="in_progress" />
+                      <div className="flex items-center gap-1.5">
+                        <StatusPill status="in_progress" />
+                        {formatEventDate(getEventDisplayDate(evt.event_date, evt.close_date)) && (
+                          <p className="text-xs text-zinc-400">
+                            ends {formatEventDate(getEventDisplayDate(evt.event_date, evt.close_date))}
+                          </p>
+                        )}
+                      </div>
                     ) : formatEventDate(getEventDisplayDate(evt.event_date, evt.close_date)) ? (
                       <p className="text-xs text-zinc-400">
                         {formatEventDate(getEventDisplayDate(evt.event_date, evt.close_date))}

@@ -34,10 +34,27 @@ function toArray<T>(data: unknown, ...keys: string[]): T[] {
   return [];
 }
 
+/** Normalise a raw API event object to our CompetitionEvent shape. */
+function normalizeEvent(e: Record<string, unknown>): CompetitionEvent {
+  return {
+    id: Number(e.id),
+    event_name: String(e.event_name ?? ""),
+    sport: String(e.sport ?? ""),
+    event_date: (e.event_date as string) ?? null,
+    // API sends event_end_date; fall back to close_date if present
+    close_date: (e.event_end_date as string) ?? (e.close_date as string) ?? null,
+    points_value: Number(e.available_points ?? e.points_value ?? 1),
+    correct_answer: (e.correct_answer as string) ?? null,
+    status: (e.status as CompetitionEvent["status"]) ?? "upcoming",
+    display_order: Number(e.event_number ?? e.display_order ?? e.id),
+    created_at: e.created_at as string | undefined,
+  };
+}
+
 export async function getEvents(status?: string): Promise<CompetitionEvent[]> {
   const query = status ? `?status=${status}` : "";
   const data = await fetchJson<unknown>(`/events${query}`);
-  return toArray<CompetitionEvent>(data, "events", "data", "results");
+  return toArray<Record<string, unknown>>(data, "events", "data", "results").map(normalizeEvent);
 }
 
 function buildEventWithPredictions(raw: Record<string, unknown>): EventWithPredictions {
@@ -127,20 +144,8 @@ export async function getResults(): Promise<{
   const rawParticipants: Participant[] = toArray<Participant>(raw, "participants");
   const nameToId = new Map(rawParticipants.map((p) => [p.name, Number(p.id)]));
 
-  // Normalize events: map API field names → our type field names
   const rawEvents = toArray<Record<string, unknown>>(raw, "events");
-  const events: CompetitionEvent[] = rawEvents.map((e) => ({
-    id: Number(e.id),
-    event_name: String(e.event_name ?? ""),
-    sport: String(e.sport ?? ""),
-    event_date: (e.event_date as string) ?? null,
-    close_date: (e.event_end_date as string) ?? (e.close_date as string) ?? null,
-    points_value: Number(e.available_points ?? e.points_value ?? 1),
-    correct_answer: (e.correct_answer as string) ?? null,
-    status: (e.status as CompetitionEvent["status"]) ?? "upcoming",
-    display_order: Number(e.event_number ?? e.display_order ?? e.id),
-    created_at: e.created_at as string | undefined,
-  }));
+  const events: CompetitionEvent[] = rawEvents.map(normalizeEvent);
 
   // Flatten per-event embedded predictions (keyed by participant name) into a flat array
   const predictions: Prediction[] = rawEvents.flatMap((e) => {

@@ -3,11 +3,6 @@ import { useQuery } from "@tanstack/react-query";
 import type { CompetitionEvent } from "../types";
 import { getEvents } from "../data/api";
 
-const STATUS_ORDER: Record<string, number> = {
-  in_progress: 0,
-  upcoming: 1,
-  completed: 2,
-};
 
 export function useEvents() {
   const [selectedCategory, setSelectedCategory] = useState<string>("All");
@@ -26,16 +21,20 @@ export function useEvents() {
     const base = selectedCategory === "All" ? events : events.filter((e: CompetitionEvent) => e.sport === selectedCategory);
 
     return [...base].sort((a: CompetitionEvent, b: CompetitionEvent) => {
-      const statusDiff = (STATUS_ORDER[a.status] ?? 1) - (STATUS_ORDER[b.status] ?? 1);
-      if (statusDiff !== 0) return statusDiff;
+      if (a.status === "completed" && b.status !== "completed") return 1;
+      if (b.status === "completed" && a.status !== "completed") return -1;
 
       if (a.status === "completed") {
         return (b.display_order ?? 0) - (a.display_order ?? 0);
       }
 
-      if (a.event_date && b.event_date) return a.event_date.localeCompare(b.event_date);
-      if (a.event_date) return -1;
-      if (b.event_date) return 1;
+      // For upcoming/in_progress: sort by the display date (later of event_date / close_date)
+      // so season-long events (e.g. AFL H&A) sit at their natural end-of-season position.
+      const dateA = a.close_date && a.close_date > (a.event_date ?? "") ? a.close_date : (a.event_date ?? "");
+      const dateB = b.close_date && b.close_date > (b.event_date ?? "") ? b.close_date : (b.event_date ?? "");
+      if (dateA && dateB) return dateA.localeCompare(dateB);
+      if (dateA) return -1;
+      if (dateB) return 1;
       return (a.display_order ?? 0) - (b.display_order ?? 0);
     });
   }, [events, selectedCategory]);

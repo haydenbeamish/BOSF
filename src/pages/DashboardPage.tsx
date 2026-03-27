@@ -50,14 +50,17 @@ export function DashboardPage() {
   const completedEvents = allEvents.filter((e) => e.status === "completed").length;
   const totalEvents = allEvents.length;
 
+  // Sort by display date (the later of event_date / close_date) so season-long
+  // in-progress events (e.g. AFL H&A) appear at their natural end-of-season
+  // position rather than always pinned to the top.
   const upcomingEvents = allEvents
     .filter((e) => e.status === "upcoming" || e.status === "in_progress")
     .sort((a, b) => {
-      if (a.status === "in_progress" && b.status !== "in_progress") return -1;
-      if (b.status === "in_progress" && a.status !== "in_progress") return 1;
-      if (a.event_date && b.event_date) return a.event_date.localeCompare(b.event_date);
-      if (a.event_date) return -1;
-      if (b.event_date) return 1;
+      const dateA = a.close_date && a.close_date > (a.event_date ?? "") ? a.close_date : (a.event_date ?? "");
+      const dateB = b.close_date && b.close_date > (b.event_date ?? "") ? b.close_date : (b.event_date ?? "");
+      if (dateA && dateB) return dateA.localeCompare(dateB);
+      if (dateA) return -1;
+      if (dateB) return 1;
       return (a.display_order ?? 0) - (b.display_order ?? 0);
     })
     .slice(0, 3);
