@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { searchEventNews } from "../data/ai";
 
 interface NewsItem {
@@ -9,33 +9,14 @@ interface NewsItem {
 }
 
 export function useEventNews(eventName: string | undefined, sport: string | undefined) {
-  const [news, setNews] = useState<NewsItem[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(false);
+  const year = new Date().getFullYear();
+  const query = eventName ? `${eventName}${sport ? ` ${sport}` : ""} results ${year}` : "";
 
-  useEffect(() => {
-    if (!eventName) return;
-
-    let cancelled = false;
-    setLoading(true);
-    setError(false);
-
-    const year = new Date().getFullYear();
-    const query = `${eventName}${sport ? ` ${sport}` : ""} results ${year}`;
-    searchEventNews(query)
-      .then((results) => {
-        if (cancelled) return;
-        setNews(results);
-        setLoading(false);
-      })
-      .catch(() => {
-        if (cancelled) return;
-        setError(true);
-        setLoading(false);
-      });
-
-    return () => { cancelled = true; };
-  }, [eventName, sport]);
+  const { data: news = [], isLoading: loading, isError: error } = useQuery<NewsItem[]>({
+    queryKey: ["eventNews", query],
+    queryFn: () => searchEventNews(query),
+    enabled: Boolean(eventName),
+  });
 
   return { news, loading, error };
 }
