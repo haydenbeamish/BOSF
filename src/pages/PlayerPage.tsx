@@ -258,3 +258,5 @@ export function PlayerPage() {
     </motion.div>
   );
 }
+
+export default PlayerPage;

@@ -197,3 +197,5 @@ export function DashboardPage() {
     </motion.div>
   );
 }
+
+export default DashboardPage;

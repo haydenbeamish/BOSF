@@ -132,3 +132,5 @@ export function MembersPage() {
     </motion.div>
   );
 }
+
+export default MembersPage;

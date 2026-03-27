@@ -40,26 +40,44 @@ export async function getEvents(status?: string): Promise<CompetitionEvent[]> {
   return toArray<CompetitionEvent>(data, "events", "data", "results");
 }
 
+function buildEventWithPredictions(raw: Record<string, unknown>): EventWithPredictions {
+  return {
+    id: Number(raw.id),
+    event_name: String(raw.event_name ?? ""),
+    sport: String(raw.sport ?? ""),
+    event_date: (raw.event_date as string) ?? null,
+    close_date: (raw.event_end_date as string) ?? (raw.close_date as string) ?? null,
+    points_value: Number(raw.available_points ?? raw.points_value ?? 1),
+    correct_answer: (raw.correct_answer as string) ?? null,
+    status: (raw.status as CompetitionEvent["status"]) ?? "upcoming",
+    display_order: Number(raw.event_number ?? raw.display_order ?? raw.id),
+    created_at: raw.created_at as string | undefined,
+    favourite: (raw.favourite as string) ?? null,
+    favourite_odds: raw.favourite_odds != null ? Number(raw.favourite_odds) : null,
+    underdog: (raw.underdog as string) ?? null,
+    underdog_odds: raw.underdog_odds != null ? Number(raw.underdog_odds) : null,
+    odds_last_updated: (raw.odds_last_updated as string) ?? null,
+    predictions: Array.isArray(raw.predictions) ? raw.predictions : [],
+  };
+}
+
 export async function getEvent(id: number): Promise<EventWithPredictions> {
   const data = await fetchJson<unknown>(`/events/${id}`);
-  // API may return the event directly or wrapped in { event: {...}, predictions: [...] }
   if (data && typeof data === "object" && !Array.isArray(data)) {
     const obj = data as Record<string, unknown>;
-    // If wrapped: merge event fields + predictions into a single object
+    // API may return the event wrapped in { event: {...}, predictions: [...] }
     if (obj.event && typeof obj.event === "object") {
       const event = obj.event as Record<string, unknown>;
       const predictions = Array.isArray(obj.predictions) ? obj.predictions : (event.predictions ?? []);
-      return { ...event, predictions } as unknown as EventWithPredictions;
+      return buildEventWithPredictions({ ...event, predictions });
     }
-    // If flat with predictions array, return as-is
+    // Or flat with id + event_name at root
     if ("id" in obj && "event_name" in obj) {
-      if (!Array.isArray(obj.predictions)) {
-        (obj as Record<string, unknown>).predictions = [];
-      }
-      return data as EventWithPredictions;
+      return buildEventWithPredictions(obj);
     }
   }
-  return data as EventWithPredictions;
+  // Fallback: try to build from whatever we got
+  return buildEventWithPredictions((data ?? {}) as Record<string, unknown>);
 }
 
 export async function getLeaderboard(): Promise<LeaderboardEntry[]> {
