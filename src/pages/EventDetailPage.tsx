@@ -103,7 +103,7 @@ export function EventDetailPage() {
   }
 
   const isDecided = event.status === "completed";
-  const isLive = event.status === "in_progress";
+
   const predictions = event.predictions ?? [];
   const correctCount = predictions.filter((p) => p.is_correct === true).length;
   const groups = groupPredictions(predictions);
@@ -171,17 +171,6 @@ export function EventDetailPage() {
           </GlassCard>
         )}
 
-        {/* Live indicator */}
-        {isLive && (
-          <motion.div
-            initial={{ opacity: 0, y: 6 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="mt-4 rounded-xl bg-amber-50 border border-amber-200/40 px-4 py-3 flex items-center gap-2"
-          >
-            <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
-            <p className="text-xs text-amber-700 font-medium">This event is live — result pending</p>
-          </motion.div>
-        )}
       </div>
 
       {/* Grouped Predictions */}
