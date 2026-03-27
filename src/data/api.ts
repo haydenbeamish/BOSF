@@ -101,9 +101,51 @@ export async function getParticipant(id: number): Promise<{
 export async function getResults(): Promise<{
   events: CompetitionEvent[];
   participants: Participant[];
-  predictions: Record<string, Record<string, Prediction>>;
+  predictions: Prediction[];
 }> {
-  return fetchJson<{ events: CompetitionEvent[]; participants: Participant[]; predictions: Record<string, Record<string, Prediction>> }>("/results");
+  const raw = await fetchJson<Record<string, unknown>>("/results");
+
+  // Participants keyed by name for ID lookup
+  const rawParticipants: Participant[] = toArray<Participant>(raw, "participants");
+  const nameToId = new Map(rawParticipants.map((p) => [p.name, Number(p.id)]));
+
+  // Normalize events: map API field names → our type field names
+  const rawEvents = toArray<Record<string, unknown>>(raw, "events");
+  const events: CompetitionEvent[] = rawEvents.map((e) => ({
+    id: Number(e.id),
+    event_name: String(e.event_name ?? ""),
+    sport: String(e.sport ?? ""),
+    event_date: (e.event_date as string) ?? null,
+    close_date: (e.event_end_date as string) ?? (e.close_date as string) ?? null,
+    points_value: Number(e.available_points ?? e.points_value ?? 1),
+    correct_answer: (e.correct_answer as string) ?? null,
+    status: (e.status as CompetitionEvent["status"]) ?? "upcoming",
+    display_order: Number(e.event_number ?? e.display_order ?? e.id),
+    created_at: e.created_at as string | undefined,
+  }));
+
+  // Flatten per-event embedded predictions (keyed by participant name) into a flat array
+  const predictions: Prediction[] = rawEvents.flatMap((e) => {
+    const eventId = Number(e.id);
+    const embeddedPreds = e.predictions;
+    if (!embeddedPreds || typeof embeddedPreds !== "object" || Array.isArray(embeddedPreds)) return [];
+    return Object.entries(embeddedPreds as Record<string, Record<string, unknown>>).map(
+      ([name, pred]) => ({
+        id: 0,
+        event_id: eventId,
+        participant_id: nameToId.get(name) ?? 0,
+        prediction: String(pred.prediction ?? ""),
+        is_correct:
+          pred.is_correct === null || pred.is_correct === undefined
+            ? null
+            : Boolean(pred.is_correct),
+        points_earned: Number(pred.points_awarded ?? pred.points_earned ?? 0),
+        participant_name: name,
+      })
+    );
+  });
+
+  return { events, participants: rawParticipants, predictions };
 }
 
 export async function getStats(): Promise<StatsOverview> {

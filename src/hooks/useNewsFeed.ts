@@ -18,22 +18,8 @@ export function useNewsFeed() {
       .then(async ([results, lb, allEvents]) => {
         if (cancelled) return;
 
-        // API returns predictions[event_id][participant_id] = Prediction
-        // (grid is "events × participants", so outer key = event_id)
-        // Always coerce IDs to numbers — JSON record keys are strings, and the
-        // API may also return numeric fields as strings in the prediction objects.
-        const allPredictions = Object.entries(results.predictions ?? {}).flatMap(
-          ([eventKey, byParticipant]) =>
-            Object.entries(byParticipant ?? {}).map(([participantKey, pred]) => ({
-              ...pred,
-              event_id: Number(pred.event_id ?? eventKey),
-              participant_id: Number(pred.participant_id ?? participantKey),
-              // Normalize is_correct: API may return 1/0 instead of true/false
-              is_correct: pred.is_correct === null || pred.is_correct === undefined
-                ? null
-                : Boolean(pred.is_correct),
-            }))
-        );
+        // getResults() now returns a flat Prediction[] already normalized
+        const allPredictions = results.predictions ?? [];
 
         const feedItems = generateNewsFeed(
           results.events ?? [],
