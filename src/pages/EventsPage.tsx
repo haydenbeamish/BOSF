@@ -1,7 +1,7 @@
 import { useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ScrollText, ChevronRight, Check, RefreshCw } from "lucide-react";
+import { ScrollText, ChevronRight, Check, RefreshCw, Radio } from "lucide-react";
 import { useEvents } from "../hooks/useEvents";
 import { SportIcon } from "../components/ui/SportIcon";
 import { StatusPill } from "../components/ui/StatusPill";
@@ -12,7 +12,7 @@ import { cn } from "../lib/cn";
 
 export function EventsPage() {
   const navigate = useNavigate();
-  const { events, allEvents, categories, selectedCategory, setSelectedCategory, loading, error, retry } = useEvents();
+  const { events, allEvents, categories, selectedCategory, setSelectedCategory, statusCounts, loading, error, retry } = useEvents();
   const scrollRef = useRef<HTMLDivElement>(null);
   const activeTabRef = useRef<HTMLButtonElement>(null);
 
@@ -87,6 +87,22 @@ export function EventsPage() {
         </div>
       </div>
 
+      {/* Status summary chips */}
+      <div className="flex gap-2 px-4 pb-2">
+        {statusCounts.live > 0 && (
+          <div className="flex items-center gap-1.5 rounded-full bg-amber-50 border border-amber-200/50 px-2.5 py-1">
+            <Radio size={10} className="text-amber-600 animate-pulse" />
+            <span className="text-[10px] font-bold text-amber-700">{statusCounts.live} Live</span>
+          </div>
+        )}
+        <div className="flex items-center gap-1.5 rounded-full bg-zinc-100 border border-zinc-200/50 px-2.5 py-1">
+          <span className="text-[10px] font-semibold text-zinc-500">{statusCounts.upcoming} Upcoming</span>
+        </div>
+        <div className="flex items-center gap-1.5 rounded-full bg-emerald-50 border border-emerald-200/50 px-2.5 py-1">
+          <span className="text-[10px] font-semibold text-emerald-600">{statusCounts.completed} Decided</span>
+        </div>
+      </div>
+
       {/* Category tabs */}
       <div
         ref={scrollRef}
@@ -123,33 +139,64 @@ export function EventsPage() {
         />
       ) : (
         <div className="flex flex-col gap-2 px-4 pt-2">
-          {events.map((evt, i) => (
-            <motion.div
-              key={evt.id}
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: i * 0.025, duration: 0.3 }}
-              onClick={() => navigate(`/events/${evt.id}`)}
-              className="flex items-center gap-3 px-4 py-3 rounded-2xl border border-zinc-200/60 bg-white cursor-pointer active:scale-[0.98] hover:shadow-md hover:-translate-y-0.5 transition-all shadow-sm"
-            >
-              <SportIcon sport={evt.sport} />
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-zinc-800 truncate">{evt.event_name}</p>
-                {evt.correct_answer ? (
-                  <div className="flex items-center gap-1 mt-0.5">
-                    <Check size={10} className="text-emerald-600" />
-                    <p className="text-xs text-emerald-600 truncate">{evt.correct_answer}</p>
+          {events.map((evt, i) => {
+            // Show section headers when status changes
+            const prevEvt = i > 0 ? events[i - 1] : null;
+            const showHeader = !prevEvt || prevEvt.status !== evt.status;
+            const sectionLabel = evt.status === "in_progress" ? "Live Now" : evt.status === "upcoming" ? "Upcoming" : "Decided";
+
+            return (
+              <div key={evt.id}>
+                {showHeader && (
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className={cn("text-[11px] font-bold uppercase tracking-wider px-1 mt-3 mb-2", i === 0 && "mt-1",
+                      evt.status === "in_progress" ? "text-amber-600" :
+                      evt.status === "upcoming" ? "text-zinc-400" :
+                      "text-emerald-600"
+                    )}
+                  >
+                    {sectionLabel}
+                  </motion.div>
+                )}
+                <motion.div
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: Math.min(i * 0.025, 0.5), duration: 0.3 }}
+                  onClick={() => navigate(`/events/${evt.id}`)}
+                  className={cn(
+                    "flex items-center gap-3 px-4 py-3 rounded-2xl border cursor-pointer active:scale-[0.98] hover:shadow-md hover:-translate-y-0.5 transition-all shadow-sm",
+                    evt.status === "in_progress"
+                      ? "border-amber-200/60 bg-amber-50/30"
+                      : "border-zinc-200/60 bg-white"
+                  )}
+                >
+                  <SportIcon sport={evt.sport} />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-zinc-800 truncate">{evt.event_name}</p>
+                    {evt.correct_answer ? (
+                      <div className="flex items-center gap-1 mt-0.5">
+                        <Check size={10} className="text-emerald-600" />
+                        <p className="text-xs text-emerald-600 truncate">{evt.correct_answer}</p>
+                      </div>
+                    ) : evt.event_date ? (
+                      <p className="text-xs text-zinc-400 mt-0.5">
+                        {new Date(evt.event_date).toLocaleDateString("en-AU", { day: "numeric", month: "short", year: "numeric" })}
+                      </p>
+                    ) : null}
                   </div>
-                ) : evt.event_date ? (
-                  <p className="text-xs text-zinc-400 mt-0.5">
-                    {new Date(evt.event_date).toLocaleDateString("en-AU", { day: "numeric", month: "short" })}
-                  </p>
-                ) : null}
+                  {evt.points_value > 1 && (
+                    <span className="text-[10px] font-bold text-amber-600 bg-amber-50 rounded-full px-1.5 py-0.5 shrink-0">
+                      {evt.points_value}pt
+                    </span>
+                  )}
+                  <StatusPill status={evt.status} />
+                  <ChevronRight size={14} className="text-zinc-300 shrink-0" />
+                </motion.div>
               </div>
-              <StatusPill status={evt.status} />
-              <ChevronRight size={14} className="text-zinc-300 shrink-0" />
-            </motion.div>
-          ))}
+            );
+          })}
         </div>
       )}
     </motion.div>

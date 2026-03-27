@@ -1,6 +1,6 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Check, X, Clock, Sparkles, RefreshCw } from "lucide-react";
+import { Check, X, Clock, Sparkles, RefreshCw, Star, Users } from "lucide-react";
 import { useEvent } from "../hooks/useEvent";
 import { SportIcon } from "../components/ui/SportIcon";
 import { StatusPill } from "../components/ui/StatusPill";
@@ -103,9 +103,11 @@ export function EventDetailPage() {
   }
 
   const isDecided = event.status === "completed";
+  const isLive = event.status === "in_progress";
   const predictions = event.predictions ?? [];
   const correctCount = predictions.filter((p) => p.is_correct === true).length;
   const groups = groupPredictions(predictions);
+  const uniqueAnswers = groups.length;
 
   return (
     <motion.div
@@ -125,10 +127,15 @@ export function EventDetailPage() {
             <div className="flex items-center gap-2 mt-2 flex-wrap">
               <StatusPill status={event.status} />
               <span className="text-xs text-zinc-400">{event.sport}</span>
-              {event.points_value > 1 && (
-                <span className="text-xs text-amber-600 font-bold">{event.points_value} pts</span>
-              )}
+              <Badge variant="gold" size="sm">
+                <Star size={8} /> {event.points_value} pt{event.points_value !== 1 ? "s" : ""}
+              </Badge>
             </div>
+            {event.event_date && (
+              <p className="text-xs text-zinc-400 mt-2">
+                {new Date(event.event_date).toLocaleDateString("en-AU", { weekday: "short", day: "numeric", month: "short", year: "numeric" })}
+              </p>
+            )}
           </div>
         </div>
 
@@ -139,117 +146,157 @@ export function EventDetailPage() {
               <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center shrink-0">
                 <Check size={20} className="text-emerald-600" />
               </div>
-              <div>
+              <div className="flex-1">
                 <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-600 mb-0.5">Result</p>
                 <p className="font-display font-extrabold text-base text-zinc-900">{event.correct_answer}</p>
               </div>
             </div>
             {predictions.length > 0 && (
-              <p className="text-xs text-zinc-400 mt-3 pt-3 border-t border-zinc-100">
-                {correctCount} of {predictions.length} got it right
-              </p>
+              <div className="flex items-center justify-between mt-3 pt-3 border-t border-zinc-100">
+                <p className="text-xs text-zinc-400">
+                  {correctCount} of {predictions.length} got it right
+                </p>
+                <span className={cn(
+                  "text-xs font-bold",
+                  correctCount === 0 ? "text-red-500" :
+                  correctCount === predictions.length ? "text-emerald-600" :
+                  "text-zinc-500"
+                )}>
+                  {correctCount === 0 ? "Total wipeout" :
+                   correctCount === predictions.length ? "Clean sweep!" :
+                   `${Math.round((correctCount / predictions.length) * 100)}% correct`}
+                </span>
+              </div>
             )}
           </GlassCard>
+        )}
+
+        {/* Live indicator */}
+        {isLive && (
+          <motion.div
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mt-4 rounded-xl bg-amber-50 border border-amber-200/40 px-4 py-3 flex items-center gap-2"
+          >
+            <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
+            <p className="text-xs text-amber-700 font-medium">This event is live — result pending</p>
+          </motion.div>
         )}
       </div>
 
       {/* Grouped Predictions */}
       <div className="px-4">
-        <h3 className="text-[11px] font-bold uppercase tracking-wider text-zinc-400 mb-3 px-1">
-          All Picks ({predictions.length})
-        </h3>
+        <div className="flex items-center justify-between mb-3 px-1">
+          <h3 className="text-[11px] font-bold uppercase tracking-wider text-zinc-400">
+            All Picks ({predictions.length})
+          </h3>
+          {uniqueAnswers > 1 && (
+            <span className="text-[10px] text-zinc-400">
+              {uniqueAnswers} different answers
+            </span>
+          )}
+        </div>
 
-        <div className="flex flex-col gap-4">
-          {groups.map((group, gi) => (
-            <motion.div
-              key={group.answer}
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: gi * 0.05, duration: 0.3 }}
-            >
-              {/* Group header */}
-              <div className={cn(
-                "flex items-center gap-2 mb-2 px-1",
-              )}>
-                <div className={cn(
-                  "flex-1 flex items-center gap-2 min-w-0",
-                )}>
-                  <span className={cn(
-                    "font-display font-bold text-sm truncate",
-                    group.isCorrect === true ? "text-emerald-700" :
-                    group.isCorrect === false ? "text-red-500" :
-                    "text-zinc-700"
-                  )}>
-                    {group.answer}
-                  </span>
-                  {group.isCorrect === true && (
-                    <Check size={14} className="text-emerald-600 shrink-0" />
-                  )}
-                  {group.isOutlier && (
-                    <Badge variant="void" size="sm" className="shrink-0">
-                      <Sparkles size={8} /> Outlier
-                    </Badge>
-                  )}
-                </div>
-                <span className="text-xs text-zinc-400 shrink-0">
-                  {group.predictions.length} pick{group.predictions.length !== 1 ? "s" : ""} ({group.percentage}%)
-                </span>
-              </div>
-
-              {/* Consensus bar */}
-              <div className="h-1.5 rounded-full bg-zinc-100 mb-2 mx-1 overflow-hidden">
-                <div
-                  className={cn(
-                    "h-full rounded-full transition-all",
-                    group.isCorrect === true ? "bg-emerald-400" :
-                    group.isCorrect === false ? "bg-red-300" :
-                    "bg-zinc-300"
-                  )}
-                  style={{ width: `${group.percentage}%` }}
-                />
-              </div>
-
-              {/* Participants in this group */}
-              <div className="flex flex-col gap-1.5">
-                {group.predictions.map((pred, i) => (
-                  <div
-                    key={pred.id ?? `${pred.participant_id}-${i}`}
-                    onClick={() => navigate(`/player/${pred.participant_id}`)}
-                    className={cn(
-                      "flex items-center gap-3 px-3 py-2.5 rounded-xl border cursor-pointer active:scale-[0.98] transition-all",
-                      group.isCorrect === true
-                        ? "border-emerald-200/40 bg-emerald-50/50"
-                        : group.isCorrect === false
-                        ? "border-red-200/30 bg-red-50/30"
-                        : "border-zinc-200/60 bg-white"
-                    )}
-                  >
-                    <Avatar name={pred.participant_name ?? "?"} id={pred.participant_id} size="sm" />
-                    <span className="font-display font-semibold text-sm text-zinc-800 flex-1 truncate">
-                      {pred.participant_name}
+        {predictions.length === 0 ? (
+          <div className="text-center py-12">
+            <Users size={24} className="mx-auto text-zinc-300 mb-3" />
+            <p className="text-sm text-zinc-400 font-medium">No predictions yet</p>
+            <p className="text-xs text-zinc-300 mt-1">Picks will appear here once members submit them.</p>
+          </div>
+        ) : (
+          <div className="flex flex-col gap-4">
+            {groups.map((group, gi) => (
+              <motion.div
+                key={group.answer}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: gi * 0.05, duration: 0.3 }}
+              >
+                {/* Group header */}
+                <div className="flex items-center gap-2 mb-2 px-1">
+                  <div className="flex-1 flex items-center gap-2 min-w-0">
+                    <span className={cn(
+                      "font-display font-bold text-sm truncate",
+                      group.isCorrect === true ? "text-emerald-700" :
+                      group.isCorrect === false ? "text-red-500" :
+                      "text-zinc-700"
+                    )}>
+                      {group.answer}
                     </span>
-
-                    {isDecided && (
-                      <div className={cn(
-                        "w-6 h-6 rounded-lg flex items-center justify-center shrink-0",
-                        pred.is_correct ? "bg-emerald-100" : "bg-red-100"
-                      )}>
-                        {pred.is_correct ? (
-                          <Check size={12} className="text-emerald-600" />
-                        ) : (
-                          <X size={12} className="text-red-400" />
-                        )}
-                      </div>
+                    {group.isCorrect === true && (
+                      <Check size={14} className="text-emerald-600 shrink-0" />
                     )}
-                    {!isDecided && (
-                      <Clock size={12} className="text-zinc-400 shrink-0" />
+                    {group.isCorrect === false && isDecided && (
+                      <X size={12} className="text-red-400 shrink-0" />
+                    )}
+                    {group.isOutlier && (
+                      <Badge variant="void" size="sm" className="shrink-0">
+                        <Sparkles size={8} /> Outlier
+                      </Badge>
                     )}
                   </div>
-                ))}
-              </div>
-            </motion.div>
-          ))}
-        </div>
+                  <span className="text-xs text-zinc-400 shrink-0">
+                    {group.predictions.length} pick{group.predictions.length !== 1 ? "s" : ""} ({group.percentage}%)
+                  </span>
+                </div>
+
+                {/* Consensus bar - animated */}
+                <div className="h-1.5 rounded-full bg-zinc-100 mb-2 mx-1 overflow-hidden">
+                  <motion.div
+                    initial={{ width: 0 }}
+                    animate={{ width: `${group.percentage}%` }}
+                    transition={{ delay: gi * 0.05 + 0.2, duration: 0.5, ease: "easeOut" }}
+                    className={cn(
+                      "h-full rounded-full",
+                      group.isCorrect === true ? "bg-emerald-400" :
+                      group.isCorrect === false ? "bg-red-300" :
+                      "bg-zinc-300"
+                    )}
+                  />
+                </div>
+
+                {/* Participants in this group */}
+                <div className="flex flex-col gap-1.5">
+                  {group.predictions.map((pred, i) => (
+                    <div
+                      key={pred.id ?? `${pred.participant_id}-${i}`}
+                      onClick={() => navigate(`/player/${pred.participant_id}`)}
+                      className={cn(
+                        "flex items-center gap-3 px-3 py-2.5 rounded-xl border cursor-pointer active:scale-[0.98] transition-all",
+                        group.isCorrect === true
+                          ? "border-emerald-200/40 bg-emerald-50/50"
+                          : group.isCorrect === false
+                          ? "border-red-200/30 bg-red-50/30"
+                          : "border-zinc-200/60 bg-white"
+                      )}
+                    >
+                      <Avatar name={pred.participant_name ?? "?"} id={pred.participant_id} size="sm" />
+                      <span className="font-display font-semibold text-sm text-zinc-800 flex-1 truncate">
+                        {pred.participant_name}
+                      </span>
+
+                      {isDecided && (
+                        <div className={cn(
+                          "w-6 h-6 rounded-lg flex items-center justify-center shrink-0",
+                          pred.is_correct ? "bg-emerald-100" : "bg-red-100"
+                        )}>
+                          {pred.is_correct ? (
+                            <Check size={12} className="text-emerald-600" />
+                          ) : (
+                            <X size={12} className="text-red-400" />
+                          )}
+                        </div>
+                      )}
+                      {!isDecided && (
+                        <Clock size={12} className="text-zinc-400 shrink-0" />
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        )}
 
         {/* Brave Search: Latest news for this event */}
         <EventNews eventName={event.event_name} sport={event.sport} />

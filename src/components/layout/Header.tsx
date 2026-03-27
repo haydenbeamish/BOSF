@@ -1,21 +1,28 @@
 import { useLocation, useNavigate } from "react-router-dom";
 import { ChevronLeft } from "lucide-react";
 
+const PAGE_TITLES: Record<string, string> = {
+  "/leaderboard": "Leaderboard",
+  "/events": "Events",
+  "/members": "Members",
+};
+
 export function Header() {
   const location = useLocation();
   const navigate = useNavigate();
   const isSubPage = /^\/(player|events)\/\d+/.test(location.pathname);
+  const pageTitle = PAGE_TITLES[location.pathname];
 
   function handleBack() {
-    // Navigate to the logical parent route instead of relying on browser history
     if (location.pathname.startsWith("/events/")) {
       navigate("/events");
     } else if (location.pathname.startsWith("/player/")) {
-      // Go back in history if available, otherwise fallback to leaderboard
-      if (window.history.length > 1) {
+      // Try to go back in history; if we came from somewhere within the app it'll work.
+      // If direct navigation, fallback to members page.
+      if (window.history.state?.idx > 0) {
         navigate(-1);
       } else {
-        navigate("/leaderboard");
+        navigate("/members");
       }
     } else {
       navigate(-1);
@@ -34,15 +41,20 @@ export function Header() {
             >
               <ChevronLeft size={20} />
             </button>
-            <h1 className="font-display font-bold text-sm text-zinc-900">Back</h1>
+            <h1 className="font-display font-bold text-sm text-zinc-900">
+              {location.pathname.startsWith("/events/") ? "Event Details" : "Player Profile"}
+            </h1>
           </>
         ) : (
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2.5">
             <img
               src="/logo.png"
               alt="BOSF"
               className="w-8 h-8 rounded-lg object-contain"
             />
+            {pageTitle && (
+              <h1 className="font-display font-bold text-sm text-zinc-900">{pageTitle}</h1>
+            )}
           </div>
         )}
       </div>

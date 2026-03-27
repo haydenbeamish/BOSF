@@ -1,9 +1,11 @@
+import { useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Trophy, Target, Clock, Check, X, Flame, RefreshCw } from "lucide-react";
+import { Trophy, Target, Clock, Check, X, Flame, RefreshCw, Zap } from "lucide-react";
 import { usePlayer } from "../hooks/usePlayer";
 import { Avatar } from "../components/ui/Avatar";
 import { GlassCard } from "../components/ui/GlassCard";
+import { Badge } from "../components/ui/Badge";
 import { SportIcon } from "../components/ui/SportIcon";
 import { Skeleton } from "../components/ui/Skeleton";
 import { EmptyState } from "../components/ui/EmptyState";
@@ -15,6 +17,55 @@ export function PlayerPage() {
   const navigate = useNavigate();
   const numId = Number(id);
   const { data, loading, error, retry } = usePlayer(numId);
+
+  // Compute derived stats
+  const stats = useMemo(() => {
+    if (!data) return null;
+    const { predictions, total_points } = data;
+    const wins = predictions.filter((p) => p.is_correct === true).length;
+    const losses = predictions.filter((p) => p.is_correct === false).length;
+    const pending = predictions.filter((p) => p.is_correct === null).length;
+    const winRate = (wins + losses) > 0 ? Math.round((wins / (wins + losses)) * 100) : 0;
+
+    // Sort decided by most recent (highest event_id = most recently created)
+    const decided = predictions
+      .filter((p) => p.is_correct !== null)
+      .sort((a, b) => (b.event_id ?? 0) - (a.event_id ?? 0));
+    const pendingList = predictions
+      .filter((p) => p.is_correct === null)
+      .sort((a, b) => (a.event_id ?? 0) - (b.event_id ?? 0));
+
+    // Best sport: sport with highest win rate (min 2 decided)
+    const sportStats: Record<string, { wins: number; total: number }> = {};
+    for (const pred of predictions) {
+      if (pred.is_correct !== null && pred.sport) {
+        if (!sportStats[pred.sport]) sportStats[pred.sport] = { wins: 0, total: 0 };
+        sportStats[pred.sport].total++;
+        if (pred.is_correct) sportStats[pred.sport].wins++;
+      }
+    }
+    const bestSport = Object.entries(sportStats)
+      .filter(([, s]) => s.total >= 2)
+      .sort((a, b) => (b[1].wins / b[1].total) - (a[1].wins / a[1].total))
+      .map(([sport, s]) => ({ sport, winRate: Math.round((s.wins / s.total) * 100), wins: s.wins, total: s.total }))[0] ?? null;
+
+    // Current streak
+    let currentStreak = 0;
+    let streakType: "win" | "lose" | null = null;
+    for (const pred of decided) {
+      if (pred.is_correct === true) {
+        if (streakType === "lose") break;
+        streakType = "win";
+        currentStreak++;
+      } else if (pred.is_correct === false) {
+        if (streakType === "win") break;
+        streakType = "lose";
+        currentStreak++;
+      }
+    }
+
+    return { wins, losses, pending, winRate, decided, pendingList, total_points, bestSport, currentStreak, streakType };
+  }, [data]);
 
   if (!id || isNaN(numId)) {
     return <EmptyState icon={<X size={28} />} title="Invalid player" description="This player doesn't exist." />;
@@ -31,11 +82,12 @@ export function PlayerPage() {
       </EmptyState>
     );
   }
-  if (loading || !data) {
+  if (loading || !data || !stats) {
     return (
       <div className="px-4 pt-6 flex flex-col gap-3">
         <Skeleton className="h-32 rounded-2xl" />
-        <div className="grid grid-cols-3 gap-2">
+        <div className="grid grid-cols-4 gap-2">
+          <Skeleton className="h-20" />
           <Skeleton className="h-20" />
           <Skeleton className="h-20" />
           <Skeleton className="h-20" />
@@ -47,13 +99,8 @@ export function PlayerPage() {
     );
   }
 
-  const { participant, predictions, total_points } = data;
-  const wins = predictions.filter((p) => p.is_correct === true).length;
-  const losses = predictions.filter((p) => p.is_correct === false).length;
-  const pending = predictions.filter((p) => p.is_correct === null).length;
-  const winRate = (wins + losses) > 0 ? Math.round((wins / (wins + losses)) * 100) : 0;
-  const decided = predictions.filter((p) => p.is_correct !== null);
-  const pendingList = predictions.filter((p) => p.is_correct === null);
+  const { participant } = data;
+  const { wins, losses, pending, winRate, decided, pendingList, total_points, bestSport, currentStreak, streakType } = stats;
 
   return (
     <motion.div
@@ -76,6 +123,23 @@ export function PlayerPage() {
               </p>
             </div>
           </div>
+
+          {/* Streak & best sport badges */}
+          {(currentStreak >= 2 || bestSport) && (
+            <div className="flex flex-wrap gap-2 mt-4 pt-3 border-t border-zinc-100">
+              {currentStreak >= 2 && streakType && (
+                <Badge variant={streakType === "win" ? "accent" : "loss"}>
+                  {streakType === "win" ? <Zap size={9} /> : <Flame size={9} />}
+                  {currentStreak} {streakType === "win" ? "win" : "loss"} streak
+                </Badge>
+              )}
+              {bestSport && (
+                <Badge variant="gold">
+                  Best: {bestSport.sport} ({bestSport.winRate}%)
+                </Badge>
+              )}
+            </div>
+          )}
         </GlassCard>
       </div>
 
@@ -123,7 +187,7 @@ export function PlayerPage() {
                 key={pred.id ?? `d-${pred.event_id}-${i}`}
                 initial={{ opacity: 0, x: -10 }}
                 animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.2 + i * 0.02 }}
+                transition={{ delay: 0.2 + Math.min(i * 0.02, 0.4) }}
                 onClick={() => navigate(`/events/${pred.event_id}`)}
                 className={cn(
                   "flex items-center gap-3 px-3 py-2.5 rounded-2xl border cursor-pointer active:scale-[0.98] transition-all",
@@ -166,7 +230,7 @@ export function PlayerPage() {
                 key={pred.id ?? `p-${pred.event_id}-${i}`}
                 initial={{ opacity: 0, x: -10 }}
                 animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.15 + i * 0.02 }}
+                transition={{ delay: 0.15 + Math.min(i * 0.02, 0.4) }}
                 onClick={() => navigate(`/events/${pred.event_id}`)}
                 className="flex items-center gap-3 px-3 py-2.5 rounded-2xl border border-zinc-200/60 bg-white cursor-pointer active:scale-[0.98] transition-all shadow-sm"
               >
@@ -184,7 +248,7 @@ export function PlayerPage() {
         </div>
       )}
 
-      {predictions.length === 0 && (
+      {data.predictions.length === 0 && (
         <EmptyState
           icon={<Flame size={24} />}
           title="No predictions yet"
