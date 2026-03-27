@@ -18,13 +18,13 @@ export function useNewsFeed() {
         if (cancelled) return;
 
         // Flatten predictions from the nested record
-        const allPredictions = Object.values(results.predictions).flatMap((byEvent) =>
-          Object.values(byEvent)
+        const allPredictions = Object.values(results.predictions ?? {}).flatMap((byEvent) =>
+          Object.values(byEvent ?? {})
         );
 
         const feedItems = generateNewsFeed(
-          results.events,
-          results.participants,
+          results.events ?? [],
+          results.participants ?? [],
           allPredictions,
           lb
         );
