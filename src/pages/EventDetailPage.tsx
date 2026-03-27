@@ -9,6 +9,7 @@ import { GlassCard } from "../components/ui/GlassCard";
 import { Badge } from "../components/ui/Badge";
 import { Skeleton } from "../components/ui/Skeleton";
 import { EmptyState } from "../components/ui/EmptyState";
+import { EventNews } from "../components/feed/EventNews";
 import { cn } from "../lib/cn";
 
 interface PredictionGroup {
@@ -240,6 +241,9 @@ export function EventDetailPage() {
             </motion.div>
           ))}
         </div>
+
+        {/* Brave Search: Latest news for this event */}
+        <EventNews eventName={event.event_name} sport={event.sport} />
       </div>
     </motion.div>
   );
