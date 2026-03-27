@@ -1,6 +1,6 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Check, X, Clock, Sparkles } from "lucide-react";
+import { Check, X, Clock, Sparkles, RefreshCw } from "lucide-react";
 import { useEvent } from "../hooks/useEvent";
 import { SportIcon } from "../components/ui/SportIcon";
 import { StatusPill } from "../components/ui/StatusPill";
@@ -74,13 +74,22 @@ export function EventDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const numId = Number(id);
-  const { event, loading, error } = useEvent(numId);
+  const { event, loading, error, retry } = useEvent(numId);
 
   if (!id || isNaN(numId)) {
     return <EmptyState icon={<X size={28} />} title="Invalid event" description="This event doesn't exist." />;
   }
   if (error) {
-    return <EmptyState icon={<X size={28} />} title="Couldn't load event" description={error} />;
+    return (
+      <EmptyState icon={<X size={28} />} title="Couldn't load event" description={error}>
+        <button
+          onClick={retry}
+          className="mt-4 flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-50 text-emerald-700 text-sm font-semibold active:scale-95 transition-transform"
+        >
+          <RefreshCw size={14} /> Try again
+        </button>
+      </EmptyState>
+    );
   }
   if (loading || !event) {
     return (

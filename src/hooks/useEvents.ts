@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import type { CompetitionEvent } from "../types";
 import { getEvents } from "../data/api";
 
@@ -8,24 +8,23 @@ export function useEvents() {
   const [error, setError] = useState<string | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string>("All");
 
-  useEffect(() => {
-    let cancelled = false;
+  const fetchData = useCallback(() => {
     setLoading(true);
+    setError(null);
     getEvents()
       .then((data) => {
-        if (!cancelled) {
-          setEvents(data);
-          setLoading(false);
-        }
+        setEvents(data);
+        setLoading(false);
       })
       .catch((err) => {
-        if (!cancelled) {
-          setError(err instanceof Error ? err.message : String(err));
-          setLoading(false);
-        }
+        setError(err instanceof Error ? err.message : String(err));
+        setLoading(false);
       });
-    return () => { cancelled = true; };
   }, []);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
 
   const categories = useMemo(() => {
     const cats = new Set(events.map((e) => e.sport));
@@ -45,5 +44,6 @@ export function useEvents() {
     setSelectedCategory,
     loading,
     error,
+    retry: fetchData,
   };
 }

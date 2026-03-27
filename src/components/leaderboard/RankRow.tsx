@@ -3,10 +3,10 @@ import { useNavigate } from "react-router-dom";
 import { ChevronRight } from "lucide-react";
 import { Avatar } from "../ui/Avatar";
 import { cn } from "../../lib/cn";
-import type { LeaderboardEntry } from "../../types";
+import type { EnhancedLeaderboardEntry } from "../../hooks/useLeaderboard";
 
 interface RankRowProps {
-  entry: LeaderboardEntry;
+  entry: EnhancedLeaderboardEntry;
   isSpud: boolean;
   index: number;
   totalEntries: number;
@@ -14,9 +14,7 @@ interface RankRowProps {
 
 export function RankRow({ entry, isSpud, index }: RankRowProps) {
   const navigate = useNavigate();
-  const winRate = entry.total_predictions > 0
-    ? Math.round((entry.correct_predictions / entry.total_predictions) * 100)
-    : 0;
+  const winRate = entry.win_rate;
 
   return (
     <motion.div
@@ -56,7 +54,7 @@ export function RankRow({ entry, isSpud, index }: RankRowProps) {
         </div>
         <div className="flex items-center gap-2 mt-0.5">
           <span className="text-[11px] text-zinc-400">
-            {entry.correct_predictions}/{entry.total_predictions} correct
+            {entry.correct_predictions}/{entry.decided_predictions} correct
           </span>
           <span className="text-[11px] text-zinc-300">&middot;</span>
           <span className={cn("text-[11px] font-semibold", winRate >= 50 ? "text-emerald-600" : "text-zinc-400")}>
