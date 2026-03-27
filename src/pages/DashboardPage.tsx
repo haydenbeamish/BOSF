@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Trophy, ChevronRight, Zap, Newspaper, ScrollText, Check, Clock } from "lucide-react";
+import { Trophy, ChevronRight, Zap, Newspaper, ScrollText } from "lucide-react";
 import { useNewsFeed } from "../hooks/useNewsFeed";
 import { GlassCard } from "../components/ui/GlassCard";
 import { Avatar } from "../components/ui/Avatar";
