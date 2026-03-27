@@ -78,22 +78,32 @@ export function DashboardPage() {
       className="pb-24"
     >
       {/* Welcome header */}
-      <div className="px-4 pt-5 pb-4">
-        <motion.h1
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="font-display font-extrabold text-xl text-zinc-100"
-        >
-          BOSF
-        </motion.h1>
-        <motion.p
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.05 }}
-          className="text-sm text-surface-500 mt-0.5"
-        >
-          Punting Leaderboard &middot; {totalCount} events
-        </motion.p>
+      <div className="px-4 pt-5 pb-4 flex items-center gap-3">
+        <motion.img
+          src="/logo.png"
+          alt="BOSF Logo"
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.3 }}
+          className="h-16 w-16 object-contain rounded-xl"
+        />
+        <div>
+          <motion.h1
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="font-display font-extrabold text-xl text-zinc-100"
+          >
+            BOSF
+          </motion.h1>
+          <motion.p
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.05 }}
+            className="text-sm text-surface-500 mt-0.5"
+          >
+            Punting Leaderboard &middot; {totalCount} events
+          </motion.p>
+        </div>
       </div>
 
       {/* Key stats grid */}
