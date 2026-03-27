@@ -18,7 +18,6 @@ export function useLeaderboard() {
 
     Promise.all([getLeaderboard(), getResults()])
       .then(([leaderboard, results]) => {
-        // Compute per-player decided prediction counts from results data
         const allPredictions = Object.values(results.predictions ?? {}).flatMap((byEvent) =>
           Object.values(byEvent ?? {})
         );
@@ -60,7 +59,15 @@ export function useLeaderboard() {
     fetchData();
   }, [fetchData]);
 
-  const spud = entries.length > 0 ? entries[entries.length - 1] : null;
+  // Spud = last place, but only if they're actually behind everyone else (not tied)
+  const spud = (() => {
+    if (entries.length < 2) return null;
+    const last = entries[entries.length - 1];
+    const secondLast = entries[entries.length - 2];
+    // Only show spud if they're strictly behind the second-to-last person
+    if (last.total_points < secondLast.total_points) return last;
+    return null;
+  })();
 
   return { entries, spud, loading, error, retry: fetchData };
 }

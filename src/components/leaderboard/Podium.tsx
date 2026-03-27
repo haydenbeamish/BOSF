@@ -38,7 +38,11 @@ export function Podium({ entries, onSelect }: PodiumProps) {
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2, duration: 0.5 }}
+            role="button"
+            tabIndex={0}
             onClick={() => onSelect(second.id)}
+            onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onSelect(second.id); } }}
+            aria-label={`${second.name}, 2nd place, ${second.total_points} points`}
             className="flex flex-col items-center cursor-pointer active:scale-95 transition-transform"
           >
             <Avatar name={second.name} id={second.id} size="lg" ringColor="silver" />
@@ -57,7 +61,11 @@ export function Podium({ entries, onSelect }: PodiumProps) {
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1, duration: 0.5 }}
+          role="button"
+          tabIndex={0}
           onClick={() => onSelect(first.id)}
+          onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onSelect(first.id); } }}
+          aria-label={`${first.name}, 1st place, ${first.total_points} points`}
           className="flex flex-col items-center cursor-pointer active:scale-95 transition-transform"
         >
           <div className="relative">
@@ -81,7 +89,11 @@ export function Podium({ entries, onSelect }: PodiumProps) {
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3, duration: 0.5 }}
+            role="button"
+            tabIndex={0}
             onClick={() => onSelect(third.id)}
+            onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onSelect(third.id); } }}
+            aria-label={`${third.name}, 3rd place, ${third.total_points} points`}
             className="flex flex-col items-center cursor-pointer active:scale-95 transition-transform"
           >
             <Avatar name={third.name} id={third.id} size="lg" ringColor="bronze" />

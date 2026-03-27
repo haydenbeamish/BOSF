@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Trophy, Target, Flame, RefreshCw } from "lucide-react";
+import { Trophy, Target, Flame, RefreshCw, TrendingUp } from "lucide-react";
 import { useLeaderboard } from "../hooks/useLeaderboard";
 import { Podium } from "../components/leaderboard/Podium";
 import { RankRow } from "../components/leaderboard/RankRow";
@@ -61,6 +61,9 @@ export function LeaderboardPage() {
   const groupWinRate = totalDecided > 0 ? Math.round((totalCorrect / totalDecided) * 100) : 0;
   const topScore = entries[0]?.total_points ?? 0;
 
+  // Find the tightest race at the top (gap between 1st and 2nd)
+  const topGap = entries.length >= 2 ? entries[0].total_points - entries[1].total_points : 0;
+
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -92,6 +95,23 @@ export function LeaderboardPage() {
         />
       </div>
 
+      {/* Race tightness indicator */}
+      {entries.length >= 2 && topGap <= 3 && (
+        <motion.div
+          initial={{ opacity: 0, y: 6 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+          className="mx-4 mt-3 rounded-xl bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200/30 px-4 py-2.5 flex items-center gap-2"
+        >
+          <TrendingUp size={14} className="text-amber-600 shrink-0" />
+          <p className="text-xs text-amber-700 font-medium">
+            {topGap === 0
+              ? `${entries[0].name} and ${entries[1].name} are tied at the top!`
+              : `Only ${topGap} point${topGap === 1 ? "" : "s"} between 1st and 2nd — it's a tight race!`}
+          </p>
+        </motion.div>
+      )}
+
       {/* Podium */}
       <Podium entries={entries} onSelect={(id) => navigate(`/player/${id}`)} />
 
@@ -99,22 +119,24 @@ export function LeaderboardPage() {
       {spud && <SpudBanner spud={spud} />}
 
       {/* Rest of rankings */}
-      <div className="px-4 mt-2">
-        <h3 className="text-[11px] font-bold uppercase tracking-wider text-zinc-400 mb-3 px-1">
-          Full Standings
-        </h3>
-        <div className="flex flex-col gap-2">
-          {entries.slice(3).map((entry, i) => (
-            <RankRow
-              key={entry.id}
-              entry={entry}
-              isSpud={spud?.id === entry.id}
-              index={i}
-              totalEntries={entries.length}
-            />
-          ))}
+      {entries.length > 3 && (
+        <div className="px-4 mt-2">
+          <h3 className="text-[11px] font-bold uppercase tracking-wider text-zinc-400 mb-3 px-1">
+            Full Standings
+          </h3>
+          <div className="flex flex-col gap-2">
+            {entries.slice(3).map((entry, i) => (
+              <RankRow
+                key={entry.id}
+                entry={entry}
+                isSpud={spud?.id === entry.id}
+                index={i}
+                totalEntries={entries.length}
+              />
+            ))}
+          </div>
         </div>
-      </div>
+      )}
     </motion.div>
   );
 }

@@ -34,6 +34,11 @@ const TYPE_STYLES: Record<string, { bg: string; border: string; accent: string }
     border: "border-violet-200/40",
     accent: "text-violet-700",
   },
+  close_race: {
+    bg: "bg-amber-50/60",
+    border: "border-amber-200/40",
+    accent: "text-amber-700",
+  },
   hot_take: {
     bg: "bg-sky-50/60",
     border: "border-sky-200/40",
