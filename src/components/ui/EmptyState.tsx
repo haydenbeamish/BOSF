@@ -4,9 +4,10 @@ interface EmptyStateProps {
   icon: React.ReactNode;
   title: string;
   description: string;
+  children?: React.ReactNode;
 }
 
-export function EmptyState({ icon, title, description }: EmptyStateProps) {
+export function EmptyState({ icon, title, description, children }: EmptyStateProps) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -19,6 +20,7 @@ export function EmptyState({ icon, title, description }: EmptyStateProps) {
       </div>
       <h3 className="font-display font-bold text-base text-zinc-700 mb-1">{title}</h3>
       <p className="text-sm text-zinc-500 max-w-xs">{description}</p>
+      {children}
     </motion.div>
   );
 }

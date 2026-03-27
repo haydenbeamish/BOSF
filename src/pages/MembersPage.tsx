@@ -1,35 +1,28 @@
-import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Users, ChevronRight } from "lucide-react";
-import { getLeaderboard } from "../data/api";
+import { Users, ChevronRight, RefreshCw } from "lucide-react";
+import { useLeaderboard } from "../hooks/useLeaderboard";
 import { Avatar } from "../components/ui/Avatar";
 import { Badge } from "../components/ui/Badge";
 import { Skeleton } from "../components/ui/Skeleton";
 import { EmptyState } from "../components/ui/EmptyState";
 import { cn } from "../lib/cn";
-import type { LeaderboardEntry } from "../types";
 
 export function MembersPage() {
   const navigate = useNavigate();
-  const [members, setMembers] = useState<LeaderboardEntry[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    let cancelled = false;
-    getLeaderboard()
-      .then((data) => {
-        if (!cancelled) { setMembers(data); setLoading(false); }
-      })
-      .catch((err) => {
-        if (!cancelled) { setError(err instanceof Error ? err.message : String(err)); setLoading(false); }
-      });
-    return () => { cancelled = true; };
-  }, []);
+  const { entries: members, loading, error, retry } = useLeaderboard();
 
   if (error) {
-    return <EmptyState icon={<Users size={28} />} title="Couldn't load members" description={error} />;
+    return (
+      <EmptyState icon={<Users size={28} />} title="Couldn't load members" description={error}>
+        <button
+          onClick={retry}
+          className="mt-4 flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-50 text-emerald-700 text-sm font-semibold active:scale-95 transition-transform"
+        >
+          <RefreshCw size={14} /> Try again
+        </button>
+      </EmptyState>
+    );
   }
 
   if (loading) {
@@ -55,57 +48,55 @@ export function MembersPage() {
       </div>
 
       <div className="flex flex-col gap-2 px-4">
-        {members.map((member, i) => {
-          const winRate = member.total_predictions > 0
-            ? Math.round((member.correct_predictions / member.total_predictions) * 100)
-            : 0;
-
-          return (
-            <motion.div
-              key={member.id}
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: i * 0.04, duration: 0.3 }}
-              onClick={() => navigate(`/player/${member.id}`)}
-              className="flex items-center gap-3 px-4 py-4 rounded-2xl border border-zinc-200/60 bg-white cursor-pointer active:scale-[0.98] hover:shadow-md hover:-translate-y-0.5 transition-all shadow-sm"
-            >
-              <div className="relative">
-                <Avatar name={member.name} id={member.id} size="lg" />
-                <div className="absolute -top-0.5 -right-0.5 w-5 h-5 rounded-full bg-white shadow-sm border border-zinc-200/60 flex items-center justify-center">
-                  <span className={cn(
-                    "text-[9px] font-display font-extrabold",
-                    member.rank <= 3 ? "text-amber-600" : "text-zinc-400"
-                  )}>
-                    {member.rank}
-                  </span>
-                </div>
-              </div>
-
-              <div className="flex-1 min-w-0">
-                <p className="font-display font-bold text-sm text-zinc-900 truncate">{member.name}</p>
-                <div className="flex items-center gap-2 mt-1">
-                  <Badge variant={winRate >= 50 ? "accent" : "default"} size="sm">
-                    {winRate}% win rate
-                  </Badge>
-                  <span className="text-[11px] text-zinc-400">
-                    {member.correct_predictions} correct
-                  </span>
-                </div>
-              </div>
-
-              <div className="text-right shrink-0">
-                <p className={cn(
-                  "font-display font-extrabold text-base tabular-nums",
-                  member.rank === 1 ? "text-amber-600" : "text-zinc-800"
+        {members.map((member, i) => (
+          <motion.div
+            key={member.id}
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: i * 0.04, duration: 0.3 }}
+            onClick={() => navigate(`/player/${member.id}`)}
+            className="flex items-center gap-3 px-4 py-4 rounded-2xl border border-zinc-200/60 bg-white cursor-pointer active:scale-[0.98] hover:shadow-md hover:-translate-y-0.5 transition-all shadow-sm"
+          >
+            <div className="relative">
+              <Avatar name={member.name} id={member.id} size="lg" />
+              <div className="absolute -top-0.5 -right-0.5 w-5 h-5 rounded-full bg-white shadow-sm border border-zinc-200/60 flex items-center justify-center">
+                <span className={cn(
+                  "text-[9px] font-display font-extrabold",
+                  member.rank <= 3 ? "text-amber-600" : "text-zinc-400"
                 )}>
-                  {member.total_points}
-                </p>
-                <p className="text-[9px] font-semibold uppercase tracking-wider text-zinc-400">pts</p>
+                  {member.rank}
+                </span>
               </div>
-              <ChevronRight size={14} className="text-zinc-300 shrink-0" />
-            </motion.div>
-          );
-        })}
+            </div>
+
+            <div className="flex-1 min-w-0">
+              <p className="font-display font-bold text-sm text-zinc-900 truncate">{member.name}</p>
+              <div className="flex items-center gap-2 mt-1">
+                {member.decided_predictions > 0 ? (
+                  <Badge variant={member.win_rate >= 50 ? "accent" : "default"} size="sm">
+                    {member.win_rate}% win rate
+                  </Badge>
+                ) : (
+                  <Badge variant="default" size="sm">No results yet</Badge>
+                )}
+                <span className="text-[11px] text-zinc-400">
+                  {member.correct_predictions} correct
+                </span>
+              </div>
+            </div>
+
+            <div className="text-right shrink-0">
+              <p className={cn(
+                "font-display font-extrabold text-base tabular-nums",
+                member.rank === 1 ? "text-amber-600" : "text-zinc-800"
+              )}>
+                {member.total_points}
+              </p>
+              <p className="text-[9px] font-semibold uppercase tracking-wider text-zinc-400">pts</p>
+            </div>
+            <ChevronRight size={14} className="text-zinc-300 shrink-0" />
+          </motion.div>
+        ))}
       </div>
     </motion.div>
   );

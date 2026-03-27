@@ -13,14 +13,14 @@ interface StatCardProps {
 }
 
 export function StatCard({ label, value, trend, trendLabel, icon, accent = "default", delay = 0 }: StatCardProps) {
-  const trendColor = !trend ? "text-zinc-400" : trend > 0 ? "text-accent" : "text-loss";
+  const trendColor = !trend ? "text-zinc-400" : trend > 0 ? "text-emerald-600" : "text-red-500";
   const TrendIcon = !trend ? Minus : trend > 0 ? TrendingUp : TrendingDown;
 
   const valueColor = {
     default: "text-zinc-900",
-    accent: "text-accent",
+    accent: "text-emerald-600",
     gold: "text-gradient-gold",
-    loss: "text-loss",
+    loss: "text-red-500",
   }[accent];
 
   return (

@@ -1,7 +1,7 @@
 import { useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ScrollText, ChevronRight, Check } from "lucide-react";
+import { ScrollText, ChevronRight, Check, RefreshCw } from "lucide-react";
 import { useEvents } from "../hooks/useEvents";
 import { SportIcon } from "../components/ui/SportIcon";
 import { StatusPill } from "../components/ui/StatusPill";
@@ -12,7 +12,7 @@ import { cn } from "../lib/cn";
 
 export function EventsPage() {
   const navigate = useNavigate();
-  const { events, allEvents, categories, selectedCategory, setSelectedCategory, loading, error } = useEvents();
+  const { events, allEvents, categories, selectedCategory, setSelectedCategory, loading, error, retry } = useEvents();
   const scrollRef = useRef<HTMLDivElement>(null);
   const activeTabRef = useRef<HTMLButtonElement>(null);
 
@@ -31,7 +31,14 @@ export function EventsPage() {
         icon={<ScrollText size={28} />}
         title="Couldn't load events"
         description={error}
-      />
+      >
+        <button
+          onClick={retry}
+          className="mt-4 flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-50 text-emerald-700 text-sm font-semibold active:scale-95 transition-transform"
+        >
+          <RefreshCw size={14} /> Try again
+        </button>
+      </EmptyState>
     );
   }
 

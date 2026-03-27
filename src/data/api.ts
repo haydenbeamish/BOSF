@@ -41,7 +41,25 @@ export async function getEvents(status?: string): Promise<CompetitionEvent[]> {
 }
 
 export async function getEvent(id: number): Promise<EventWithPredictions> {
-  return fetchJson<EventWithPredictions>(`/events/${id}`);
+  const data = await fetchJson<unknown>(`/events/${id}`);
+  // API may return the event directly or wrapped in { event: {...}, predictions: [...] }
+  if (data && typeof data === "object" && !Array.isArray(data)) {
+    const obj = data as Record<string, unknown>;
+    // If wrapped: merge event fields + predictions into a single object
+    if (obj.event && typeof obj.event === "object") {
+      const event = obj.event as Record<string, unknown>;
+      const predictions = Array.isArray(obj.predictions) ? obj.predictions : (event.predictions ?? []);
+      return { ...event, predictions } as unknown as EventWithPredictions;
+    }
+    // If flat with predictions array, return as-is
+    if ("id" in obj && "event_name" in obj) {
+      if (!Array.isArray(obj.predictions)) {
+        (obj as Record<string, unknown>).predictions = [];
+      }
+      return data as EventWithPredictions;
+    }
+  }
+  return data as EventWithPredictions;
 }
 
 export async function getLeaderboard(): Promise<LeaderboardEntry[]> {
@@ -59,7 +77,17 @@ export async function getParticipant(id: number): Promise<{
   predictions: Prediction[];
   total_points: number;
 }> {
-  return fetchJson<{ participant: Participant; predictions: Prediction[]; total_points: number }>(`/participants/${id}`);
+  const data = await fetchJson<unknown>(`/participants/${id}`);
+  if (data && typeof data === "object") {
+    const obj = data as Record<string, unknown>;
+    // Handle case where participant data is at root or nested
+    const participant = (obj.participant ?? obj.data ?? obj) as Participant;
+    const predictions = Array.isArray(obj.predictions) ? obj.predictions as Prediction[] : [];
+    const total_points = typeof obj.total_points === "number" ? obj.total_points :
+      predictions.reduce((sum: number, p: Prediction) => sum + (p.points_earned ?? 0), 0);
+    return { participant, predictions, total_points };
+  }
+  return data as { participant: Participant; predictions: Prediction[]; total_points: number };
 }
 
 export async function getResults(): Promise<{
