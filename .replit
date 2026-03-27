@@ -38,7 +38,6 @@ localPort = 5000
 externalPort = 80
 
 [deployment]
-deploymentTarget = "static"
+deploymentTarget = "autoscale"
 build = ["npm", "run", "build"]
-run = ["sh", "-c", "npx serve dist -s -l 3000"]
-publicDir = "dist"
+run = ["node", "server.js"]
