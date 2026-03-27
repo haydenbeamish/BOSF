@@ -1,0 +1,55 @@
+import { motion } from "framer-motion";
+import { TrendingUp, TrendingDown, Minus } from "lucide-react";
+import { cn } from "../../lib/cn";
+
+interface StatCardProps {
+  label: string;
+  value: string | number;
+  trend?: number | null;
+  trendLabel?: string;
+  icon?: React.ReactNode;
+  accent?: "default" | "accent" | "gold" | "loss";
+  delay?: number;
+}
+
+export function StatCard({ label, value, trend, trendLabel, icon, accent = "default", delay = 0 }: StatCardProps) {
+  const trendColor = !trend ? "text-surface-500" : trend > 0 ? "text-accent" : "text-loss";
+  const TrendIcon = !trend ? Minus : trend > 0 ? TrendingUp : TrendingDown;
+
+  const valueColor = {
+    default: "text-zinc-100",
+    accent: "text-accent",
+    gold: "text-gradient-gold",
+    loss: "text-loss",
+  }[accent];
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay, duration: 0.4, ease: [0.25, 0.46, 0.45, 0.94] }}
+      className="rounded-2xl border border-surface-200/50 bg-surface-50/80 p-4"
+    >
+      <div className="flex items-center justify-between mb-3">
+        <span className="text-[11px] font-semibold uppercase tracking-wider text-surface-500">
+          {label}
+        </span>
+        {icon && <span className="text-surface-400">{icon}</span>}
+      </div>
+      <p className={cn("font-display font-extrabold text-2xl tracking-tight", valueColor)}>
+        {value}
+      </p>
+      {trend !== undefined && trend !== null && (
+        <div className={cn("flex items-center gap-1 mt-2", trendColor)}>
+          <TrendIcon size={12} />
+          <span className="text-[11px] font-semibold">
+            {trend > 0 ? "+" : ""}{trend}%
+          </span>
+          {trendLabel && (
+            <span className="text-[10px] text-surface-500 ml-1">{trendLabel}</span>
+          )}
+        </div>
+      )}
+    </motion.div>
+  );
+}

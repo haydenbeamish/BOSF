@@ -1,66 +1,112 @@
+import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
+import { Trophy, Target, Flame } from "lucide-react";
 import { useLeaderboard } from "../hooks/useLeaderboard";
-import { LeaderboardList } from "../components/leaderboard/LeaderboardList";
+import { Podium } from "../components/leaderboard/Podium";
+import { RankRow } from "../components/leaderboard/RankRow";
 import { SpudBanner } from "../components/leaderboard/SpudBanner";
+import { StatCard } from "../components/ui/StatCard";
 import { Skeleton } from "../components/ui/Skeleton";
+import { EmptyState } from "../components/ui/EmptyState";
 
 export function LeaderboardPage() {
   const { entries, spud, loading, error } = useLeaderboard();
+  const navigate = useNavigate();
 
   if (error) {
     return (
-      <div className="flex flex-col items-center justify-center py-20 px-4 text-center">
-        <p className="text-4xl mb-4" role="img" aria-label="error">{"\u{1F6AB}"}</p>
-        <p className="text-slate-400 text-sm">Failed to load leaderboard</p>
-        <p className="text-slate-600 text-xs mt-1">{error}</p>
-      </div>
+      <EmptyState
+        icon={<Trophy size={28} />}
+        title="Couldn't load standings"
+        description={error}
+      />
     );
   }
 
   if (loading) {
     return (
-      <div className="px-4 pt-4 flex flex-col gap-2">
-        {Array.from({ length: 10 }).map((_, i) => (
-          <Skeleton key={i} className="h-16 rounded-xl" />
+      <div className="px-4 pt-6 flex flex-col gap-3">
+        <div className="flex gap-3 mb-4">
+          <Skeleton className="h-24 flex-1" />
+          <Skeleton className="h-24 flex-1" />
+        </div>
+        <Skeleton className="h-48 rounded-2xl" />
+        {Array.from({ length: 7 }).map((_, i) => (
+          <Skeleton key={i} className="h-16 rounded-2xl" />
         ))}
       </div>
     );
   }
+
+  if (entries.length === 0) {
+    return (
+      <EmptyState
+        icon={<Trophy size={28} />}
+        title="No standings yet"
+        description="Results will appear here once events start getting decided. Stay tuned."
+      />
+    );
+  }
+
+  const totalCorrect = entries.reduce((s, e) => s + e.correct_predictions, 0);
+  const totalPredictions = entries.reduce((s, e) => s + e.total_predictions, 0);
+  const groupWinRate = totalPredictions > 0 ? Math.round((totalCorrect / totalPredictions) * 100) : 0;
+  const topScore = entries[0]?.total_points ?? 0;
 
   return (
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.3 }}
+      className="pb-24"
     >
-      {/* Stats bar */}
-      <div className="flex items-center justify-between px-4 py-4">
-        <div>
-          <h2 className="text-base font-bold text-slate-200">Standings</h2>
-          <p className="text-xs text-slate-500">{entries.length} punters</p>
-        </div>
-        {entries.length > 0 && (
-          <div className="text-right">
-            <p className="text-xs text-slate-500">Leader</p>
-            <p className="text-sm font-bold text-gold-400">{entries[0].name}</p>
-          </div>
-        )}
+      {/* Quick stats */}
+      <div className="grid grid-cols-3 gap-2 px-4 pt-4">
+        <StatCard
+          label="Punters"
+          value={entries.length}
+          icon={<Trophy size={14} />}
+          delay={0}
+        />
+        <StatCard
+          label="Win Rate"
+          value={`${groupWinRate}%`}
+          icon={<Target size={14} />}
+          accent={groupWinRate >= 50 ? "accent" : "default"}
+          delay={0.05}
+        />
+        <StatCard
+          label="Top Score"
+          value={topScore}
+          icon={<Flame size={14} />}
+          accent="gold"
+          delay={0.1}
+        />
       </div>
 
-      {entries.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-16 text-center px-4">
-          <p className="text-4xl mb-4" role="img" aria-label="trophy">{"\u{1F3C6}"}</p>
-          <p className="text-slate-400 text-sm">No standings yet</p>
-          <p className="text-slate-600 text-xs mt-1">Results will appear once events are decided</p>
-        </div>
-      ) : (
-        <>
-          {spud && <SpudBanner spud={spud} />}
-          <LeaderboardList entries={entries} />
-        </>
-      )}
+      {/* Podium */}
+      <Podium entries={entries} onSelect={(id) => navigate(`/player/${id}`)} />
 
-      <div className="h-24" />
+      {/* Spud */}
+      {spud && <SpudBanner spud={spud} />}
+
+      {/* Rest of rankings */}
+      <div className="px-4 mt-2">
+        <h3 className="text-[11px] font-bold uppercase tracking-wider text-surface-500 mb-3 px-1">
+          Full Standings
+        </h3>
+        <div className="flex flex-col gap-2">
+          {entries.slice(3).map((entry, i) => (
+            <RankRow
+              key={entry.id}
+              entry={entry}
+              isSpud={spud?.id === entry.id}
+              index={i}
+              totalEntries={entries.length}
+            />
+          ))}
+        </div>
+      </div>
     </motion.div>
   );
 }
