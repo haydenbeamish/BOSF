@@ -8,9 +8,15 @@ import type {
 } from "../types";
 
 const API_BASE = import.meta.env.VITE_API_URL || "/api/competition";
+const API_KEY = import.meta.env.VITE_LASERBEAMNODE_API_KEY;
+
+const baseHeaders: HeadersInit = {
+  "Content-Type": "application/json",
+  ...(API_KEY ? { "X-API-Key": API_KEY } : {}),
+};
 
 async function fetchJson<T>(path: string): Promise<T> {
-  const res = await fetch(`${API_BASE}${path}`);
+  const res = await fetch(`${API_BASE}${path}`, { headers: baseHeaders });
   if (!res.ok) throw new Error(`API error: ${res.status} ${res.statusText}`);
   return res.json();
 }
