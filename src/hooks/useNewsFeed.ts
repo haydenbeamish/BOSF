@@ -28,6 +28,9 @@ export function useNewsFeed() {
               ...pred,
               participant_id: pred.participant_id ?? Number(outerKey),
               event_id: pred.event_id ?? Number(innerKey),
+              // Normalize is_correct: API may return 1/0 instead of true/false
+              is_correct: pred.is_correct === null || pred.is_correct === undefined ? null
+                : Boolean(pred.is_correct),
             }))
         );
 

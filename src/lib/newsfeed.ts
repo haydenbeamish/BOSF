@@ -177,10 +177,12 @@ function computeStreaks(
   let loseStreak = 0;
 
   for (const pred of sorted) {
-    if (pred.is_correct === true) {
+    const correct = pred.is_correct === true || (pred.is_correct as unknown) === 1;
+    const incorrect = pred.is_correct === false || (pred.is_correct as unknown) === 0;
+    if (correct) {
       if (loseStreak > 0) break;
       winStreak++;
-    } else if (pred.is_correct === false) {
+    } else if (incorrect) {
       if (winStreak > 0) break;
       loseStreak++;
     }
@@ -261,7 +263,7 @@ export function generateNewsFeed(
   // 1. Event results
   for (const event of completedEvents) {
     const preds = allPredictions.filter((p) => p.event_id === event.id);
-    const correctCount = preds.filter((p) => p.is_correct === true).length;
+    const correctCount = preds.filter((p) => p.is_correct === true || (p.is_correct as unknown) === 1).length;
     const template = hashPick(EVENT_RESULT_TEMPLATES, `result-${event.id}`);
     const { headline, subtext } = template(
       event.event_name,
@@ -303,7 +305,7 @@ export function generateNewsFeed(
 
     // Check if only one person got it right
     if (correctCount === 1) {
-      const winner = preds.find((p) => p.is_correct === true);
+      const winner = preds.find((p) => p.is_correct === true || (p.is_correct as unknown) === 1);
       if (winner) {
         const t = hashPick(PERFECT_PICK_TEMPLATES, `perfect-${event.id}`);
         const { headline: h, subtext: s } = t(
