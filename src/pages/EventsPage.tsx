@@ -175,23 +175,25 @@ export function EventsPage() {
                   <SportIcon sport={evt.sport} />
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-zinc-800 truncate">{evt.event_name}</p>
-                    {evt.correct_answer ? (
-                      <div className="flex items-center gap-1 mt-0.5">
-                        <Check size={10} className="text-emerald-600" />
-                        <p className="text-xs text-emerald-600 truncate">{evt.correct_answer}</p>
-                      </div>
-                    ) : evt.event_date ? (
-                      <p className="text-xs text-zinc-400 mt-0.5">
-                        {new Date(evt.event_date).toLocaleDateString("en-AU", { day: "numeric", month: "short", year: "numeric" })}
-                      </p>
-                    ) : null}
+                    <div className="flex items-center gap-2 mt-0.5">
+                      {evt.correct_answer ? (
+                        <div className="flex items-center gap-1 min-w-0">
+                          <Check size={10} className="text-emerald-600 shrink-0" />
+                          <p className="text-xs text-emerald-600 truncate">{evt.correct_answer}</p>
+                        </div>
+                      ) : evt.event_date ? (
+                        <p className="text-xs text-zinc-400">
+                          {new Date(evt.event_date).toLocaleDateString("en-AU", { day: "numeric", month: "short", year: "numeric" })}
+                        </p>
+                      ) : null}
+                      {evt.points_value > 1 && (
+                        <span className="text-[10px] font-bold text-amber-600 bg-amber-50 rounded-full px-1.5 py-0.5 shrink-0">
+                          {evt.points_value}pt
+                        </span>
+                      )}
+                      <StatusPill status={evt.status} />
+                    </div>
                   </div>
-                  {evt.points_value > 1 && (
-                    <span className="text-[10px] font-bold text-amber-600 bg-amber-50 rounded-full px-1.5 py-0.5 shrink-0">
-                      {evt.points_value}pt
-                    </span>
-                  )}
-                  <StatusPill status={evt.status} />
                   <ChevronRight size={14} className="text-zinc-300 shrink-0" />
                 </motion.div>
               </div>

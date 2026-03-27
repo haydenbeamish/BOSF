@@ -2,6 +2,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { ChevronLeft } from "lucide-react";
 
 const PAGE_TITLES: Record<string, string> = {
+  "/": "BOSF Punting",
   "/leaderboard": "Leaderboard",
   "/events": "Events",
   "/members": "Members",

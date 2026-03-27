@@ -82,9 +82,17 @@ export async function getParticipant(id: number): Promise<{
     const obj = data as Record<string, unknown>;
     // Handle case where participant data is at root or nested
     const participant = (obj.participant ?? obj.data ?? obj) as Participant;
-    const predictions = Array.isArray(obj.predictions) ? obj.predictions as Prediction[] : [];
-    const total_points = typeof obj.total_points === "number" ? obj.total_points :
-      predictions.reduce((sum: number, p: Prediction) => sum + (p.points_earned ?? 0), 0);
+    const rawPredictions = Array.isArray(obj.predictions) ? obj.predictions as Prediction[] : [];
+    // Normalize is_correct: API may return 1/0 instead of true/false
+    const predictions = rawPredictions.map((p) => ({
+      ...p,
+      is_correct: p.is_correct === null || p.is_correct === undefined ? null : Boolean(p.is_correct),
+    }));
+    const participantObj = obj.participant as Record<string, unknown> | undefined;
+    const total_points =
+      typeof obj.total_points === "number" ? obj.total_points :
+      (participantObj && typeof participantObj === "object" && typeof participantObj.total_points === "number") ? participantObj.total_points :
+      predictions.reduce((sum: number, p: Prediction) => sum + (p.points_earned || (p.is_correct ? 1 : 0)), 0);
     return { participant, predictions, total_points };
   }
   return data as { participant: Participant; predictions: Prediction[]; total_points: number };
