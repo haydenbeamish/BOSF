@@ -18,9 +18,7 @@ export function useLeaderboard() {
 
     Promise.all([getLeaderboard(), getResults()])
       .then(([leaderboard, results]) => {
-        const allPredictions = Object.values(results.predictions ?? {}).flatMap((byEvent) =>
-          Object.values(byEvent ?? {})
-        );
+        const allPredictions = results.predictions ?? [];
 
         const decidedByPlayer: Record<number, { correct: number; decided: number }> = {};
         for (const pred of allPredictions) {
