@@ -423,7 +423,8 @@ export function generateNewsFeed(
   // 3. Outlier alerts for upcoming events
   const outliers = findOutliers(events, allPredictions, participants);
   for (const outlier of outliers.slice(0, MAX_OUTLIERS)) {
-    const t = hashPick(OUTLIER_TEMPLATES, `outlier-${outlier.prediction.id}`);
+    const uid = `${outlier.prediction.event_id}-${outlier.prediction.participant_id}`;
+    const t = hashPick(OUTLIER_TEMPLATES, `outlier-${uid}`);
     const { headline, subtext } = t(
       outlier.participant.name,
       outlier.prediction.prediction,
@@ -431,7 +432,7 @@ export function generateNewsFeed(
       outlier.popularPick
     );
     feed.push({
-      id: `outlier-${outlier.prediction.id}`,
+      id: `outlier-${uid}`,
       type: "outlier_alert",
       emoji: "🔮",
       headline,
