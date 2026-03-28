@@ -161,6 +161,36 @@ export const UNDERDOG_BACKER_TEMPLATES = [
   }),
 ];
 
+export const WINNERS_LIST_TEMPLATES = [
+  (event: string, winners: string, losers: string) => ({
+    headline: `Who cashed in on ${event}`,
+    subtext: `Points to: ${winners}. ${losers ? `Unlucky: ${losers}.` : ""}`,
+  }),
+  (event: string, winners: string, losers: string) => ({
+    headline: `${event} — the scorecard`,
+    subtext: `${winners} pocketed the points. ${losers ? `${losers} got nothing.` : "Everyone cleaned up."}`,
+  }),
+  (event: string, winners: string, losers: string) => ({
+    headline: `Points awarded for ${event}`,
+    subtext: `${winners} called it right. ${losers ? `${losers} can stew on it.` : ""}`,
+  }),
+];
+
+export const GROUP_CONSENSUS_TEMPLATES = [
+  (event: string, pick: string, count: number, total: number) => ({
+    headline: `The group has spoken on ${event}`,
+    subtext: `${count} of ${total} have gone with "${pick}". The rest are taking their chances.`,
+  }),
+  (event: string, pick: string, count: number, total: number) => ({
+    headline: `Everyone's piling on "${pick}" for ${event}`,
+    subtext: `${count}/${total} picked the same thing. Bold strategy — or just the obvious answer?`,
+  }),
+  (event: string, pick: string, count: number, total: number) => ({
+    headline: `${event}: the crowd goes with "${pick}"`,
+    subtext: `${count} out of ${total} in agreement. Let's see if the herd is right this time.`,
+  }),
+];
+
 /** Use a seeded index based on string hash for deterministic template selection */
 export function hashPick<T>(templates: T[], seed: string): T {
   let hash = 0;

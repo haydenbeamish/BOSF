@@ -9,7 +9,9 @@ export type FeedItemType =
   | "hot_take"
   | "odds_alert"
   | "contrarian_pick"
-  | "underdog_backer";
+  | "underdog_backer"
+  | "winners_list"
+  | "group_consensus";
 
 export interface FeedItem {
   id: string;
