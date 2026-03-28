@@ -12,6 +12,8 @@ import {
   BarChart3,
   ArrowRightLeft,
   Ticket,
+  Coins,
+  Users,
 } from "lucide-react";
 import { cn } from "../../lib/cn";
 import type { FeedItem } from "../../lib/newsfeed";
@@ -74,6 +76,16 @@ const TYPE_CONFIG: Record<
     icon: Ticket,
     accent: "text-teal-600",
     stripe: "bg-teal-500",
+  },
+  winners_list: {
+    icon: Coins,
+    accent: "text-yellow-600",
+    stripe: "bg-yellow-400",
+  },
+  group_consensus: {
+    icon: Users,
+    accent: "text-indigo-600",
+    stripe: "bg-indigo-500",
   },
 };
 

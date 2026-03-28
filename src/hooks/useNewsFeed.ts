@@ -20,8 +20,16 @@ async function fetchNewsFeedData(): Promise<NewsFeedData> {
 
   const allPredictions = results.predictions ?? [];
 
+  // Merge results events with all events (deduped by id) so upcoming events
+  // that carry odds data are included in odds-based feed items.
+  const resultsEventIds = new Set((results.events ?? []).map((e) => e.id));
+  const mergedEvents = [
+    ...(results.events ?? []),
+    ...allEvents.filter((e) => !resultsEventIds.has(e.id)),
+  ];
+
   const feedItems = generateNewsFeed(
-    results.events ?? [],
+    mergedEvents,
     results.participants ?? [],
     allPredictions,
     lb
