@@ -5,6 +5,7 @@ import type {
   Prediction,
   StatsOverview,
   EventWithPredictions,
+  LunchContribution,
 } from "../types";
 
 const API_BASE = import.meta.env.VITE_API_URL || "/api/competition";
@@ -178,5 +179,21 @@ export async function getResults(): Promise<{
 }
 
 export async function getStats(): Promise<StatsOverview> {
-  return fetchJson("/stats");
+  const [stats, lb] = await Promise.all([
+    fetchJson<StatsOverview>("/stats"),
+    getLeaderboard(),
+  ]);
+
+  // Build the full lunch contributions table (14 positions) with participant names
+  const { LUNCH_CONTRIBUTIONS } = await import("../lib/feed/index");
+  const lunch_contributions: LunchContribution[] = LUNCH_CONTRIBUTIONS.map((entry) => {
+    const player = lb[entry.position - 1];
+    return {
+      position: entry.position,
+      contribution: entry.contribution,
+      participant_name: player?.name,
+    };
+  });
+
+  return { ...stats, lunch_contributions };
 }

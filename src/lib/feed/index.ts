@@ -11,12 +11,36 @@ import {
   CLOSE_RACE_TEMPLATES,
   WINNERS_LIST_TEMPLATES,
   GROUP_CONSENSUS_TEMPLATES,
+  LEADER_BANTER_TEMPLATES,
+  LAST_PLACE_BANTER_TEMPLATES,
 } from "./templates";
 import { computeStreaks, STREAK_THRESHOLD } from "./streaks";
 import { findOutliers, MAX_OUTLIERS } from "./outliers";
 import { generateOddsFeedItems } from "./odds";
 
 export type { FeedItem, FeedItemType } from "./types";
+
+/**
+ * Lunch contributions table — maps leaderboard position (1-14) to the
+ * dollar amount that person contributes to the group lunch.
+ * Position 1 (leader) pays $0; position 14 (last) pays $325.
+ */
+export const LUNCH_CONTRIBUTIONS: { position: number; contribution: number }[] = [
+  { position: 1, contribution: 0 },
+  { position: 2, contribution: 5 },
+  { position: 3, contribution: 10 },
+  { position: 4, contribution: 15 },
+  { position: 5, contribution: 20 },
+  { position: 6, contribution: 25 },
+  { position: 7, contribution: 30 },
+  { position: 8, contribution: 40 },
+  { position: 9, contribution: 50 },
+  { position: 10, contribution: 65 },
+  { position: 11, contribution: 80 },
+  { position: 12, contribution: 110 },
+  { position: 13, contribution: 150 },
+  { position: 14, contribution: 325 },
+];
 
 export function generateNewsFeed(
   events: CompetitionEvent[],
@@ -265,7 +289,41 @@ export function generateNewsFeed(
     }
   }
 
-  // 5. Odds-based alerts
+  // 5. Leader & last-place banter (fires when there are completed events)
+  if (completedEvents.length > 0 && leaderboard.length >= 2) {
+    const leader = leaderboard[0];
+    const lastPlace = leaderboard[leaderboard.length - 1];
+    const lastContribution = LUNCH_CONTRIBUTIONS[Math.min(leaderboard.length, LUNCH_CONTRIBUTIONS.length) - 1];
+    const liability = `$${lastContribution?.contribution ?? 325}`;
+
+    const lt = hashPick(LEADER_BANTER_TEMPLATES, `leader-${leader.id}`);
+    const { headline: lh, subtext: ls } = lt(leader.name);
+    feed.push({
+      id: `leader-banter`,
+      type: "leader_banter",
+      emoji: "\u{1F451}",
+      headline: lh,
+      subtext: ls,
+      playerName: leader.name,
+      playerId: leader.id,
+      priority: 8,
+    });
+
+    const bt = hashPick(LAST_PLACE_BANTER_TEMPLATES, `lastplace-${lastPlace.id}`);
+    const { headline: bh, subtext: bs } = bt(lastPlace.name, liability);
+    feed.push({
+      id: `last-place-banter`,
+      type: "last_place_banter",
+      emoji: "\u{1F4B8}",
+      headline: bh,
+      subtext: bs,
+      playerName: lastPlace.name,
+      playerId: lastPlace.id,
+      priority: 8,
+    });
+  }
+
+  // 6. Odds-based alerts
   feed.push(...generateOddsFeedItems(events, allPredictions, participants));
 
   // Sort: highest priority first, then by timestamp (newest first)
