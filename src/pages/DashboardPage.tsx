@@ -2,6 +2,7 @@ import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Trophy, ChevronRight, Zap, Newspaper, Target, Flame, CalendarDays } from "lucide-react";
 import { useNewsFeed } from "../hooks/useNewsFeed";
+import { useLeaderboard } from "../hooks/useLeaderboard";
 import { useEvents } from "../hooks/useEvents";
 import { GlassCard } from "../components/ui/GlassCard";
 import { Avatar } from "../components/ui/Avatar";
@@ -15,7 +16,8 @@ import { getEventDisplayDate, formatEventDate } from "../lib/dates";
 
 export function DashboardPage() {
   const navigate = useNavigate();
-  const { feed, leaderboard, loading, error } = useNewsFeed();
+  const { feed, loading, error } = useNewsFeed();
+  const { entries: leaderboard, loading: lbLoading } = useLeaderboard();
   const {
     allEvents,
     loading: eventsLoading,
@@ -31,7 +33,7 @@ export function DashboardPage() {
     );
   }
 
-  if (loading || eventsLoading) {
+  if (loading || lbLoading || eventsLoading) {
     return (
       <div className="px-4 pt-4 flex flex-col gap-3">
         <div className="grid grid-cols-3 gap-2">

@@ -7,6 +7,7 @@ import { Avatar } from "../components/ui/Avatar";
 import { Badge } from "../components/ui/Badge";
 import { Skeleton } from "../components/ui/Skeleton";
 import { EmptyState } from "../components/ui/EmptyState";
+import { FormGuide } from "../components/ui/FormGuide";
 import { cn } from "../lib/cn";
 
 export function MembersPage() {
@@ -143,6 +144,11 @@ export function MembersPage() {
                     </>
                   )}
                 </div>
+                {member.form.length > 0 && (
+                  <div className="mt-1">
+                    <FormGuide results={member.form} max={5} compact />
+                  </div>
+                )}
               </div>
 
               <div className="text-right shrink-0">

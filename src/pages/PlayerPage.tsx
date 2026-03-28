@@ -10,6 +10,8 @@ import { SportIcon } from "../components/ui/SportIcon";
 import { Skeleton } from "../components/ui/Skeleton";
 import { EmptyState } from "../components/ui/EmptyState";
 import { PlayerInsight } from "../components/feed/PlayerInsight";
+import { FormGuide } from "../components/ui/FormGuide";
+import type { FormResult } from "../components/ui/FormGuide";
 import { cn } from "../lib/cn";
 
 export function PlayerPage() {
@@ -64,7 +66,10 @@ export function PlayerPage() {
       }
     }
 
-    return { wins, losses, pending, winRate, decided, pendingList, total_points, bestSport, currentStreak, streakType };
+    // Form guide: last 10 decided results (most recent first)
+    const formGuide: FormResult[] = decided.slice(0, 10).map((p) => (p.is_correct ? "W" : "L"));
+
+    return { wins, losses, pending, winRate, decided, pendingList, total_points, bestSport, currentStreak, streakType, formGuide };
   }, [data]);
 
   if (!id || isNaN(numId)) {
@@ -100,7 +105,7 @@ export function PlayerPage() {
   }
 
   const { participant } = data;
-  const { wins, losses, pending, winRate, decided, pendingList, total_points, bestSport, currentStreak, streakType } = stats;
+  const { wins, losses, pending, winRate, decided, pendingList, total_points, bestSport, currentStreak, streakType, formGuide } = stats;
 
   return (
     <motion.div
@@ -174,6 +179,25 @@ export function PlayerPage() {
           </motion.div>
         ))}
       </div>
+
+      {/* Form Guide */}
+      {formGuide.length > 0 && (
+        <motion.div
+          initial={{ opacity: 0, y: 6 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.25 }}
+          className="px-4 mb-4"
+        >
+          <div className="rounded-2xl border border-zinc-200/60 bg-white p-3 shadow-sm">
+            <div className="flex items-center justify-between">
+              <FormGuide results={formGuide} max={10} />
+              <span className="text-[9px] font-semibold uppercase tracking-wider text-zinc-300 ml-2">
+                Latest &rarr;
+              </span>
+            </div>
+          </div>
+        </motion.div>
+      )}
 
       {/* Decided picks */}
       {decided.length > 0 && (
