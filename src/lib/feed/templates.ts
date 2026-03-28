@@ -191,6 +191,36 @@ export const GROUP_CONSENSUS_TEMPLATES = [
   }),
 ];
 
+export const LEADER_BANTER_TEMPLATES = [
+  (name: string) => ({
+    headline: `${name} is eating for free`,
+    subtext: `${name} is sitting at the top of the ladder and eating for free. Not paying a cent. Absolute scenes.`,
+  }),
+  (name: string) => ({
+    headline: `${name} is laughing all the way to lunch`,
+    subtext: `Top of the table, zero dollars owed. ${name} is living the dream while the rest of you pay up.`,
+  }),
+  (name: string) => ({
+    headline: `${name} doesn't owe a thing`,
+    subtext: `Perched at the top of the ladder like royalty. Free feed. The rest of you are funding it.`,
+  }),
+];
+
+export const LAST_PLACE_BANTER_TEMPLATES = [
+  (name: string, liability: string) => ({
+    headline: `Dead last: ${name}`,
+    subtext: `That's ${liability} for lunch — and we all know the group doesn't order cheaply. Bankruptcy watch is officially on.`,
+  }),
+  (name: string, liability: string) => ({
+    headline: `${name} is propping up the ladder`,
+    subtext: `${name} is propping up the ladder in last place. Current lunch liability: ${liability}. We're ordering from the wine cellar. Brace for impact.`,
+  }),
+  (name: string, liability: string) => ({
+    headline: `${name} is cooked — literally paying for everyone`,
+    subtext: `Last place and staring down a ${liability} lunch bill. Someone start a GoFundMe.`,
+  }),
+];
+
 /** Use a seeded index based on string hash for deterministic template selection */
 export function hashPick<T>(templates: T[], seed: string): T {
   let hash = 0;

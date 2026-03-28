@@ -11,7 +11,9 @@ export type FeedItemType =
   | "contrarian_pick"
   | "underdog_backer"
   | "winners_list"
-  | "group_consensus";
+  | "group_consensus"
+  | "leader_banter"
+  | "last_place_banter";
 
 export interface FeedItem {
   id: string;
