@@ -63,7 +63,7 @@ export function RankRow({ entry, isSpud, index }: RankRowProps) {
         </div>
       </div>
 
-      {/* Points */}
+      {/* Points + Penalty */}
       <div className="text-right shrink-0 mr-1">
         <span className={cn(
           "font-display font-extrabold text-base tabular-nums",
@@ -72,6 +72,14 @@ export function RankRow({ entry, isSpud, index }: RankRowProps) {
           {entry.total_points}
         </span>
         <p className="text-[9px] font-semibold uppercase tracking-wider text-zinc-400">pts</p>
+        {entry.penalty > 0 && (
+          <p className={cn(
+            "text-[10px] font-semibold tabular-nums mt-0.5",
+            isSpud ? "text-red-400" : "text-zinc-400"
+          )}>
+            ${entry.penalty}
+          </p>
+        )}
       </div>
 
       <ChevronRight size={14} className="text-zinc-300 shrink-0" />

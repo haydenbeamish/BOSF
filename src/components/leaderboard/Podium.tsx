@@ -1,10 +1,10 @@
 import { motion } from "framer-motion";
 import { Trophy, Crown, Medal } from "lucide-react";
 import { Avatar } from "../ui/Avatar";
-import type { LeaderboardEntry } from "../../types";
+import type { EnhancedLeaderboardEntry } from "../../hooks/useLeaderboard";
 
 interface PodiumProps {
-  entries: LeaderboardEntry[];
+  entries: EnhancedLeaderboardEntry[];
   onSelect: (id: number) => void;
 }
 
@@ -52,6 +52,9 @@ export function Podium({ entries, onSelect }: PodiumProps) {
                 {second.name}
               </p>
               <p className="text-lg font-display font-extrabold text-zinc-500">{second.total_points}</p>
+              {second.penalty > 0 && (
+                <p className="text-[10px] font-semibold text-zinc-400">${second.penalty}</p>
+              )}
             </motion.div>
           )}
 
@@ -77,6 +80,11 @@ export function Podium({ entries, onSelect }: PodiumProps) {
               {first.name}
             </p>
             <p className="text-2xl font-display font-extrabold text-gradient-gold">{first.total_points}</p>
+            {first.penalty === 0 ? (
+              <p className="text-[10px] font-semibold text-emerald-500">Free lunch!</p>
+            ) : (
+              <p className="text-[10px] font-semibold text-zinc-400">${first.penalty}</p>
+            )}
           </motion.div>
 
           {/* 3rd place */}
@@ -97,6 +105,9 @@ export function Podium({ entries, onSelect }: PodiumProps) {
                 {third.name}
               </p>
               <p className="text-lg font-display font-extrabold text-amber-700">{third.total_points}</p>
+              {third.penalty > 0 && (
+                <p className="text-[10px] font-semibold text-zinc-400">${third.penalty}</p>
+              )}
             </motion.div>
           )}
         </div>

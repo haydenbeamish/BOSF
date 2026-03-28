@@ -1,10 +1,12 @@
 import { useQuery } from "@tanstack/react-query";
 import type { LeaderboardEntry } from "../types";
 import { getLeaderboard, getResults } from "../data/api";
+import { LUNCH_CONTRIBUTIONS } from "../lib/feed/index";
 
 export interface EnhancedLeaderboardEntry extends LeaderboardEntry {
   decided_predictions: number;
   win_rate: number;
+  penalty: number;
 }
 
 async function fetchLeaderboardData(): Promise<EnhancedLeaderboardEntry[]> {
@@ -24,14 +26,18 @@ async function fetchLeaderboardData(): Promise<EnhancedLeaderboardEntry[]> {
     }
   }
 
-  return leaderboard.map((entry) => {
+  return leaderboard.map((entry, index) => {
     const stats = decidedByPlayer[entry.id];
     const decided = stats?.decided ?? 0;
     const correct = stats?.correct ?? entry.correct_predictions;
+    const position = index + 1;
+    const lunchEntry = LUNCH_CONTRIBUTIONS.find((lc) => lc.position === position);
+    const penalty = lunchEntry?.contribution ?? LUNCH_CONTRIBUTIONS[LUNCH_CONTRIBUTIONS.length - 1].contribution;
     return {
       ...entry,
       decided_predictions: decided,
       win_rate: decided > 0 ? Math.round((correct / decided) * 100) : 0,
+      penalty,
     };
   });
 }
