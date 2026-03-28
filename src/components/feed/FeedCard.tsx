@@ -14,6 +14,8 @@ import {
   Ticket,
   Coins,
   Users,
+  Crown,
+  Banknote,
 } from "lucide-react";
 import { cn } from "../../lib/cn";
 import type { FeedItem } from "../../lib/newsfeed";
@@ -86,6 +88,16 @@ const TYPE_CONFIG: Record<
     icon: Users,
     accent: "text-indigo-600",
     stripe: "bg-indigo-500",
+  },
+  leader_banter: {
+    icon: Crown,
+    accent: "text-yellow-600",
+    stripe: "bg-yellow-500",
+  },
+  last_place_banter: {
+    icon: Banknote,
+    accent: "text-red-600",
+    stripe: "bg-red-500",
   },
 };
 

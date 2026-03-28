@@ -77,10 +77,17 @@ export interface ParticipantWithPredictions extends Participant {
   total_points: number;
 }
 
+export interface LunchContribution {
+  position: number;
+  contribution: number;
+  participant_name?: string;
+}
+
 export interface StatsOverview {
   total_events: number;
   completed_events: number;
   upcoming_events: number;
   in_progress_events: number;
   leaderboard: LeaderboardEntry[];
+  lunch_contributions?: LunchContribution[];
 }
