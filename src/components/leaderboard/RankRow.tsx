@@ -2,6 +2,7 @@ import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { ChevronRight } from "lucide-react";
 import { Avatar } from "../ui/Avatar";
+import { FormGuide } from "../ui/FormGuide";
 import { cn } from "../../lib/cn";
 import type { EnhancedLeaderboardEntry } from "../../hooks/useLeaderboard";
 
@@ -61,6 +62,11 @@ export function RankRow({ entry, isSpud, index }: RankRowProps) {
             {winRate}%
           </span>
         </div>
+        {entry.form.length > 0 && (
+          <div className="mt-1">
+            <FormGuide results={entry.form} max={5} compact />
+          </div>
+        )}
       </div>
 
       {/* Points + Penalty */}
