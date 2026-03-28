@@ -3,10 +3,13 @@ import type { LeaderboardEntry } from "../types";
 import { getLeaderboard, getResults } from "../data/api";
 import { LUNCH_CONTRIBUTIONS } from "../lib/feed/index";
 
+export type FormResult = "W" | "L";
+
 export interface EnhancedLeaderboardEntry extends LeaderboardEntry {
   decided_predictions: number;
   win_rate: number;
   penalty: number;
+  form: FormResult[];
 }
 
 async function fetchLeaderboardData(): Promise<EnhancedLeaderboardEntry[]> {
@@ -14,6 +17,8 @@ async function fetchLeaderboardData(): Promise<EnhancedLeaderboardEntry[]> {
   const allPredictions = results.predictions ?? [];
 
   const decidedByPlayer: Record<number, { correct: number; decided: number }> = {};
+  // Collect decided predictions per player for form guide (sorted by event_id desc = most recent first)
+  const decidedPredsByPlayer: Record<number, { event_id: number; is_correct: boolean }[]> = {};
   for (const pred of allPredictions) {
     if (pred.is_correct !== null && pred.is_correct !== undefined) {
       if (!decidedByPlayer[pred.participant_id]) {
@@ -23,7 +28,18 @@ async function fetchLeaderboardData(): Promise<EnhancedLeaderboardEntry[]> {
       if (pred.is_correct === true) {
         decidedByPlayer[pred.participant_id].correct++;
       }
+      if (!decidedPredsByPlayer[pred.participant_id]) {
+        decidedPredsByPlayer[pred.participant_id] = [];
+      }
+      decidedPredsByPlayer[pred.participant_id].push({
+        event_id: pred.event_id,
+        is_correct: pred.is_correct === true,
+      });
     }
+  }
+  // Sort each player's decided predictions by event_id descending (most recent first)
+  for (const preds of Object.values(decidedPredsByPlayer)) {
+    preds.sort((a, b) => b.event_id - a.event_id);
   }
 
   return leaderboard.map((entry, index) => {
@@ -33,11 +49,14 @@ async function fetchLeaderboardData(): Promise<EnhancedLeaderboardEntry[]> {
     const position = index + 1;
     const lunchEntry = LUNCH_CONTRIBUTIONS.find((lc) => lc.position === position);
     const penalty = lunchEntry?.contribution ?? LUNCH_CONTRIBUTIONS[LUNCH_CONTRIBUTIONS.length - 1].contribution;
+    const playerPreds = decidedPredsByPlayer[entry.id] ?? [];
+    const form: FormResult[] = playerPreds.slice(0, 5).map((p) => (p.is_correct ? "W" : "L"));
     return {
       ...entry,
       decided_predictions: decided,
       win_rate: decided > 0 ? Math.round((correct / decided) * 100) : 0,
       penalty,
+      form,
     };
   });
 }
