@@ -2,6 +2,7 @@ import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { ChevronRight } from "lucide-react";
 import { Avatar } from "../ui/Avatar";
+import { FormGuide } from "../ui/FormGuide";
 import { cn } from "../../lib/cn";
 import type { EnhancedLeaderboardEntry } from "../../hooks/useLeaderboard";
 
@@ -60,6 +61,12 @@ export function RankRow({ entry, isSpud, index }: RankRowProps) {
           <span className={cn("text-[11px] font-semibold", winRate >= 50 ? "text-emerald-600" : "text-zinc-400")}>
             {winRate}%
           </span>
+          {entry.recent_form.length > 0 && (
+            <>
+              <span className="text-[11px] text-zinc-300">&middot;</span>
+              <FormGuide results={entry.recent_form} size="sm" />
+            </>
+          )}
         </div>
       </div>
 

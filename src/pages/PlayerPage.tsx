@@ -6,6 +6,7 @@ import { usePlayer } from "../hooks/usePlayer";
 import { Avatar } from "../components/ui/Avatar";
 import { GlassCard } from "../components/ui/GlassCard";
 import { Badge } from "../components/ui/Badge";
+import { FormGuide } from "../components/ui/FormGuide";
 import { SportIcon } from "../components/ui/SportIcon";
 import { Skeleton } from "../components/ui/Skeleton";
 import { EmptyState } from "../components/ui/EmptyState";
@@ -64,7 +65,10 @@ export function PlayerPage() {
       }
     }
 
-    return { wins, losses, pending, winRate, decided, pendingList, total_points, bestSport, currentStreak, streakType };
+    // Recent form: last 5 decided results (most recent first)
+    const recentForm = decided.slice(0, 5).map((p) => p.is_correct === true);
+
+    return { wins, losses, pending, winRate, decided, pendingList, total_points, bestSport, currentStreak, streakType, recentForm };
   }, [data]);
 
   if (!id || isNaN(numId)) {
@@ -100,7 +104,7 @@ export function PlayerPage() {
   }
 
   const { participant } = data;
-  const { wins, losses, pending, winRate, decided, pendingList, total_points, bestSport, currentStreak, streakType } = stats;
+  const { wins, losses, pending, winRate, decided, pendingList, total_points, bestSport, currentStreak, streakType, recentForm } = stats;
 
   return (
     <motion.div
@@ -174,6 +178,28 @@ export function PlayerPage() {
           </motion.div>
         ))}
       </div>
+
+      {/* Form Guide */}
+      {recentForm.length > 0 && (
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.25 }}
+          className="px-4 mb-4"
+        >
+          <GlassCard className="px-4 py-3">
+            <div className="flex items-center justify-between">
+              <h3 className="text-[11px] font-bold uppercase tracking-wider text-zinc-400">
+                Recent Form
+              </h3>
+              <span className="text-[10px] text-zinc-300">latest &rarr; oldest</span>
+            </div>
+            <div className="flex items-center gap-2 mt-2.5">
+              <FormGuide results={recentForm} limit={5} size="md" showLabels />
+            </div>
+          </GlassCard>
+        </motion.div>
+      )}
 
       {/* Decided picks */}
       {decided.length > 0 && (
