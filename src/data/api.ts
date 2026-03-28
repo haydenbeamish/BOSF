@@ -48,6 +48,12 @@ function normalizeEvent(e: Record<string, unknown>): CompetitionEvent {
     status: (e.status as CompetitionEvent["status"]) ?? "upcoming",
     display_order: Number(e.event_number ?? e.display_order ?? e.id),
     created_at: e.created_at as string | undefined,
+    // Odds fields — populated by backend cron from The Odds API
+    favourite: (e.favourite as string) ?? null,
+    favourite_odds: e.favourite_odds != null ? Number(e.favourite_odds) : null,
+    underdog: (e.underdog as string) ?? null,
+    underdog_odds: e.underdog_odds != null ? Number(e.underdog_odds) : null,
+    odds_last_updated: (e.odds_last_updated as string) ?? null,
   };
 }
 
