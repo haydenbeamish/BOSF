@@ -22,27 +22,23 @@ export function generateOddsFeedItems(
     const favOdds = `$${event.favourite_odds!.toFixed(2)}`;
     const eventPreds = allPredictions.filter((p) => Number(p.event_id) === Number(event.id));
 
-    // Odds alert — show odds for events happening soon
+    // Odds alert — show odds for any upcoming event with favourite odds available
     const eventDate = event.event_date ?? event.close_date;
-    if (eventDate) {
-      const msUntil = new Date(eventDate).getTime() - Date.now();
-      const hoursUntil = msUntil / (1000 * 60 * 60);
-      if (hoursUntil > 0 && hoursUntil <= 48) {
-        const t = hashPick(ODDS_ALERT_TEMPLATES, `odds-${event.id}`);
-        const { headline, subtext } = t(event.event_name, event.favourite!, favOdds);
-        feed.push({
-          id: `odds-${event.id}`,
-          type: "odds_alert",
-          emoji: "\u{1F4CA}",
-          headline,
-          subtext,
-          eventId: event.id,
-          eventName: event.event_name,
-          sport: event.sport,
-          timestamp: eventDate,
-          priority: 6,
-        });
-      }
+    {
+      const t = hashPick(ODDS_ALERT_TEMPLATES, `odds-${event.id}`);
+      const { headline, subtext } = t(event.event_name, event.favourite!, favOdds);
+      feed.push({
+        id: `odds-${event.id}`,
+        type: "odds_alert",
+        emoji: "\u{1F4CA}",
+        headline,
+        subtext,
+        eventId: event.id,
+        eventName: event.event_name,
+        sport: event.sport,
+        timestamp: eventDate ?? undefined,
+        priority: 6,
+      });
     }
 
     // Contrarian pick — the group's most popular pick differs from the bookies' favourite

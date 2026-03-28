@@ -47,7 +47,7 @@ export function useNewsFeed() {
     if (!data?.feedItems.length || dataKey === banterKey) return;
 
     let cancelled = false;
-    const toEnhance = data.feedItems.slice(0, 15);
+    const toEnhance = data.feedItems.slice(0, 25);
 
     enhanceBanter(toEnhance).then((enhanced) => {
       if (cancelled) return;

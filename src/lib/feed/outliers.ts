@@ -1,6 +1,6 @@
 import type { CompetitionEvent, Prediction, Participant } from "../../types";
 
-const MAX_OUTLIERS = 6;
+const MAX_OUTLIERS = 15;
 
 export { MAX_OUTLIERS };
 
@@ -20,9 +20,9 @@ export function findOutliers(
 ): OutlierInfo[] {
   const outliers: OutlierInfo[] = [];
 
-  // Only flag outliers for events that are genuinely coming up soon (within 90 days).
-  // Season-long events (e.g. AFL H&A resolving in August) are excluded so the
-  // news feed doesn't comment on picks that won't matter for months.
+  // Only flag outliers for events resolving within the next 90 days.
+  // Season-long events (e.g. AFL H&A ending in August) are excluded so the
+  // news feed doesn't chatter about picks that won't matter for months.
   const cutoff = new Date();
   cutoff.setDate(cutoff.getDate() + 90);
 
@@ -31,7 +31,7 @@ export function findOutliers(
     const displayDate = e.close_date && e.close_date > (e.event_date ?? "")
       ? e.close_date
       : e.event_date;
-    if (!displayDate) return true; // no date info — include it
+    if (!displayDate) return true;
     return new Date(displayDate) <= cutoff;
   });
 
