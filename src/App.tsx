@@ -26,11 +26,18 @@ function PageSkeleton() {
   );
 }
 
-function ScrollToTop({ scrollRef }: { scrollRef: React.RefObject<HTMLElement | null> }) {
+function ScrollToTop({
+  scrollRef,
+  onRouteChange,
+}: {
+  scrollRef: React.RefObject<HTMLElement | null>;
+  onRouteChange: () => void;
+}) {
   const { pathname } = useLocation();
   useEffect(() => {
     scrollRef.current?.scrollTo(0, 0);
-  }, [pathname, scrollRef]);
+    onRouteChange();
+  }, [pathname, scrollRef, onRouteChange]);
   return null;
 }
 
@@ -61,6 +68,8 @@ function AnimatedRoutes() {
   );
 }
 
+const SCROLL_DELTA = 10;
+
 export default function App() {
   const mainRef = useRef<HTMLElement>(null);
   const [headerHidden, setHeaderHidden] = useState(false);
@@ -70,12 +79,19 @@ export default function App() {
     const el = mainRef.current;
     if (!el) return;
     const currentY = el.scrollTop;
-    if (currentY > lastScrollY.current && currentY > 56) {
+    const delta = currentY - lastScrollY.current;
+    if (delta > SCROLL_DELTA && currentY > 56) {
       setHeaderHidden(true);
-    } else if (currentY < lastScrollY.current) {
+      lastScrollY.current = currentY;
+    } else if (delta < -SCROLL_DELTA) {
       setHeaderHidden(false);
+      lastScrollY.current = currentY;
     }
-    lastScrollY.current = currentY;
+  }, []);
+
+  const resetHeader = useCallback(() => {
+    setHeaderHidden(false);
+    lastScrollY.current = 0;
   }, []);
 
   useEffect(() => {
@@ -88,7 +104,7 @@ export default function App() {
   return (
     <BrowserRouter>
       <div className="flex flex-col h-dvh bg-surface-50 text-zinc-800 max-w-3xl mx-auto app-shell">
-        <ScrollToTop scrollRef={mainRef} />
+        <ScrollToTop scrollRef={mainRef} onRouteChange={resetHeader} />
         <Header hidden={headerHidden} />
         <main ref={mainRef} className="flex-1 overflow-y-auto overscroll-contain scroll-smooth-ios">
           <ErrorBoundary>
