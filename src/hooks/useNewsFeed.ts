@@ -36,7 +36,6 @@ async function fetchNewsFeedData(): Promise<NewsFeedData> {
     "pick_summary",
     "group_consensus",
     "pre_event_odds",
-    "odds_alert",
   ]);
 
   const backendItems = backendFeedRaw

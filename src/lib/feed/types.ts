@@ -36,6 +36,13 @@ export interface FeedItem {
   sport?: string;
   timestamp?: string;
   priority: number;
+  /** Structured odds data for visual rendering on odds_alert cards */
+  odds?: {
+    favourite: string;
+    favouriteOdds: number;
+    underdog?: string;
+    underdogOdds?: number;
+  };
 }
 
 /**

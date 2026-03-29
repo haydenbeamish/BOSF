@@ -3,7 +3,7 @@ import type { FeedItem } from "./types";
 import { hashPick, CONTRARIAN_PICK_TEMPLATES, UNDERDOG_BACKER_TEMPLATES } from "./templates";
 
 /** Maximum total odds-related items to include in the feed */
-const MAX_ODDS_ITEMS = 3;
+const MAX_ODDS_ITEMS = 5;
 
 export function generateOddsFeedItems(
   events: CompetitionEvent[],
@@ -16,8 +16,32 @@ export function generateOddsFeedItems(
     (e) => e.status !== "completed" && e.favourite && e.favourite_odds
   );
 
+  // --- Odds alerts: show actual odds for upcoming events ---
+  for (const event of upcomingWithOdds) {
+    const eventDate = event.event_date ?? event.close_date;
+    feed.push({
+      id: `odds-${event.id}`,
+      type: "odds_alert",
+      emoji: "\u{1F4CA}",
+      headline: event.event_name,
+      subtext: event.underdog
+        ? `${event.favourite} vs ${event.underdog}`
+        : `${event.favourite} favoured`,
+      eventId: event.id,
+      eventName: event.event_name,
+      sport: event.sport,
+      timestamp: eventDate ?? undefined,
+      priority: 5,
+      odds: {
+        favourite: event.favourite!,
+        favouriteOdds: event.favourite_odds!,
+        underdog: event.underdog ?? undefined,
+        underdogOdds: event.underdog_odds ?? undefined,
+      },
+    });
+  }
+
   // --- Contrarian picks: group's most popular pick differs from bookmaker favourite ---
-  // Collect all contrarian events with their disagreement strength, keep only the best
   const contrarianCandidates: {
     event: CompetitionEvent;
     popularDisplay: string;

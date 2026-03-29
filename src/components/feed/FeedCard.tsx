@@ -209,9 +209,13 @@ export function FeedCard({ item, index }: FeedCardProps) {
           <p className="font-display font-bold text-sm leading-snug text-zinc-800">
             {item.headline}
           </p>
-          <p className="text-[13px] text-zinc-500 mt-0.5 leading-relaxed">
-            {item.subtext}
-          </p>
+          {item.odds ? (
+            <OddsDisplay odds={item.odds} />
+          ) : (
+            <p className="text-[13px] text-zinc-500 mt-0.5 leading-relaxed">
+              {item.subtext}
+            </p>
+          )}
           {item.sport && (
             <span className="inline-block mt-1.5 text-[10px] font-semibold uppercase tracking-wider text-zinc-400 bg-zinc-100 rounded-full px-2 py-0.5">
               {item.sport}
@@ -220,5 +224,51 @@ export function FeedCard({ item, index }: FeedCardProps) {
         </div>
       </div>
     </motion.div>
+  );
+}
+
+function OddsDisplay({ odds }: { odds: NonNullable<FeedItem["odds"]> }) {
+  const favPct = odds.underdogOdds
+    ? Math.round((odds.underdogOdds / (odds.favouriteOdds + odds.underdogOdds)) * 100)
+    : 100;
+  const undPct = 100 - favPct;
+
+  return (
+    <div className="mt-1.5 space-y-1.5">
+      <div className="flex items-center gap-2">
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center justify-between mb-0.5">
+            <span className="text-[12px] font-semibold text-emerald-700 truncate">
+              {odds.favourite}
+            </span>
+            <span className="text-[12px] font-bold tabular-nums text-emerald-700">
+              ${odds.favouriteOdds.toFixed(2)}
+            </span>
+          </div>
+          {odds.underdog && odds.underdogOdds != null && (
+            <div className="flex items-center justify-between">
+              <span className="text-[12px] font-semibold text-blue-600 truncate">
+                {odds.underdog}
+              </span>
+              <span className="text-[12px] font-bold tabular-nums text-blue-600">
+                ${odds.underdogOdds.toFixed(2)}
+              </span>
+            </div>
+          )}
+        </div>
+      </div>
+      {odds.underdog && odds.underdogOdds != null && (
+        <div className="flex h-1.5 rounded-full overflow-hidden bg-zinc-100">
+          <div
+            className="bg-emerald-500 rounded-l-full"
+            style={{ width: `${favPct}%` }}
+          />
+          <div
+            className="bg-blue-500 rounded-r-full"
+            style={{ width: `${undPct}%` }}
+          />
+        </div>
+      )}
+    </div>
   );
 }
