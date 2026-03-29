@@ -44,7 +44,7 @@ function normalizeEvent(e: Record<string, unknown>): CompetitionEvent {
     event_date: (e.event_date as string) ?? null,
     // API sends event_end_date; fall back to close_date if present
     close_date: (e.event_end_date as string) ?? (e.close_date as string) ?? null,
-    points_value: Number(e.available_points ?? e.points_value ?? 1),
+    points_value: Number(e.available_points ?? e.points_value ?? 14),
     correct_answer: (e.correct_answer as string) ?? null,
     status: (e.status as CompetitionEvent["status"]) ?? "upcoming",
     display_order: Number(e.event_number ?? e.display_order ?? e.id),
@@ -71,7 +71,7 @@ function buildEventWithPredictions(raw: Record<string, unknown>): EventWithPredi
     sport: String(raw.sport ?? ""),
     event_date: (raw.event_date as string) ?? null,
     close_date: (raw.event_end_date as string) ?? (raw.close_date as string) ?? null,
-    points_value: Number(raw.available_points ?? raw.points_value ?? 1),
+    points_value: Number(raw.available_points ?? raw.points_value ?? 14),
     correct_answer: (raw.correct_answer as string) ?? null,
     status: (raw.status as CompetitionEvent["status"]) ?? "upcoming",
     display_order: Number(raw.event_number ?? raw.display_order ?? raw.id),
@@ -134,7 +134,7 @@ export async function getParticipant(id: number): Promise<{
     const total_points =
       typeof obj.total_points === "number" ? obj.total_points :
       (participantObj && typeof participantObj === "object" && typeof participantObj.total_points === "number") ? participantObj.total_points :
-      predictions.reduce((sum: number, p: Prediction) => sum + (p.points_earned || (p.is_correct ? 1 : 0)), 0);
+      predictions.reduce((sum: number, p: Prediction) => sum + (p.points_earned || 0), 0);
     return { participant, predictions, total_points };
   }
   return data as { participant: Participant; predictions: Prediction[]; total_points: number };
