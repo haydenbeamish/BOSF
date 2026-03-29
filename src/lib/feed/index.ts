@@ -10,9 +10,10 @@ import {
   OUTLIER_TEMPLATES,
   CLOSE_RACE_TEMPLATES,
   WINNERS_LIST_TEMPLATES,
-  GROUP_CONSENSUS_TEMPLATES,
   LEADER_BANTER_TEMPLATES,
   LAST_PLACE_BANTER_TEMPLATES,
+  NEW_LEADER_TEMPLATES,
+  NEW_SPUD_TEMPLATES,
 } from "./templates";
 import { computeStreaks, STREAK_THRESHOLD } from "./streaks";
 import { findOutliers, MAX_OUTLIERS } from "./outliers";
@@ -55,10 +56,12 @@ export function generateNewsFeed(
     .filter((e) => e.status === "completed" && e.correct_answer)
     .sort((a, b) => (b.display_order ?? 0) - (a.display_order ?? 0));
 
-  // 1. Event results
+  // 1. Event results — show who won for every completed event
   for (const event of completedEvents) {
     const preds = allPredictions.filter((p) => Number(p.event_id) === Number(event.id));
     const correctCount = preds.filter((p) => Boolean(p.is_correct)).length;
+
+    // Result for every event — who won
     const template = hashPick(EVENT_RESULT_TEMPLATES, `result-${event.id}`);
     const { headline, subtext } = template(
       event.event_name,
@@ -66,7 +69,6 @@ export function generateNewsFeed(
       correctCount,
       preds.length
     );
-
     feed.push({
       id: `result-${event.id}`,
       type: "event_result",
@@ -77,10 +79,10 @@ export function generateNewsFeed(
       eventName: event.event_name,
       sport: event.sport,
       timestamp: event.event_date ?? event.created_at,
-      priority: 10,
+      priority: 7,
     });
 
-    // Nobody got it right
+    // Nobody got it right — always hilarious, higher priority
     if (correctCount === 0 && preds.length > 0) {
       const t = hashPick(EVERYONE_WRONG_TEMPLATES, `wrong-${event.id}`);
       const { headline: h, subtext: s } = t(event.event_name);
@@ -94,11 +96,11 @@ export function generateNewsFeed(
         eventName: event.event_name,
         sport: event.sport,
         timestamp: event.event_date ?? event.created_at,
-        priority: 8,
+        priority: 9,
       });
     }
 
-    // Only one person got it right
+    // Only one person got it right — lone genius moment
     if (correctCount === 1) {
       const winner = preds.find((p) => p.is_correct === true || (p.is_correct as unknown) === 1);
       if (winner) {
@@ -124,86 +126,39 @@ export function generateNewsFeed(
       }
     }
 
-    // Winners list — call out who scored and who missed (skip if everyone got it or nobody did)
-    if (correctCount > 0 && correctCount < preds.length) {
-      const winners = preds
-        .filter((p) => p.is_correct === true || (p.is_correct as unknown) === 1)
-        .map((p) => p.participant_name ?? "Unknown");
-      const losers = preds
-        .filter((p) => !p.is_correct && (p.is_correct as unknown) !== 1)
-        .map((p) => p.participant_name ?? "Unknown");
-      const t = hashPick(WINNERS_LIST_TEMPLATES, `winners-${event.id}`);
-      const { headline: h, subtext: s } = t(
-        event.event_name,
-        winners.join(", "),
-        losers.join(", ")
-      );
-      feed.push({
-        id: `winners-${event.id}`,
-        type: "winners_list",
-        emoji: "\u{1F4B0}",
-        headline: h,
-        subtext: s,
-        eventId: event.id,
-        eventName: event.event_name,
-        sport: event.sport,
-        timestamp: event.event_date ?? event.created_at,
-        priority: 9,
-      });
+    // Winners list — only when the split is lopsided (≤30% won OR ≥70% won = drama)
+    if (correctCount > 0 && correctCount < preds.length && preds.length >= 3) {
+      const winRatio = correctCount / preds.length;
+      if (winRatio <= 0.3 || winRatio >= 0.7) {
+        const winners = preds
+          .filter((p) => p.is_correct === true || (p.is_correct as unknown) === 1)
+          .map((p) => p.participant_name ?? "Unknown");
+        const losers = preds
+          .filter((p) => !p.is_correct && (p.is_correct as unknown) !== 1)
+          .map((p) => p.participant_name ?? "Unknown");
+        const t = hashPick(WINNERS_LIST_TEMPLATES, `winners-${event.id}`);
+        const { headline: h, subtext: s } = t(
+          event.event_name,
+          winners.join(", "),
+          losers.join(", ")
+        );
+        feed.push({
+          id: `winners-${event.id}`,
+          type: "winners_list",
+          emoji: "\u{1F4B0}",
+          headline: h,
+          subtext: s,
+          eventId: event.id,
+          eventName: event.event_name,
+          sport: event.sport,
+          timestamp: event.event_date ?? event.created_at,
+          priority: 8,
+        });
+      }
     }
   }
 
-  // 1b. Group consensus for upcoming events (within 90 days)
-  const consensusCutoff = new Date();
-  consensusCutoff.setDate(consensusCutoff.getDate() + 90);
-
-  const upcomingForConsensus = events.filter((e) => {
-    if (e.status === "completed") return false;
-    const displayDate = e.close_date && e.close_date > (e.event_date ?? "")
-      ? e.close_date
-      : e.event_date;
-    if (!displayDate) return true;
-    return new Date(displayDate) <= consensusCutoff;
-  });
-
-  for (const event of upcomingForConsensus) {
-    const eventPreds = allPredictions.filter((p) => Number(p.event_id) === Number(event.id));
-    if (eventPreds.length < 3) continue;
-
-    const counts: Record<string, number> = {};
-    const originalCase: Record<string, string> = {};
-    for (const p of eventPreds) {
-      const key = p.prediction.toLowerCase().trim();
-      counts[key] = (counts[key] || 0) + 1;
-      if (!originalCase[key]) originalCase[key] = p.prediction.trim();
-    }
-    const sorted = Object.entries(counts).sort((a, b) => b[1] - a[1]);
-    const popularKey = sorted[0]?.[0] ?? "";
-    const popularDisplay = originalCase[popularKey] ?? popularKey;
-    const popularCount = sorted[0]?.[1] ?? 0;
-
-    // Only post consensus if there's a clear majority (more than half)
-    if (popularCount > eventPreds.length / 2) {
-      const t = hashPick(GROUP_CONSENSUS_TEMPLATES, `consensus-${event.id}`);
-      const { headline: h, subtext: s } = t(
-        event.event_name,
-        popularDisplay,
-        popularCount,
-        eventPreds.length
-      );
-      feed.push({
-        id: `consensus-${event.id}`,
-        type: "group_consensus",
-        emoji: "\u{1F5F3}\u{FE0F}",
-        eventId: event.id,
-        eventName: event.event_name,
-        sport: event.sport,
-        headline: h,
-        subtext: s,
-        priority: 4,
-      });
-    }
-  }
+  // Group consensus removed — too noisy, not interesting enough for the feed
 
   // 2. Streaks per participant
   for (const participant of participants) {
@@ -324,7 +279,54 @@ export function generateNewsFeed(
     });
   }
 
-  // 6. Odds-based alerts
+  // 6. New leader / new spud detection
+  // If the current leader only leads by the points value of the most recent event,
+  // they likely just took the lead — call it out. Same logic for last place.
+  if (completedEvents.length >= 2 && leaderboard.length >= 3) {
+    const leader = leaderboard[0];
+    const second = leaderboard[1];
+    const lastPlace = leaderboard[leaderboard.length - 1];
+    const secondLast = leaderboard[leaderboard.length - 2];
+    const mostRecentEvent = completedEvents[0];
+    const pointsValue = mostRecentEvent?.points_value ?? 1;
+
+    // New leader: leader's margin over 2nd is within the last event's points
+    // (meaning before that event, they were behind or tied)
+    const leaderGap = leader.total_points - second.total_points;
+    if (leaderGap > 0 && leaderGap <= pointsValue) {
+      const t = hashPick(NEW_LEADER_TEMPLATES, `newleader-${leader.id}`);
+      const { headline, subtext } = t(leader.name, second.name);
+      feed.push({
+        id: `new-leader`,
+        type: "new_leader",
+        emoji: "\u{1F4AA}",
+        headline,
+        subtext,
+        playerName: leader.name,
+        playerId: leader.id,
+        priority: 9,
+      });
+    }
+
+    // New spud: last place's deficit from 2nd-last is within the last event's points
+    const spudGap = secondLast.total_points - lastPlace.total_points;
+    if (spudGap > 0 && spudGap <= pointsValue) {
+      const t = hashPick(NEW_SPUD_TEMPLATES, `newspud-${lastPlace.id}`);
+      const { headline, subtext } = t(lastPlace.name, secondLast.name);
+      feed.push({
+        id: `new-spud`,
+        type: "new_spud",
+        emoji: "\u{1F954}",
+        headline,
+        subtext,
+        playerName: lastPlace.name,
+        playerId: lastPlace.id,
+        priority: 9,
+      });
+    }
+  }
+
+  // 7. Odds-based alerts
   feed.push(...generateOddsFeedItems(events, allPredictions, participants));
 
   // Sort: highest priority first, then by timestamp (newest first)

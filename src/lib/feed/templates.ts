@@ -2,177 +2,177 @@
 
 export const LOSING_STREAK_TEMPLATES = [
   (name: string, n: number) => ({
-    headline: `${name} has dropped ${n} in a row`,
-    subtext: `Someone check on them... ${n} wrong picks and counting. Absolutely cooked.`,
+    headline: `${name} is shitting the bed`,
+    subtext: `${n} wrong in a row. Their picks are about as useful as a screen door on a submarine.`,
   }),
   (name: string, n: number) => ({
-    headline: `${name} is ice cold`,
-    subtext: `${n} straight Ls. Couldn't pick their nose right now.`,
+    headline: `${name} couldn't tip a bucket of water`,
+    subtext: `${n} straight Ls. Couldn't pick their arse with both hands right now.`,
   }),
   (name: string, n: number) => ({
     headline: `Thoughts and prayers for ${name}`,
     subtext: `${n} wrong in a row. At this point it's genuinely impressive how shit they are.`,
   }),
   (name: string, n: number) => ({
-    headline: `${name} on a historic losing run`,
-    subtext: `${n} consecutive wrong picks. A blindfolded monkey would do better.`,
+    headline: `${name} is pissing into the wind`,
+    subtext: `${n} consecutive wrong picks. A drunk toddler throwing darts would do better.`,
   }),
   (name: string, n: number) => ({
-    headline: `${name} is an absolute fraud`,
-    subtext: `${n} wrong on the trot. Their crystal ball is well and truly cooked.`,
+    headline: `${name} is an absolute dumpster fire`,
+    subtext: `${n} wrong on the trot. Their brain is smoother than a baby's arse.`,
   }),
 ];
 
 export const WINNING_STREAK_TEMPLATES = [
   (name: string, n: number) => ({
-    headline: `${name} is absolutely cooking`,
-    subtext: `${n} correct in a row. Someone drug test this person.`,
+    headline: `${name} is absolutely cooking with gas`,
+    subtext: `${n} correct in a row. Someone piss-test this jammy bastard.`,
   }),
   (name: string, n: number) => ({
     headline: `${name} can't bloody miss`,
-    subtext: `${n} straight wins. Either a genius or the luckiest bastard alive.`,
+    subtext: `${n} straight wins. Either a genius or the luckiest prick alive.`,
   }),
   (name: string, n: number) => ({
-    headline: `${name} on a tear`,
-    subtext: `${n} in a row. The rest of you clowns should be worried.`,
+    headline: `${name} is making you all look like dickheads`,
+    subtext: `${n} in a row. The rest of you might as well not bother showing up.`,
   }),
   (name: string, n: number) => ({
     headline: `${name} is seeing the damn Matrix`,
-    subtext: `${n} correct picks running. Everyone else is just making up the numbers.`,
+    subtext: `${n} correct picks running. Everyone else is just pissing money away.`,
   }),
 ];
 
 export const PERFECT_PICK_TEMPLATES = [
   (name: string, event: string) => ({
     headline: `${name} is a certified genius`,
-    subtext: `Only one to nail ${event}. The rest of you should be embarrassed.`,
+    subtext: `Only one to nail ${event}. The rest of you absolute muppets should be ashamed.`,
   }),
   (name: string, event: string) => ({
-    headline: `${name} stood alone and was proven right`,
-    subtext: `The only correct pick on ${event}. Bow down.`,
+    headline: `${name} stood alone — and was bloody right`,
+    subtext: `The only correct pick on ${event}. Bow down, you pack of sheep.`,
   }),
   (name: string, event: string) => ({
-    headline: `${name} backed themselves on ${event}`,
-    subtext: `Sole correct pick. The rest of you followed the herd like sheep.`,
+    headline: `${name} has massive balls on ${event}`,
+    subtext: `Sole correct pick. Everyone else copied each other's homework and still failed.`,
   }),
 ];
 
 export const EVERYONE_WRONG_TEMPLATES = [
   (event: string) => ({
-    headline: `What a pack of idiots`,
-    subtext: `Not a single correct pick on ${event}. Collective brain cell count: zero.`,
+    headline: `What a pack of useless bloody idiots`,
+    subtext: `Not a single correct pick on ${event}. Collective IQ of a dead goldfish.`,
   }),
   (event: string) => ({
-    headline: `Complete wipeout on ${event}`,
-    subtext: `Zero correct picks. A coin flip would've done a better job than all of you.`,
+    headline: `Complete shitshow on ${event}`,
+    subtext: `Zero correct picks. A blind dog with no legs would've done better.`,
   }),
   (event: string) => ({
-    headline: `${event} made mugs out of everyone`,
-    subtext: `Not one correct pick across the board. Absolutely shameful scenes.`,
+    headline: `${event} made absolute mugs of the lot of you`,
+    subtext: `Not one correct pick. You should all be ashamed to show your faces. Embarrassing.`,
   }),
 ];
 
 export const OUTLIER_TEMPLATES = [
   (name: string, prediction: string, event: string, popular: string) => ({
-    headline: `${name} has gone rogue on ${event}`,
-    subtext: `Picked "${prediction}" while everyone else piled on "${popular}". Genius or idiot — we'll find out.`,
+    headline: `${name} has lost the plot on ${event}`,
+    subtext: `Picked "${prediction}" while everyone else went "${popular}". Absolute madman or absolute moron.`,
   }),
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   (name: string, prediction: string, event: string, _popular: string) => ({
-    headline: `${name} going full lone wolf on ${event}`,
-    subtext: `"${prediction}" — absolutely nobody else went there. Balls of steel or rocks in the head.`,
+    headline: `${name} going full kamikaze on ${event}`,
+    subtext: `"${prediction}" — nobody else had the balls (or stupidity) to go there.`,
   }),
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   (name: string, prediction: string, event: string, _popular: string) => ({
-    headline: `${name} with a wildcard pick on ${event}`,
-    subtext: `Backing "${prediction}" against the pack. Either hero or village idiot by week's end.`,
+    headline: `What the hell is ${name} smoking?`,
+    subtext: `Backing "${prediction}" against the entire pack on ${event}. Either a genius or needs a psych eval.`,
   }),
 ];
 
 export const EVENT_RESULT_TEMPLATES = [
   (event: string, answer: string, correct: number, total: number) => ({
     headline: `${answer} wins ${event}`,
-    subtext: `${correct} of ${total} got it right${correct === 0 ? " — absolute scenes, you're all useless" : correct === total ? " — too easy, no one's getting points for that" : ""}.`,
+    subtext: `${correct} of ${total} got it right${correct === 0 ? ". Not one of you useless pricks called it" : correct === total ? ". Too bloody easy — even you lot couldn't stuff it up" : `. The other ${total - correct}? Cooked.`}`,
   }),
   (event: string, answer: string, correct: number, total: number) => ({
-    headline: `${event} is decided`,
-    subtext: `${answer} was the answer. ${correct}/${total} got it right. The rest — have a word with yourselves.`,
+    headline: `${event}: it's ${answer}`,
+    subtext: `${correct}/${total} called it. ${correct === 0 ? "Pathetic. Every single one of you is a fraud." : correct < total / 2 ? "Most of you are hopeless." : "Not bad for a bunch of degenerates."}`,
   }),
   (event: string, answer: string, correct: number, total: number) => ({
-    headline: `${event}: ${answer} gets it done`,
-    subtext: `${correct === 0 ? "Nobody called it. Embarrassing" : `${correct} of ${total} called it right`}.`,
+    headline: `${answer} gets it done — ${event}`,
+    subtext: `${correct === 0 ? "Zero correct. You're all a disgrace" : correct === total ? "Everyone got it. Snooze fest" : `${correct} of ${total} nailed it. Rest of you — sort yourselves out`}.`,
   }),
 ];
 
 export const CLOSE_RACE_TEMPLATES = [
   (name1: string, name2: string, gap: number) => ({
-    headline: `It's neck and neck at the top`,
-    subtext: `${name1} leads ${name2} by just ${gap} point${gap === 1 ? "" : "s"}. One bad pick and it's all over.`,
+    headline: `Neck and neck — someone's about to choke`,
+    subtext: `${name1} leads ${name2} by just ${gap} point${gap === 1 ? "" : "s"}. One shit pick and the whole thing flips. Clench up.`,
   }),
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   (name1: string, name2: string, _gap: number) => ({
-    headline: `${name1} vs ${name2} — this is getting spicy`,
-    subtext: `The gap at the top is razor thin. Someone's about to choke.`,
+    headline: `${name1} vs ${name2} — absolute scenes incoming`,
+    subtext: `The gap at the top is razor thin. One of them is about to bottle it spectacularly.`,
   }),
 ];
 
 export const ODDS_ALERT_TEMPLATES = [
   (event: string, favourite: string, odds: string) => ({
-    headline: `${event} is almost here`,
-    subtext: `${favourite} is the bookies' pick at ${odds}. Have you got the guts to go against it?`,
+    headline: `${event} — bookies have spoken`,
+    subtext: `${favourite} at ${odds}. Go against it if you've got the balls, but don't come crying when you're wrong.`,
   }),
   (event: string, favourite: string, odds: string) => ({
-    headline: `The odds are in for ${event}`,
-    subtext: `${favourite} at ${odds} is the favourite. Half of you will still get it wrong.`,
+    headline: `Odds are in for ${event}`,
+    subtext: `${favourite} at ${odds}. Half of you will still somehow stuff this up.`,
   }),
   (event: string, favourite: string, odds: string) => ({
-    headline: `${event} tips off soon`,
-    subtext: `Bookmakers have ${favourite} at ${odds}. Time to put your money where your mouth is.`,
+    headline: `${event} is coming — ${favourite} (${odds})`,
+    subtext: `The bookies reckon they know. Do you? Probably not, you useless lot.`,
   }),
 ];
 
 export const CONTRARIAN_PICK_TEMPLATES = [
   (event: string, favourite: string, favOdds: string, popularPick: string) => ({
-    headline: `The group is going against the bookies on ${event}`,
-    subtext: `${favourite} is the ${favOdds} favourite but most of you picked "${popularPick}". Someone's about to look very stupid.`,
+    headline: `The group thinks they're smarter than the bookies`,
+    subtext: `${favourite} at ${favOdds} for ${event} but you clowns picked "${popularPick}". Can't wait to watch this blow up.`,
   }),
   (event: string, favourite: string, favOdds: string, popularPick: string) => ({
-    headline: `Bookies vs the group on ${event}`,
-    subtext: `The money says ${favourite} (${favOdds}) but you lot reckon "${popularPick}". This'll be entertaining.`,
+    headline: `Bookies vs you idiots on ${event}`,
+    subtext: `Money says ${favourite} (${favOdds}) but the group reckons "${popularPick}". One side is going to look very stupid.`,
   }),
   (event: string, _favourite: string, _favOdds: string, popularPick: string) => ({
-    headline: `Bold move from the group on ${event}`,
-    subtext: `Most backed "${popularPick}" over the bookmaker favourite. Brave or bloody stupid?`,
+    headline: `Delusional confidence on ${event}`,
+    subtext: `Most of you backed "${popularPick}" over the bookmaker favourite. Brave or brain-dead?`,
   }),
 ];
 
 export const UNDERDOG_BACKER_TEMPLATES = [
   (name: string, event: string, pick: string, odds: string) => ({
-    headline: `${name} is riding the long shot on ${event}`,
-    subtext: `Backing "${pick}" at ${odds}. Either a visionary or a complete lunatic.`,
+    headline: `${name} is off their rocker on ${event}`,
+    subtext: `Backing "${pick}" at ${odds}. Either a visionary or a complete bloody lunatic.`,
   }),
   (name: string, event: string, pick: string, odds: string) => ({
-    headline: `${name} loves a punt on the underdog`,
-    subtext: `Picked "${pick}" (${odds}) for ${event}. Big risk, big reward, big chance of looking like an idiot.`,
+    headline: `${name} loves throwing money in the bin`,
+    subtext: `Picked "${pick}" (${odds}) for ${event}. That's the kind of pick that gets you sectioned.`,
   }),
   (name: string, event: string, pick: string, odds: string) => ({
-    headline: `${name} going against the grain on ${event}`,
-    subtext: `"${pick}" at ${odds} — the kind of pick that's either legendary or embarrassing. No in between.`,
+    headline: `Has ${name} been drinking?`,
+    subtext: `"${pick}" at ${odds} for ${event}. Either the ballsiest pick ever or the dumbest. No in between.`,
   }),
 ];
 
 export const WINNERS_LIST_TEMPLATES = [
   (event: string, winners: string, losers: string) => ({
-    headline: `Who cashed in on ${event}`,
-    subtext: `Points to: ${winners}. ${losers ? `Unlucky: ${losers}.` : ""}`,
+    headline: `${event} — the bloodbath scorecard`,
+    subtext: `${winners} cashed in. ${losers ? `${losers} got absolutely nothing. Suck it.` : ""}`,
   }),
   (event: string, winners: string, losers: string) => ({
-    headline: `${event} — the scorecard`,
-    subtext: `${winners} pocketed the points. ${losers ? `${losers} got nothing.` : "Everyone cleaned up."}`,
+    headline: `${event} — winners and losers`,
+    subtext: `${winners} pocketed the points. ${losers ? `${losers} can go cry about it.` : "Everyone cleaned up."}`,
   }),
   (event: string, winners: string, losers: string) => ({
-    headline: `Points awarded for ${event}`,
-    subtext: `${winners} called it right. ${losers ? `${losers} can stew on it.` : ""}`,
+    headline: `Who's laughing after ${event}?`,
+    subtext: `${winners} called it. ${losers ? `${losers} — what the hell were you thinking?` : ""}`,
   }),
 ];
 
@@ -193,31 +193,61 @@ export const GROUP_CONSENSUS_TEMPLATES = [
 
 export const LEADER_BANTER_TEMPLATES = [
   (name: string) => ({
-    headline: `${name} is eating for free`,
-    subtext: `${name} is sitting at the top of the ladder and eating for free. Not paying a cent. Absolute scenes.`,
+    headline: `${name} is eating for free, you're all paying`,
+    subtext: `Sitting pretty at the top while the rest of you mugs bankroll the meal. Must be nice.`,
   }),
   (name: string) => ({
-    headline: `${name} is laughing all the way to lunch`,
-    subtext: `Top of the table, zero dollars owed. ${name} is living the dream while the rest of you pay up.`,
+    headline: `${name} is laughing at every single one of you`,
+    subtext: `Top of the table, zero dollars owed. Living rent-free in your wallets and your heads.`,
   }),
   (name: string) => ({
-    headline: `${name} doesn't owe a thing`,
-    subtext: `Perched at the top of the ladder like royalty. Free feed. The rest of you are funding it.`,
+    headline: `Free feed for ${name} — sucks to be everyone else`,
+    subtext: `Perched at the top like royalty while the peasants below reach for their wallets.`,
   }),
 ];
 
 export const LAST_PLACE_BANTER_TEMPLATES = [
   (name: string, liability: string) => ({
-    headline: `Dead last: ${name}`,
-    subtext: `That's ${liability} for lunch — and we all know the group doesn't order cheaply. Bankruptcy watch is officially on.`,
+    headline: `Dead last: ${name} is absolutely cooked`,
+    subtext: `Staring down a ${liability} lunch bill. We're ordering lobster and the top shelf. Get the credit card ready, dickhead.`,
   }),
   (name: string, liability: string) => ({
-    headline: `${name} is propping up the ladder`,
-    subtext: `${name} is propping up the ladder in last place. Current lunch liability: ${liability}. We're ordering from the wine cellar. Brace for impact.`,
+    headline: `${name} is propping up the ladder like a drunken idiot`,
+    subtext: `Current lunch liability: ${liability}. At this rate we're ordering wagyu and champagne on their tab.`,
   }),
   (name: string, liability: string) => ({
-    headline: `${name} is cooked — literally paying for everyone`,
-    subtext: `Last place and staring down a ${liability} lunch bill. Someone start a GoFundMe.`,
+    headline: `${name} is the group's personal ATM`,
+    subtext: `Last place. ${liability} lunch bill. Someone start a GoFundMe because this clown is going bankrupt.`,
+  }),
+];
+
+export const NEW_LEADER_TEMPLATES = [
+  (name: string, prevLeader: string) => ({
+    headline: `${name} has knocked ${prevLeader} off their perch`,
+    subtext: `New leader. Free lunch secured. ${prevLeader} can get the wallet out now, ya mug.`,
+  }),
+  (name: string, prevLeader: string) => ({
+    headline: `${prevLeader} just got absolutely mugged`,
+    subtext: `${name} has taken the top spot. ${prevLeader} was talking shit and now they're paying for lunch. Beautiful.`,
+  }),
+  (name: string, prevLeader: string) => ({
+    headline: `Coup at the top — ${name} takes over`,
+    subtext: `${prevLeader} choked and ${name} swooped in. The throne has a new arse on it.`,
+  }),
+];
+
+export const NEW_SPUD_TEMPLATES = [
+  (name: string, prevSpud: string) => ({
+    headline: `${name} has sunk to dead bloody last`,
+    subtext: `Even ${prevSpud} is looking down at them now. Maximum lunch bill incoming. Get absolutely wrecked.`,
+  }),
+  (name: string, prevSpud: string) => ({
+    headline: `New spud alert: ${name} is the biggest loser`,
+    subtext: `${prevSpud} just dodged a bullet and ${name} caught it right in the face. Last place. Enjoy the bill, champion.`,
+  }),
+  (name: string, prevSpud: string) => ({
+    headline: `${name} — congratulations, you useless spud`,
+    subtext: `Officially dead last. ${prevSpud} sends their deepest thanks. Somebody hide ${name}'s credit card.`,
   }),
 ];
 

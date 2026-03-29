@@ -2,6 +2,8 @@ import type { FeedItem, FeedItemType, BackendFeedItem } from "./types";
 
 /** Default emoji per feed item type */
 const TYPE_EMOJI: Record<string, string> = {
+  new_leader: "\u{1F4AA}",
+  new_spud: "\u{1F954}",
   event_result: "\u{1F3C6}",
   perfect_pick: "\u{1F3AF}",
   everyone_wrong: "\u{1F602}",
@@ -32,6 +34,8 @@ const TYPE_PRIORITY: Record<string, number> = {
   leader_banter: 8,
   last_place_banter: 8,
   result_commentary: 8,
+  new_leader: 9,
+  new_spud: 9,
   winning_streak: 7,
   losing_streak: 7,
   contrarian_pick: 7,

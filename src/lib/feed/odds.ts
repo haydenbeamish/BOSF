@@ -22,7 +22,7 @@ export function generateOddsFeedItems(
     const favOdds = `$${event.favourite_odds!.toFixed(2)}`;
     const eventPreds = allPredictions.filter((p) => Number(p.event_id) === Number(event.id));
 
-    // Odds alert — show odds for any upcoming event with favourite odds available
+    // Odds alert — show odds for upcoming events
     const eventDate = event.event_date ?? event.close_date;
     {
       const t = hashPick(ODDS_ALERT_TEMPLATES, `odds-${event.id}`);
@@ -37,7 +37,7 @@ export function generateOddsFeedItems(
         eventName: event.event_name,
         sport: event.sport,
         timestamp: eventDate ?? undefined,
-        priority: 6,
+        priority: 5,
       });
     }
 
