@@ -6,12 +6,13 @@ import { cn } from "../../lib/cn";
 
 const PAGE_TITLES: Record<string, string> = {
   "/": "BOSF Punting",
+  "/news": "News Feed",
   "/events": "Events",
   "/leaderboard": "Leaderboard",
   "/members": "Members",
 };
 
-export function Header() {
+export function Header({ hidden = false }: { hidden?: boolean }) {
   const location = useLocation();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -44,7 +45,10 @@ export function Header() {
   }
 
   return (
-    <header className="shrink-0 border-b border-zinc-200/60 bg-white/80 backdrop-blur-xl pt-safe">
+    <header className={cn(
+      "shrink-0 border-b border-zinc-200/60 bg-white/80 backdrop-blur-xl pt-safe transition-[max-height,border-color] duration-300 ease-in-out overflow-hidden",
+      hidden && !isSubPage ? "max-h-0 border-transparent" : "max-h-20"
+    )}>
       <div className="flex items-center justify-between h-14 px-4 max-w-3xl mx-auto">
         {isSubPage ? (
           <div className="flex items-center">
