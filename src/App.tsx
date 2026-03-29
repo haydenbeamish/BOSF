@@ -12,6 +12,7 @@ const EventDetailPage = lazy(() => import("./pages/EventDetailPage"));
 const PlayerPage = lazy(() => import("./pages/PlayerPage"));
 const MembersPage = lazy(() => import("./pages/MembersPage"));
 const EventsPage = lazy(() => import("./pages/EventsPage"));
+const NewsPage = lazy(() => import("./pages/NewsPage"));
 const NotFoundPage = lazy(() => import("./pages/NotFoundPage"));
 
 function PageSkeleton() {
@@ -47,6 +48,7 @@ function AnimatedRoutes() {
       >
         <Routes location={location}>
           <Route path="/" element={<DashboardPage />} />
+          <Route path="/news" element={<NewsPage />} />
           <Route path="/events" element={<EventsPage />} />
           <Route path="/leaderboard" element={<LeaderboardPage />} />
           <Route path="/events/:id" element={<EventDetailPage />} />
