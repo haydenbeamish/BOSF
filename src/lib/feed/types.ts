@@ -44,6 +44,16 @@ export interface FeedItem {
     underdog?: string;
     underdogOdds?: number;
   };
+  /** Who picked what — for showing pick distribution alongside odds */
+  picks?: {
+    options: Array<{
+      label: string;
+      count: number;
+      names: string[];
+      isFavourite?: boolean;
+    }>;
+    total: number;
+  };
 }
 
 /**

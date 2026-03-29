@@ -4,12 +4,80 @@ import { getResults, getLeaderboard, getEvents, getFeed } from "../data/api";
 import { generateNewsFeed, type FeedItem } from "../lib/newsfeed";
 import { normalizeBackendFeedItem } from "../lib/feed/normalize";
 import { enhanceBanter } from "../data/ai";
-import type { LeaderboardEntry, CompetitionEvent } from "../types";
+import type { LeaderboardEntry, CompetitionEvent, Prediction, Participant } from "../types";
 
 interface NewsFeedData {
   feedItems: FeedItem[];
   leaderboard: LeaderboardEntry[];
   events: CompetitionEvent[];
+}
+
+/**
+ * Enrich a backend feed item with structured odds & picks data
+ * when the item references an event that has odds and predictions.
+ */
+function enrichFeedItemWithOddsAndPicks(
+  item: FeedItem,
+  events: CompetitionEvent[],
+  predictions: Prediction[],
+  participants: Participant[]
+): FeedItem {
+  // Only enrich odds-related types that are missing structured data
+  const ODDS_TYPES = new Set(["odds_alert", "contrarian_pick", "underdog_backer", "pre_event_odds"]);
+  if (!ODDS_TYPES.has(item.type)) return item;
+  if (!item.eventId) return item;
+
+  const event = events.find((e) => Number(e.id) === Number(item.eventId));
+  if (!event || !event.favourite || !event.favourite_odds) return item;
+
+  const enriched = { ...item };
+
+  // Add odds if missing
+  if (!enriched.odds) {
+    enriched.odds = {
+      favourite: event.favourite,
+      favouriteOdds: event.favourite_odds,
+      underdog: event.underdog ?? undefined,
+      underdogOdds: event.underdog_odds ?? undefined,
+    };
+  }
+
+  // Add picks if missing
+  if (!enriched.picks) {
+    const eventPreds = predictions.filter(
+      (p) => Number(p.event_id) === Number(event.id)
+    );
+    if (eventPreds.length > 0) {
+      const participantMap = new Map(
+        participants.map((p) => [Number(p.id), p.name])
+      );
+      const groups: Record<string, { label: string; names: string[] }> = {};
+      for (const pred of eventPreds) {
+        const key = pred.prediction.toLowerCase().trim();
+        if (!groups[key]) {
+          groups[key] = { label: pred.prediction.trim(), names: [] };
+        }
+        const name =
+          participantMap.get(Number(pred.participant_id)) ??
+          pred.participant_name ??
+          "Unknown";
+        groups[key].names.push(name);
+      }
+      const favouriteKey = event.favourite.toLowerCase().trim();
+      const options = Object.entries(groups)
+        .map(([key, { label, names }]) => ({
+          label,
+          count: names.length,
+          names,
+          isFavourite: key === favouriteKey,
+        }))
+        .sort((a, b) => b.count - a.count);
+
+      enriched.picks = { options, total: eventPreds.length };
+    }
+  }
+
+  return enriched;
 }
 
 async function fetchNewsFeedData(): Promise<NewsFeedData> {
@@ -40,7 +108,10 @@ async function fetchNewsFeedData(): Promise<NewsFeedData> {
 
   const backendItems = backendFeedRaw
     .map((raw) => normalizeBackendFeedItem(raw))
-    .filter((item): item is FeedItem => item !== null && !BORING_TYPES.has(item.type));
+    .filter((item): item is FeedItem => item !== null && !BORING_TYPES.has(item.type))
+    .map((item) =>
+      enrichFeedItemWithOddsAndPicks(item, mergedEvents, allPredictions, results.participants ?? [])
+    );
 
   // Generate client-side feed items as supplement
   const clientItems = generateNewsFeed(

@@ -5,6 +5,48 @@ import { hashPick, CONTRARIAN_PICK_TEMPLATES, UNDERDOG_BACKER_TEMPLATES } from "
 /** Maximum total odds-related items to include in the feed */
 const MAX_ODDS_ITEMS = 5;
 
+/** Build a pick distribution for an event: who picked what, grouped by option */
+function buildPickDistribution(
+  event: CompetitionEvent,
+  allPredictions: Prediction[],
+  participants: Participant[]
+): NonNullable<FeedItem["picks"]> {
+  const eventPreds = allPredictions.filter(
+    (p) => Number(p.event_id) === Number(event.id)
+  );
+
+  const participantMap = new Map(
+    participants.map((p) => [Number(p.id), p.name])
+  );
+
+  // Group predictions by option (case-insensitive)
+  const groups: Record<string, { label: string; names: string[] }> = {};
+  for (const pred of eventPreds) {
+    const key = pred.prediction.toLowerCase().trim();
+    if (!groups[key]) {
+      groups[key] = { label: pred.prediction.trim(), names: [] };
+    }
+    const name =
+      participantMap.get(Number(pred.participant_id)) ??
+      pred.participant_name ??
+      "Unknown";
+    groups[key].names.push(name);
+  }
+
+  const favouriteKey = event.favourite?.toLowerCase().trim() ?? "";
+
+  const options = Object.entries(groups)
+    .map(([key, { label, names }]) => ({
+      label,
+      count: names.length,
+      names,
+      isFavourite: key === favouriteKey,
+    }))
+    .sort((a, b) => b.count - a.count);
+
+  return { options, total: eventPreds.length };
+}
+
 export function generateOddsFeedItems(
   events: CompetitionEvent[],
   allPredictions: Prediction[],
@@ -19,6 +61,7 @@ export function generateOddsFeedItems(
   // --- Odds alerts: show actual odds for upcoming events ---
   for (const event of upcomingWithOdds) {
     const eventDate = event.event_date ?? event.close_date;
+    const picks = buildPickDistribution(event, allPredictions, participants);
     feed.push({
       id: `odds-${event.id}`,
       type: "odds_alert",
@@ -38,6 +81,7 @@ export function generateOddsFeedItems(
         underdog: event.underdog ?? undefined,
         underdogOdds: event.underdog_odds ?? undefined,
       },
+      picks: picks.total > 0 ? picks : undefined,
     });
   }
 
@@ -85,6 +129,7 @@ export function generateOddsFeedItems(
     const pctGroup = Math.round((c.popularCount / c.total) * 100);
     const t = hashPick(CONTRARIAN_PICK_TEMPLATES, `contrarian-${c.event.id}`);
     const { headline, subtext } = t(c.event.event_name, c.event.favourite!, c.favOdds, c.popularDisplay, pctGroup);
+    const picks = buildPickDistribution(c.event, allPredictions, participants);
     feed.push({
       id: `contrarian-${c.event.id}`,
       type: "contrarian_pick",
@@ -95,6 +140,13 @@ export function generateOddsFeedItems(
       eventName: c.event.event_name,
       sport: c.event.sport,
       priority: 7,
+      odds: {
+        favourite: c.event.favourite!,
+        favouriteOdds: c.event.favourite_odds!,
+        underdog: c.event.underdog ?? undefined,
+        underdogOdds: c.event.underdog_odds ?? undefined,
+      },
+      picks: picks.total > 0 ? picks : undefined,
     });
   }
 
