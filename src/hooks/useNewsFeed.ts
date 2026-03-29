@@ -104,10 +104,11 @@ async function fetchNewsFeedData(): Promise<NewsFeedData> {
     "pick_summary",
     "group_consensus",
     "pre_event_odds",
+    "odds_vs_picks",
   ]);
 
-  // Headlines that indicate admin/validation items, not real news
-  const BORING_HEADLINE_PREFIXES = ["Date Check"];
+  // Headlines that indicate admin/validation items or generic placeholders, not real news
+  const BORING_HEADLINE_PREFIXES = ["Date Check", "Odds vs picks:"];
 
   const backendItems = backendFeedRaw
     .map((raw) => normalizeBackendFeedItem(raw))
