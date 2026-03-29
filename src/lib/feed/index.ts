@@ -2,6 +2,7 @@ import type { CompetitionEvent, Prediction, LeaderboardEntry, Participant } from
 import type { FeedItem } from "./types";
 import {
   hashPick,
+  EVENT_RESULT_TEMPLATES,
   EVERYONE_WRONG_TEMPLATES,
   PERFECT_PICK_TEMPLATES,
   WINNING_STREAK_TEMPLATES,
@@ -11,6 +12,8 @@ import {
   WINNERS_LIST_TEMPLATES,
   LEADER_BANTER_TEMPLATES,
   LAST_PLACE_BANTER_TEMPLATES,
+  NEW_LEADER_TEMPLATES,
+  NEW_SPUD_TEMPLATES,
 } from "./templates";
 import { computeStreaks, STREAK_THRESHOLD } from "./streaks";
 import { findOutliers, MAX_OUTLIERS } from "./outliers";
@@ -53,12 +56,33 @@ export function generateNewsFeed(
     .filter((e) => e.status === "completed" && e.correct_answer)
     .sort((a, b) => (b.display_order ?? 0) - (a.display_order ?? 0));
 
-  // 1. Event results — only show dramatic outcomes, not every result
+  // 1. Event results — show who won for every completed event
   for (const event of completedEvents) {
     const preds = allPredictions.filter((p) => Number(p.event_id) === Number(event.id));
     const correctCount = preds.filter((p) => Boolean(p.is_correct)).length;
 
-    // Nobody got it right — always hilarious
+    // Result for every event — who won
+    const template = hashPick(EVENT_RESULT_TEMPLATES, `result-${event.id}`);
+    const { headline, subtext } = template(
+      event.event_name,
+      event.correct_answer!,
+      correctCount,
+      preds.length
+    );
+    feed.push({
+      id: `result-${event.id}`,
+      type: "event_result",
+      emoji: "\u{1F3C6}",
+      headline,
+      subtext,
+      eventId: event.id,
+      eventName: event.event_name,
+      sport: event.sport,
+      timestamp: event.event_date ?? event.created_at,
+      priority: 7,
+    });
+
+    // Nobody got it right — always hilarious, higher priority
     if (correctCount === 0 && preds.length > 0) {
       const t = hashPick(EVERYONE_WRONG_TEMPLATES, `wrong-${event.id}`);
       const { headline: h, subtext: s } = t(event.event_name);
@@ -102,7 +126,7 @@ export function generateNewsFeed(
       }
     }
 
-    // Winners list — only when the split is lopsided (≤30% won OR ≤30% lost = drama)
+    // Winners list — only when the split is lopsided (≤30% won OR ≥70% won = drama)
     if (correctCount > 0 && correctCount < preds.length && preds.length >= 3) {
       const winRatio = correctCount / preds.length;
       if (winRatio <= 0.3 || winRatio >= 0.7) {
@@ -255,7 +279,54 @@ export function generateNewsFeed(
     });
   }
 
-  // 6. Odds-based alerts
+  // 6. New leader / new spud detection
+  // If the current leader only leads by the points value of the most recent event,
+  // they likely just took the lead — call it out. Same logic for last place.
+  if (completedEvents.length >= 2 && leaderboard.length >= 3) {
+    const leader = leaderboard[0];
+    const second = leaderboard[1];
+    const lastPlace = leaderboard[leaderboard.length - 1];
+    const secondLast = leaderboard[leaderboard.length - 2];
+    const mostRecentEvent = completedEvents[0];
+    const pointsValue = mostRecentEvent?.points_value ?? 1;
+
+    // New leader: leader's margin over 2nd is within the last event's points
+    // (meaning before that event, they were behind or tied)
+    const leaderGap = leader.total_points - second.total_points;
+    if (leaderGap > 0 && leaderGap <= pointsValue) {
+      const t = hashPick(NEW_LEADER_TEMPLATES, `newleader-${leader.id}`);
+      const { headline, subtext } = t(leader.name, second.name);
+      feed.push({
+        id: `new-leader`,
+        type: "new_leader",
+        emoji: "\u{1F4AA}",
+        headline,
+        subtext,
+        playerName: leader.name,
+        playerId: leader.id,
+        priority: 9,
+      });
+    }
+
+    // New spud: last place's deficit from 2nd-last is within the last event's points
+    const spudGap = secondLast.total_points - lastPlace.total_points;
+    if (spudGap > 0 && spudGap <= pointsValue) {
+      const t = hashPick(NEW_SPUD_TEMPLATES, `newspud-${lastPlace.id}`);
+      const { headline, subtext } = t(lastPlace.name, secondLast.name);
+      feed.push({
+        id: `new-spud`,
+        type: "new_spud",
+        emoji: "\u{1F954}",
+        headline,
+        subtext,
+        playerName: lastPlace.name,
+        playerId: lastPlace.id,
+        priority: 9,
+      });
+    }
+  }
+
+  // 7. Odds-based alerts
   feed.push(...generateOddsFeedItems(events, allPredictions, participants));
 
   // Sort: highest priority first, then by timestamp (newest first)

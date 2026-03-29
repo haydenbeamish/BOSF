@@ -31,13 +31,11 @@ async function fetchNewsFeedData(): Promise<NewsFeedData> {
   ];
 
   // Normalise backend feed items into our FeedItem shape, filtering out
-  // boring types that clog the feed (plain pick summaries, generic odds, consensus)
+  // boring types that clog the feed (plain pick summaries, consensus)
   const BORING_TYPES = new Set([
     "pick_summary",
     "group_consensus",
-    "odds_alert",
     "pre_event_odds",
-    "event_result",
   ]);
 
   const backendItems = backendFeedRaw
@@ -70,8 +68,8 @@ async function fetchNewsFeedData(): Promise<NewsFeedData> {
     return 0;
   });
 
-  // Cap the feed — only the most interesting items make the cut
-  const MAX_FEED_ITEMS = 15;
+  // Cap the feed — show plenty of items but not infinite
+  const MAX_FEED_ITEMS = 30;
 
   return { feedItems: combined.slice(0, MAX_FEED_ITEMS), leaderboard: lb, events: allEvents };
 }

@@ -2,6 +2,7 @@ import type { CompetitionEvent, Prediction, Participant } from "../../types";
 import type { FeedItem } from "./types";
 import {
   hashPick,
+  ODDS_ALERT_TEMPLATES,
   CONTRARIAN_PICK_TEMPLATES,
   UNDERDOG_BACKER_TEMPLATES,
 } from "./templates";
@@ -21,7 +22,24 @@ export function generateOddsFeedItems(
     const favOdds = `$${event.favourite_odds!.toFixed(2)}`;
     const eventPreds = allPredictions.filter((p) => Number(p.event_id) === Number(event.id));
 
-    // Odds alert removed — just showing numbers isn't interesting
+    // Odds alert — show odds for upcoming events
+    const eventDate = event.event_date ?? event.close_date;
+    {
+      const t = hashPick(ODDS_ALERT_TEMPLATES, `odds-${event.id}`);
+      const { headline, subtext } = t(event.event_name, event.favourite!, favOdds);
+      feed.push({
+        id: `odds-${event.id}`,
+        type: "odds_alert",
+        emoji: "\u{1F4CA}",
+        headline,
+        subtext,
+        eventId: event.id,
+        eventName: event.event_name,
+        sport: event.sport,
+        timestamp: eventDate ?? undefined,
+        priority: 5,
+      });
+    }
 
     // Contrarian pick — the group's most popular pick differs from the bookies' favourite
     if (eventPreds.length >= 3) {
