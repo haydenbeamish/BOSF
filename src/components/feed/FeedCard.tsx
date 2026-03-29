@@ -18,6 +18,8 @@ import {
   Banknote,
   ClipboardList,
   MessageSquare,
+  ArrowUpCircle,
+  Skull,
 } from "lucide-react";
 import { cn } from "../../lib/cn";
 import type { FeedItem } from "../../lib/newsfeed";
@@ -115,6 +117,16 @@ const TYPE_CONFIG: Record<
     icon: BarChart3,
     accent: "text-blue-600",
     stripe: "bg-blue-500",
+  },
+  new_leader: {
+    icon: ArrowUpCircle,
+    accent: "text-amber-600",
+    stripe: "bg-amber-500",
+  },
+  new_spud: {
+    icon: Skull,
+    accent: "text-red-600",
+    stripe: "bg-red-500",
   },
 };
 

@@ -16,7 +16,9 @@ export type FeedItemType =
   | "last_place_banter"
   | "pick_summary"
   | "result_commentary"
-  | "pre_event_odds";
+  | "pre_event_odds"
+  | "new_leader"
+  | "new_spud";
 
 export interface FeedItem {
   id: string;
