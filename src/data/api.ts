@@ -178,6 +178,22 @@ export async function getResults(): Promise<{
   return { events, participants: rawParticipants, predictions };
 }
 
+export async function getFeed(options?: {
+  limit?: number;
+  offset?: number;
+  type?: string;
+  since?: string;
+}): Promise<unknown[]> {
+  const params = new URLSearchParams();
+  if (options?.limit) params.set("limit", String(options.limit));
+  if (options?.offset) params.set("offset", String(options.offset));
+  if (options?.type) params.set("type", options.type);
+  if (options?.since) params.set("since", options.since);
+  const query = params.toString() ? `?${params}` : "";
+  const data = await fetchJson<unknown>(`/feed${query}`);
+  return toArray<unknown>(data, "feed", "items", "data", "results");
+}
+
 export async function getStats(): Promise<StatsOverview> {
   const [stats, lb] = await Promise.all([
     fetchJson<StatsOverview>("/stats"),

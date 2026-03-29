@@ -18,7 +18,8 @@ import { computeStreaks, STREAK_THRESHOLD } from "./streaks";
 import { findOutliers, MAX_OUTLIERS } from "./outliers";
 import { generateOddsFeedItems } from "./odds";
 
-export type { FeedItem, FeedItemType } from "./types";
+export type { FeedItem, FeedItemType, BackendFeedItem } from "./types";
+export { normalizeBackendFeedItem } from "./normalize";
 
 /**
  * Lunch contributions table — maps leaderboard position (1-14) to the
