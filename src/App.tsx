@@ -48,10 +48,10 @@ function AnimatedRoutes() {
     <AnimatePresence mode="wait">
       <motion.div
         key={location.pathname}
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        transition={{ duration: 0.15 }}
+        initial={{ opacity: 0, y: 6 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: -4 }}
+        transition={{ duration: 0.2, ease: [0.25, 0.1, 0.25, 1] }}
       >
         <Routes location={location}>
           <Route path="/" element={<DashboardPage />} />
@@ -68,25 +68,32 @@ function AnimatedRoutes() {
   );
 }
 
-const SCROLL_DELTA = 10;
+const SCROLL_DELTA = 3;
 
 export default function App() {
   const mainRef = useRef<HTMLElement>(null);
   const [headerHidden, setHeaderHidden] = useState(false);
   const lastScrollY = useRef(0);
+  const ticking = useRef(false);
 
   const handleScroll = useCallback(() => {
-    const el = mainRef.current;
-    if (!el) return;
-    const currentY = el.scrollTop;
-    const delta = currentY - lastScrollY.current;
-    if (delta > SCROLL_DELTA && currentY > 56) {
-      setHeaderHidden(true);
-      lastScrollY.current = currentY;
-    } else if (delta < -SCROLL_DELTA) {
-      setHeaderHidden(false);
-      lastScrollY.current = currentY;
-    }
+    if (ticking.current) return;
+    ticking.current = true;
+    requestAnimationFrame(() => {
+      const el = mainRef.current;
+      if (el) {
+        const currentY = el.scrollTop;
+        const delta = currentY - lastScrollY.current;
+        if (delta > SCROLL_DELTA && currentY > 48) {
+          setHeaderHidden(true);
+          lastScrollY.current = currentY;
+        } else if (delta < -SCROLL_DELTA) {
+          setHeaderHidden(false);
+          lastScrollY.current = currentY;
+        }
+      }
+      ticking.current = false;
+    });
   }, []);
 
   const resetHeader = useCallback(() => {
