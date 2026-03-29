@@ -236,6 +236,43 @@ export const NEW_SPUD_TEMPLATES = [
   }),
 ];
 
+export const UPSET_ALERT_TEMPLATES = [
+  (event: string, winner: string, favourite: string, favOdds: string) => ({
+    headline: `Upset! ${winner} rolled ${favourite} — ${event}`,
+    subtext: `The bookies had ${favourite} at ${favOdds}. The punters who called it are geniuses. The rest are fuming.`,
+  }),
+  (event: string, winner: string, favourite: string, favOdds: string) => ({
+    headline: `${favourite} (${favOdds}) just got pantsed`,
+    subtext: `${winner} wins ${event}. The bookies got it wrong and so did anyone dumb enough to follow them.`,
+  }),
+  (event: string, winner: string, favourite: string, _favOdds: string) => ({
+    headline: `${event}: the bookies are crying`,
+    subtext: `${winner} over ${favourite}. Absolute scenes. If you tipped the upset, take a bloody bow.`,
+  }),
+];
+
+export const ACCURACY_TEMPLATES = [
+  (name: string, pct: string, correct: number, total: number) => ({
+    headline: `${name} is running at ${pct}`,
+    subtext: `${correct} from ${total}. ${Number(pct.replace('%','')) >= 70 ? "Annoyingly good." : Number(pct.replace('%','')) <= 30 ? "Embarrassingly shit." : "Thoroughly mid."}`,
+  }),
+  (name: string, pct: string, correct: number, total: number) => ({
+    headline: `${name}: ${correct}/${total} — ${pct} hit rate`,
+    subtext: `${Number(pct.replace('%','')) >= 70 ? "Making it look too easy, the smug bastard." : Number(pct.replace('%','')) <= 30 ? "Shouldn't be allowed to make picks anymore." : "Right in the pack. Nothing to brag about."}`,
+  }),
+];
+
+export const LUNCH_LIABILITY_TEMPLATES = [
+  (name: string, amount: string, position: string) => ({
+    headline: `${name} owes ${amount} for lunch`,
+    subtext: `Currently sitting ${position}. Every wrong pick from here is going to sting.`,
+  }),
+  (name: string, amount: string, position: string) => ({
+    headline: `${name}'s wallet: ${amount} lighter`,
+    subtext: `${position} on the ladder. Better start tipping well or that bill's going up, dickhead.`,
+  }),
+];
+
 /** Use a seeded index based on string hash for deterministic template selection */
 export function hashPick<T>(templates: T[], seed: string): T {
   let hash = 0;

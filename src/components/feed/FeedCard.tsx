@@ -20,6 +20,9 @@ import {
   MessageSquare,
   ArrowUpCircle,
   Skull,
+  Zap,
+  Percent,
+  CreditCard,
 } from "lucide-react";
 import { cn } from "../../lib/cn";
 import type { FeedItem } from "../../lib/newsfeed";
@@ -127,6 +130,21 @@ const TYPE_CONFIG: Record<
     icon: Skull,
     accent: "text-red-600",
     stripe: "bg-red-500",
+  },
+  upset_alert: {
+    icon: Zap,
+    accent: "text-orange-600",
+    stripe: "bg-orange-500",
+  },
+  accuracy_check: {
+    icon: Percent,
+    accent: "text-cyan-600",
+    stripe: "bg-cyan-500",
+  },
+  lunch_liability: {
+    icon: CreditCard,
+    accent: "text-rose-600",
+    stripe: "bg-rose-500",
   },
 };
 

@@ -18,7 +18,10 @@ export type FeedItemType =
   | "result_commentary"
   | "pre_event_odds"
   | "new_leader"
-  | "new_spud";
+  | "new_spud"
+  | "upset_alert"
+  | "accuracy_check"
+  | "lunch_liability";
 
 export interface FeedItem {
   id: string;

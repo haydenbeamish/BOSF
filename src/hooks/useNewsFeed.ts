@@ -79,8 +79,20 @@ async function fetchNewsFeedData(): Promise<NewsFeedData> {
     return true;
   });
 
+  // Interleave: avoid runs of 3+ cards of the same type back-to-back.
+  // Walk the sorted list; when we see a third consecutive same-type item,
+  // swap it with the next different-type item found later in the list.
+  for (let i = 2; i < capped.length; i++) {
+    if (capped[i].type === capped[i - 1].type && capped[i].type === capped[i - 2].type) {
+      const swapIdx = capped.findIndex((item, j) => j > i && item.type !== capped[i].type);
+      if (swapIdx !== -1) {
+        [capped[i], capped[swapIdx]] = [capped[swapIdx], capped[i]];
+      }
+    }
+  }
+
   // Cap the feed — show plenty of items but not infinite
-  const MAX_FEED_ITEMS = 30;
+  const MAX_FEED_ITEMS = 25;
 
   return { feedItems: capped.slice(0, MAX_FEED_ITEMS), leaderboard: lb, events: allEvents };
 }
