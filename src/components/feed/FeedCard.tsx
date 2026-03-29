@@ -215,13 +215,12 @@ export function FeedCard({ item, index }: FeedCardProps) {
           <p className="font-display font-bold text-sm leading-snug text-zinc-800">
             {item.headline}
           </p>
-          {item.odds ? (
-            <OddsDisplay odds={item.odds} />
-          ) : (
+          {item.subtext && (
             <p className="text-[13px] text-zinc-500 mt-0.5 leading-relaxed">
               {item.subtext}
             </p>
           )}
+          {item.odds && <OddsDisplay odds={item.odds} />}
           {item.picks && item.picks.total > 0 && (
             <PicksDisplay picks={item.picks} />
           )}
