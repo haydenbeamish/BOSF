@@ -22,7 +22,7 @@ function enrichFeedItemWithOddsAndPicks(
   predictions: Prediction[],
   participants: Participant[]
 ): FeedItem {
-  const ODDS_TYPES = new Set(["odds_alert", "contrarian_pick", "underdog_backer", "pre_event_odds"]);
+  const ODDS_TYPES = new Set(["odds_alert", "contrarian_pick", "underdog_backer", "pre_event_odds", "picks_open"]);
   if (!ODDS_TYPES.has(item.type)) return item;
   if (!item.eventId) return item;
 

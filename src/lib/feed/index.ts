@@ -453,6 +453,14 @@ export function generateNewsFeed(
           sport: event.sport,
           timestamp: event.event_date ?? event.close_date ?? undefined,
           priority: 8,
+          odds: event.favourite && event.favourite_odds
+            ? {
+                favourite: event.favourite,
+                favouriteOdds: event.favourite_odds,
+                underdog: event.underdog ?? undefined,
+                underdogOdds: event.underdog_odds ?? undefined,
+              }
+            : undefined,
         });
       }
     }
