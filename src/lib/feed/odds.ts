@@ -3,7 +3,7 @@ import type { FeedItem } from "./types";
 import { hashPick, CONTRARIAN_PICK_TEMPLATES, UNDERDOG_BACKER_TEMPLATES } from "./templates";
 
 /** Maximum total odds-related items to include in the feed */
-const MAX_ODDS_ITEMS = 5;
+const MAX_ODDS_ITEMS = 3;
 
 /** Build a pick distribution for an event: who picked what, grouped by option */
 function buildPickDistribution(
@@ -62,14 +62,17 @@ export function generateOddsFeedItems(
   for (const event of upcomingWithOdds) {
     const eventDate = event.event_date ?? event.close_date;
     const picks = buildPickDistribution(event, allPredictions, participants);
+    const favOdds = `$${event.favourite_odds!.toFixed(2)}`;
+    const headline = event.underdog
+      ? `${event.favourite} (${favOdds}) vs ${event.underdog}${event.underdog_odds ? ` ($${event.underdog_odds.toFixed(2)})` : ""}`
+      : `${event.favourite} favoured at ${favOdds}`;
+
     feed.push({
       id: `odds-${event.id}`,
       type: "odds_alert",
       emoji: "\u{1F4CA}",
-      headline: event.event_name,
-      subtext: event.underdog
-        ? `${event.favourite} vs ${event.underdog}`
-        : `${event.favourite} favoured`,
+      headline,
+      subtext: event.event_name,
       eventId: event.id,
       eventName: event.event_name,
       sport: event.sport,

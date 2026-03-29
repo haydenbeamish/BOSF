@@ -131,11 +131,26 @@ async function fetchFullNewsFeedData(): Promise<FullNewsFeedData> {
 
   const combined = [...backendItems, ...uniqueClientItems];
 
-  // NO stale-item filtering — keep odds_alert, contrarian_pick,
-  // underdog_backer, picks_open for completed events
+  // Remove odds/contrarian/underdog items for completed events — they're stale
+  const completedEventIds = new Set(
+    mergedEvents
+      .filter((e) => e.status === "completed")
+      .map((e) => Number(e.id))
+  );
+  const STALE_WHEN_COMPLETED = new Set([
+    "odds_alert",
+    "contrarian_pick",
+    "underdog_backer",
+    "picks_open",
+  ]);
+  const filtered = combined.filter((item) => {
+    if (!item.eventId) return true;
+    if (!STALE_WHEN_COMPLETED.has(item.type)) return true;
+    return !completedEventIds.has(Number(item.eventId));
+  });
 
   // Sort purely chronologically (newest first), with priority as tiebreaker
-  combined.sort((a, b) => {
+  filtered.sort((a, b) => {
     if (a.timestamp && b.timestamp) {
       const cmp = b.timestamp.localeCompare(a.timestamp);
       if (cmp !== 0) return cmp;
@@ -144,10 +159,21 @@ async function fetchFullNewsFeedData(): Promise<FullNewsFeedData> {
     return b.priority - a.priority;
   });
 
-  // No per-type capping, no interleaving — full chronological feed
+  // Cap per type — prevent odds-related types from flooding the feed
+  const UNCAPPED_TYPES = new Set(["event_result"]);
+  const MAX_PER_TYPE = 3;
+  const typeCounts: Record<string, number> = {};
+  const capped = filtered.filter((item) => {
+    if (UNCAPPED_TYPES.has(item.type)) return true;
+    const count = typeCounts[item.type] ?? 0;
+    if (count >= MAX_PER_TYPE) return false;
+    typeCounts[item.type] = count + 1;
+    return true;
+  });
+
   const MAX_FEED_ITEMS = 100;
 
-  return { feedItems: combined.slice(0, MAX_FEED_ITEMS), leaderboard: lb, events: allEvents };
+  return { feedItems: capped.slice(0, MAX_FEED_ITEMS), leaderboard: lb, events: allEvents };
 }
 
 function feedItemKey(item: FeedItem): string {
