@@ -1,4 +1,5 @@
-import { NavLink } from "react-router-dom";
+import { NavLink, useLocation } from "react-router-dom";
+import { motion } from "framer-motion";
 import { LayoutDashboard, Trophy, Users, CalendarDays, Newspaper } from "lucide-react";
 import { cn } from "../../lib/cn";
 
@@ -11,6 +12,11 @@ const tabs = [
 ];
 
 export function BottomNav() {
+  const location = useLocation();
+  const activePath = tabs.find((t) =>
+    t.to === "/" ? location.pathname === "/" : location.pathname.startsWith(t.to)
+  )?.to;
+
   return (
     <nav
       className="shrink-0 border-t border-zinc-200/60 bg-white/95 backdrop-blur-xl pb-safe shadow-[0_-1px_3px_rgba(0,0,0,0.04)]"
@@ -23,7 +29,7 @@ export function BottomNav() {
             end={tab.to === "/"}
             className={({ isActive }) =>
               cn(
-                "flex flex-col items-center gap-0.5 px-5 py-2.5 rounded-xl transition-all duration-200 min-w-[64px] min-h-[44px]",
+                "relative flex flex-col items-center gap-0.5 px-5 py-2.5 rounded-xl min-w-[64px] min-h-[44px]",
                 isActive
                   ? "text-emerald-700"
                   : "text-zinc-400 active:text-zinc-600"
@@ -32,13 +38,17 @@ export function BottomNav() {
           >
             {({ isActive }) => (
               <>
-                <div className="relative">
+                {isActive && activePath === tab.to && (
+                  <motion.div
+                    layoutId="bottomnav-pill"
+                    className="absolute inset-0 rounded-xl bg-emerald-50/70"
+                    transition={{ type: "spring", stiffness: 380, damping: 30 }}
+                  />
+                )}
+                <div className="relative z-10">
                   <tab.icon size={20} strokeWidth={isActive ? 2.5 : 1.5} />
-                  {isActive && (
-                    <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-emerald-600" />
-                  )}
                 </div>
-                <span className="text-[10px] font-semibold tracking-wide">{tab.label}</span>
+                <span className="relative z-10 text-[10px] font-semibold tracking-wide">{tab.label}</span>
               </>
             )}
           </NavLink>

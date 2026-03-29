@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { ChevronRight, Check, CalendarDays, CheckCircle2 } from "lucide-react";
 import { getEventDisplayDate, formatEventDate } from "../lib/dates";
 import { useEvents } from "../hooks/useEvents";
@@ -99,13 +99,19 @@ export function EventsPage() {
     >
       <div className="px-4 pt-4">
         {/* Upcoming / Decided segmented control */}
-        <div className="flex gap-1 p-1 rounded-xl bg-zinc-100 mb-3">
+        <div className="relative flex gap-1 p-1 rounded-xl bg-zinc-100 mb-3">
+          <motion.div
+            layoutId="segment-pill"
+            className="absolute top-1 bottom-1 rounded-lg bg-white shadow-sm"
+            style={{ width: "calc(50% - 4px)", left: activeTab === "upcoming" ? 4 : "calc(50% + 0px)" }}
+            transition={{ type: "spring", stiffness: 400, damping: 30 }}
+          />
           <button
             onClick={() => setActiveTab("upcoming")}
             className={cn(
-              "flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-semibold transition-all",
+              "relative z-10 flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-semibold transition-colors duration-200",
               activeTab === "upcoming"
-                ? "bg-white text-zinc-900 shadow-sm"
+                ? "text-zinc-900"
                 : "text-zinc-400"
             )}
           >
@@ -113,7 +119,7 @@ export function EventsPage() {
             Upcoming
             {upcomingCount > 0 && (
               <span className={cn(
-                "text-[10px] rounded-full px-1.5 py-0.5 font-bold",
+                "text-[10px] rounded-full px-1.5 py-0.5 font-bold transition-colors duration-200",
                 activeTab === "upcoming" ? "bg-emerald-100 text-emerald-700" : "bg-zinc-200 text-zinc-500"
               )}>{upcomingCount}</span>
             )}
@@ -121,9 +127,9 @@ export function EventsPage() {
           <button
             onClick={() => setActiveTab("decided")}
             className={cn(
-              "flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-semibold transition-all",
+              "relative z-10 flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-semibold transition-colors duration-200",
               activeTab === "decided"
-                ? "bg-white text-zinc-900 shadow-sm"
+                ? "text-zinc-900"
                 : "text-zinc-400"
             )}
           >
@@ -131,7 +137,7 @@ export function EventsPage() {
             Decided
             {decidedCount > 0 && (
               <span className={cn(
-                "text-[10px] rounded-full px-1.5 py-0.5 font-bold",
+                "text-[10px] rounded-full px-1.5 py-0.5 font-bold transition-colors duration-200",
                 activeTab === "decided" ? "bg-emerald-100 text-emerald-700" : "bg-zinc-200 text-zinc-500"
               )}>{decidedCount}</span>
             )}
@@ -170,14 +176,29 @@ export function EventsPage() {
         </div>
 
         {/* Events list */}
+        <AnimatePresence mode="wait">
         {displayEvents.length === 0 ? (
-          <div className="text-center py-12 text-zinc-400 text-sm">
+          <motion.div
+            key={`empty-${activeTab}`}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.15 }}
+            className="text-center py-12 text-zinc-400 text-sm"
+          >
             {activeTab === "upcoming"
               ? `No upcoming${selectedCategory === "All" ? "" : " " + selectedCategory} events. Check back soon, punter!`
               : `No decided${selectedCategory === "All" ? "" : " " + selectedCategory} events yet. Sit tight!`}
-          </div>
+          </motion.div>
         ) : (
-          <div className="flex flex-col gap-1.5 pt-1">
+          <motion.div
+            key={`list-${activeTab}`}
+            initial={{ opacity: 0, y: 4 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -4 }}
+            transition={{ duration: 0.2 }}
+            className="flex flex-col gap-1.5 pt-1"
+          >
             {displayEvents.map((evt, i) => (
               <motion.div
                 key={evt.id}
@@ -222,8 +243,9 @@ export function EventsPage() {
                 <ChevronRight size={14} className="text-zinc-300 shrink-0" />
               </motion.div>
             ))}
-          </div>
+          </motion.div>
         )}
+        </AnimatePresence>
       </div>
     </motion.div>
   );
