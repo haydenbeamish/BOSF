@@ -84,13 +84,13 @@ export function generateOddsFeedItems(
   for (const c of contrarianCandidates.slice(0, 2)) {
     const pctGroup = Math.round((c.popularCount / c.total) * 100);
     const t = hashPick(CONTRARIAN_PICK_TEMPLATES, `contrarian-${c.event.id}`);
-    const { headline, subtext } = t(c.event.event_name, c.event.favourite!, c.favOdds, c.popularDisplay);
+    const { headline, subtext } = t(c.event.event_name, c.event.favourite!, c.favOdds, c.popularDisplay, pctGroup);
     feed.push({
       id: `contrarian-${c.event.id}`,
       type: "contrarian_pick",
       emoji: "\u{1F914}",
       headline,
-      subtext: `${c.popularCount}/${c.total} (${pctGroup}%) went against the bookies. ${subtext}`,
+      subtext,
       eventId: c.event.id,
       eventName: c.event.event_name,
       sport: c.event.sport,

@@ -21,7 +21,8 @@ export type FeedItemType =
   | "new_spud"
   | "upset_alert"
   | "accuracy_check"
-  | "lunch_liability";
+  | "lunch_liability"
+  | "picks_open";
 
 export interface FeedItem {
   id: string;

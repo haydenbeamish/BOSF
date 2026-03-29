@@ -17,6 +17,7 @@ import {
   UPSET_ALERT_TEMPLATES,
   ACCURACY_TEMPLATES,
   LUNCH_LIABILITY_TEMPLATES,
+  PICKS_OPEN_TEMPLATES,
 } from "./templates";
 import { computeStreaks, STREAK_THRESHOLD } from "./streaks";
 import { findOutliers, MAX_OUTLIERS } from "./outliers";
@@ -165,8 +166,8 @@ export function generateNewsFeed(
     }
   }
 
-  // 2. Upset alerts — bookmaker favourite lost (search all completed events)
-  for (const event of completedEvents) {
+  // 2. Upset alerts — bookmaker favourite lost (recent events only)
+  for (const event of recentCompleted) {
     if (!event.favourite || !event.favourite_odds) continue;
     const favouriteKey = event.favourite.toLowerCase().trim();
     const answerKey = event.correct_answer!.toLowerCase().trim();
@@ -431,6 +432,32 @@ export function generateNewsFeed(
   // 10. Odds-based alerts
   feed.push(...generateOddsFeedItems(events, allPredictions, participants));
 
+  // 11. Picks open — nudge for upcoming events with low participation
+  if (participants.length >= 3) {
+    const upcomingEvents = events.filter((e) => e.status === "upcoming" || e.status === "in_progress");
+    for (const event of upcomingEvents) {
+      const pickCount = allPredictions.filter((p) => Number(p.event_id) === Number(event.id)).length;
+      const ratio = pickCount / participants.length;
+      // Only nudge when less than half have picked and at least 1 person has (so it's active)
+      if (ratio < 0.5 && pickCount >= 1) {
+        const t = hashPick(PICKS_OPEN_TEMPLATES, `picksopen-${event.id}`);
+        const { headline, subtext } = t(event.event_name, pickCount, participants.length);
+        feed.push({
+          id: `picks-open-${event.id}`,
+          type: "picks_open",
+          emoji: "\u{1F514}",
+          headline,
+          subtext,
+          eventId: event.id,
+          eventName: event.event_name,
+          sport: event.sport,
+          timestamp: event.event_date ?? event.close_date ?? undefined,
+          priority: 8,
+        });
+      }
+    }
+  }
+
   // Sort: highest priority first, then by timestamp (newest first)
   feed.sort((a, b) => {
     if (b.priority !== a.priority) return b.priority - a.priority;
@@ -442,7 +469,12 @@ export function generateNewsFeed(
 }
 
 function ordinalSuffix(n: number): string {
-  const s = ["th", "st", "nd", "rd"];
   const v = n % 100;
-  return s[(v - 20) % 10] || s[v] || s[0];
+  if (v >= 11 && v <= 13) return "th";
+  switch (n % 10) {
+    case 1: return "st";
+    case 2: return "nd";
+    case 3: return "rd";
+    default: return "th";
+  }
 }

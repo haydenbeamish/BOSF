@@ -23,6 +23,7 @@ import {
   Zap,
   Percent,
   CreditCard,
+  Bell,
 } from "lucide-react";
 import { cn } from "../../lib/cn";
 import type { FeedItem } from "../../lib/newsfeed";
@@ -146,6 +147,11 @@ const TYPE_CONFIG: Record<
     accent: "text-rose-600",
     stripe: "bg-rose-500",
   },
+  picks_open: {
+    icon: Bell,
+    accent: "text-amber-600",
+    stripe: "bg-amber-500",
+  },
 };
 
 const DEFAULT_CONFIG = TYPE_CONFIG.event_result;
@@ -228,9 +234,11 @@ export function FeedCard({ item, index }: FeedCardProps) {
 }
 
 function OddsDisplay({ odds }: { odds: NonNullable<FeedItem["odds"]> }) {
-  const favPct = odds.underdogOdds
-    ? Math.round((odds.underdogOdds / (odds.favouriteOdds + odds.underdogOdds)) * 100)
-    : 100;
+  // Implied probability: 1/odds, then normalise so bar sums to 100%
+  const favImplied = 1 / odds.favouriteOdds;
+  const undImplied = odds.underdogOdds ? 1 / odds.underdogOdds : 0;
+  const total = favImplied + undImplied;
+  const favPct = total > 0 ? Math.round((favImplied / total) * 100) : 100;
   const undPct = 100 - favPct;
 
   return (

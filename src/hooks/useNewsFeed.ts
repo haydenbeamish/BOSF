@@ -121,15 +121,19 @@ export function useNewsFeed() {
     if (!data?.feedItems.length || dataKey === banterKey) return;
 
     let cancelled = false;
-    const toEnhance = data.feedItems.slice(0, 25);
+    // Skip odds_alert from AI enhancement — they render structured odds data, not text
+    const toEnhance = data.feedItems.filter((f) => f.type !== "odds_alert").slice(0, 25);
 
     enhanceBanter(toEnhance).then((enhanced) => {
       if (cancelled) return;
       if (enhanced && enhanced.length === toEnhance.length) {
-        const merged = data.feedItems.map((item, i) => {
-          if (i < enhanced.length && enhanced[i]?.headline && enhanced[i]?.subtext) {
-            return { ...item, headline: enhanced[i].headline, subtext: enhanced[i].subtext };
+        let enhIdx = 0;
+        const merged = data.feedItems.map((item) => {
+          if (item.type === "odds_alert") return item;
+          if (enhIdx < enhanced.length && enhanced[enhIdx]?.headline && enhanced[enhIdx]?.subtext) {
+            return { ...item, headline: enhanced[enhIdx].headline, subtext: enhanced[enhIdx++].subtext };
           }
+          enhIdx++;
           return item;
         });
         setEnhancedFeed(merged);

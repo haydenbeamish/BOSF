@@ -117,17 +117,17 @@ export const CLOSE_RACE_TEMPLATES = [
 ];
 
 export const CONTRARIAN_PICK_TEMPLATES = [
-  (event: string, favourite: string, favOdds: string, popularPick: string) => ({
-    headline: `The group thinks they're smarter than the bookies`,
-    subtext: `${favourite} at ${favOdds} for ${event} but you clowns picked "${popularPick}". Can't wait to watch this blow up.`,
+  (event: string, favourite: string, favOdds: string, popularPick: string, pctGroup: number) => ({
+    headline: `${pctGroup}% of you are backing "${popularPick}" on ${event}`,
+    subtext: `Bookies have ${favourite} at ${favOdds}. One side is going to look very stupid.`,
   }),
-  (event: string, favourite: string, favOdds: string, popularPick: string) => ({
-    headline: `Bookies vs you idiots on ${event}`,
-    subtext: `Money says ${favourite} (${favOdds}) but the group reckons "${popularPick}". One side is going to look very stupid.`,
+  (event: string, favourite: string, favOdds: string, popularPick: string, pctGroup: number) => ({
+    headline: `Bookies vs the group on ${event}`,
+    subtext: `${favourite} (${favOdds}) is the market pick but ${pctGroup}% of you went with "${popularPick}".`,
   }),
-  (event: string, _favourite: string, _favOdds: string, popularPick: string) => ({
-    headline: `Delusional confidence on ${event}`,
-    subtext: `Most of you backed "${popularPick}" over the bookmaker favourite. Brave or brain-dead?`,
+  (event: string, favourite: string, favOdds: string, popularPick: string, pctGroup: number) => ({
+    headline: `${event}: the group disagrees with the bookies`,
+    subtext: `${pctGroup}% backed "${popularPick}" over ${favourite} (${favOdds}). Brave or brain-dead?`,
   }),
 ];
 
@@ -270,6 +270,17 @@ export const LUNCH_LIABILITY_TEMPLATES = [
   (name: string, amount: string, position: string) => ({
     headline: `${name}'s wallet: ${amount} lighter`,
     subtext: `${position} on the ladder. Better start tipping well or that bill's going up, dickhead.`,
+  }),
+];
+
+export const PICKS_OPEN_TEMPLATES = [
+  (event: string, pickCount: number, totalParticipants: number) => ({
+    headline: `${event} — only ${pickCount}/${totalParticipants} have picked`,
+    subtext: `Get your pick in before it closes or cop a zero. Don't be that person.`,
+  }),
+  (event: string, pickCount: number, totalParticipants: number) => ({
+    headline: `${event} is still waiting on ${totalParticipants - pickCount} picks`,
+    subtext: `${pickCount} in so far. If you haven't picked yet, what are you doing with your life?`,
   }),
 ];
 

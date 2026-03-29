@@ -25,6 +25,7 @@ const TYPE_EMOJI: Record<string, string> = {
   upset_alert: "\u{1F4A5}",
   accuracy_check: "\u{1F4C8}",
   lunch_liability: "\u{1F4B3}",
+  picks_open: "\u{1F514}",
 };
 
 /** Default priority per feed item type */
@@ -52,6 +53,7 @@ const TYPE_PRIORITY: Record<string, number> = {
   upset_alert: 9,
   accuracy_check: 6,
   lunch_liability: 6,
+  picks_open: 8,
 };
 
 /** Known type aliases the backend might use — map to our FeedItemType */
