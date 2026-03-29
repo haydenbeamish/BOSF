@@ -98,9 +98,10 @@ async function fetchFullNewsFeedData(): Promise<FullNewsFeedData> {
     "pick_summary",
     "group_consensus",
     "pre_event_odds",
+    "odds_vs_picks",
   ]);
 
-  const BORING_HEADLINE_PREFIXES = ["Date Check"];
+  const BORING_HEADLINE_PREFIXES = ["Date Check", "Odds vs picks:"];
 
   const backendItems = backendFeedRaw
     .map((raw) => normalizeBackendFeedItem(raw))
