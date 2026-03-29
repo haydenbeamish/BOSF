@@ -46,8 +46,10 @@ export function Header({ hidden = false }: { hidden?: boolean }) {
 
   return (
     <header className={cn(
-      "shrink-0 border-b border-zinc-200/60 bg-white/80 backdrop-blur-xl pt-safe transition-[max-height,border-color] duration-300 ease-in-out overflow-hidden",
-      hidden && !isSubPage ? "max-h-0 border-transparent" : "max-h-20"
+      "shrink-0 border-b bg-white/80 backdrop-blur-xl pt-safe will-change-transform",
+      hidden && !isSubPage
+        ? "header-hidden border-transparent"
+        : "header-visible border-zinc-200/60"
     )}>
       <div className="flex items-center justify-between h-14 px-4 max-w-3xl mx-auto">
         {isSubPage ? (
