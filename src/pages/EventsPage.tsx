@@ -217,9 +217,6 @@ export function EventsPage() {
                         {formatEventDate(getEventDisplayDate(evt.event_date, evt.close_date))}
                       </p>
                     ) : null}
-                    <span className="text-[10px] font-bold text-amber-600 bg-amber-50 rounded-full px-1.5 py-0.5 shrink-0">
-                      {evt.points_value}pt pool
-                    </span>
                   </div>
                 </div>
                 <ChevronRight size={14} className="text-zinc-300 shrink-0" />
