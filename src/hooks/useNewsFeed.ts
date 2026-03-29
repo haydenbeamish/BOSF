@@ -106,9 +106,16 @@ async function fetchNewsFeedData(): Promise<NewsFeedData> {
     "pre_event_odds",
   ]);
 
+  // Headlines that indicate admin/validation items, not real news
+  const BORING_HEADLINE_PREFIXES = ["Date Check"];
+
   const backendItems = backendFeedRaw
     .map((raw) => normalizeBackendFeedItem(raw))
-    .filter((item): item is FeedItem => item !== null && !BORING_TYPES.has(item.type))
+    .filter((item): item is FeedItem =>
+      item !== null &&
+      !BORING_TYPES.has(item.type) &&
+      !BORING_HEADLINE_PREFIXES.some((prefix) => item.headline.startsWith(prefix))
+    )
     .map((item) =>
       enrichFeedItemWithOddsAndPicks(item, mergedEvents, allPredictions, results.participants ?? [])
     );
@@ -132,8 +139,34 @@ async function fetchNewsFeedData(): Promise<NewsFeedData> {
 
   const combined = [...backendItems, ...uniqueClientItems];
 
-  // Sort: newest first (chronological), then by priority as tiebreaker
-  combined.sort((a, b) => {
+  // Remove odds/contrarian/underdog items for events that are already completed
+  // — these are stale pre-event analysis cards that no longer matter
+  const completedEventIds = new Set(
+    mergedEvents
+      .filter((e) => e.status === "completed")
+      .map((e) => Number(e.id))
+  );
+  const STALE_WHEN_COMPLETED = new Set([
+    "odds_alert",
+    "contrarian_pick",
+    "underdog_backer",
+    "picks_open",
+  ]);
+  const filtered = combined.filter((item) => {
+    if (!item.eventId) return true;
+    if (!STALE_WHEN_COMPLETED.has(item.type)) return true;
+    return !completedEventIds.has(Number(item.eventId));
+  });
+
+  // Sort: event results first (they're the most interesting), then by
+  // timestamp (newest first), then priority as tiebreaker
+  const RESULT_TYPES = new Set(["event_result", "perfect_pick", "everyone_wrong", "upset_alert"]);
+  filtered.sort((a, b) => {
+    // Boost result-related items above everything else
+    const aIsResult = RESULT_TYPES.has(a.type) ? 1 : 0;
+    const bIsResult = RESULT_TYPES.has(b.type) ? 1 : 0;
+    if (aIsResult !== bIsResult) return bIsResult - aIsResult;
+
     if (a.timestamp && b.timestamp) {
       const cmp = b.timestamp.localeCompare(a.timestamp);
       if (cmp !== 0) return cmp;
@@ -147,7 +180,7 @@ async function fetchNewsFeedData(): Promise<NewsFeedData> {
   const UNCAPPED_TYPES = new Set(["event_result"]);
   const MAX_PER_TYPE = 3;
   const typeCounts: Record<string, number> = {};
-  const capped = combined.filter((item) => {
+  const capped = filtered.filter((item) => {
     if (UNCAPPED_TYPES.has(item.type)) return true;
     const count = typeCounts[item.type] ?? 0;
     if (count >= MAX_PER_TYPE) return false;
