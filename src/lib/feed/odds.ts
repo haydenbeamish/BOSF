@@ -191,6 +191,12 @@ export function generateOddsFeedItems(
       eventName: event.event_name,
       sport: event.sport,
       priority: 6,
+      odds: {
+        favourite: event.favourite!,
+        favouriteOdds: event.favourite_odds!,
+        underdog: event.underdog ?? undefined,
+        underdogOdds: event.underdog_odds ?? undefined,
+      },
     });
   }
 

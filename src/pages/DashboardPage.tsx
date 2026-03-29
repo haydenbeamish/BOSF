@@ -231,11 +231,19 @@ export function DashboardPage() {
 
       {/* News Feed */}
       <div className="px-4 mb-6">
-        <div className="flex items-center gap-2 mb-4">
-          <Newspaper size={14} className="text-zinc-400" />
-          <h2 className="text-[11px] font-bold uppercase tracking-wider text-zinc-400">
-            News Feed
-          </h2>
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <Newspaper size={14} className="text-zinc-400" />
+            <h2 className="text-[11px] font-bold uppercase tracking-wider text-zinc-400">
+              News Feed
+            </h2>
+          </div>
+          <button
+            onClick={() => navigate("/news")}
+            className="text-[11px] font-semibold text-emerald-600"
+          >
+            View full feed
+          </button>
         </div>
         {feed.length > 0 ? (
           <div className="flex flex-col gap-3">
