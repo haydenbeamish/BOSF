@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useRef } from "react";
+import { lazy, Suspense, useEffect, useRef, useState, useCallback } from "react";
 import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import { Header } from "./components/layout/Header";
@@ -63,12 +63,33 @@ function AnimatedRoutes() {
 
 export default function App() {
   const mainRef = useRef<HTMLElement>(null);
+  const [headerHidden, setHeaderHidden] = useState(false);
+  const lastScrollY = useRef(0);
+
+  const handleScroll = useCallback(() => {
+    const el = mainRef.current;
+    if (!el) return;
+    const currentY = el.scrollTop;
+    if (currentY > lastScrollY.current && currentY > 56) {
+      setHeaderHidden(true);
+    } else if (currentY < lastScrollY.current) {
+      setHeaderHidden(false);
+    }
+    lastScrollY.current = currentY;
+  }, []);
+
+  useEffect(() => {
+    const el = mainRef.current;
+    if (!el) return;
+    el.addEventListener("scroll", handleScroll, { passive: true });
+    return () => el.removeEventListener("scroll", handleScroll);
+  }, [handleScroll]);
 
   return (
     <BrowserRouter>
       <div className="flex flex-col h-dvh bg-surface-50 text-zinc-800 max-w-3xl mx-auto app-shell">
         <ScrollToTop scrollRef={mainRef} />
-        <Header />
+        <Header hidden={headerHidden} />
         <main ref={mainRef} className="flex-1 overflow-y-auto overscroll-contain scroll-smooth-ios">
           <ErrorBoundary>
             <Suspense fallback={<PageSkeleton />}>

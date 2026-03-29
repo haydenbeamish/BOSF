@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Newspaper, Zap } from "lucide-react";
+import { Zap } from "lucide-react";
 import { useFullNewsFeed } from "../hooks/useFullNewsFeed";
 import { Skeleton } from "../components/ui/Skeleton";
 import { EmptyState } from "../components/ui/EmptyState";
@@ -37,19 +37,7 @@ export function NewsPage() {
       transition={{ duration: 0.3 }}
       className="pb-20"
     >
-      <div className="px-4 pt-4 mb-4">
-        <div className="flex items-center gap-2 mb-1">
-          <Newspaper size={18} className="text-emerald-600" />
-          <h1 className="text-lg font-display font-extrabold text-zinc-800">
-            News Feed
-          </h1>
-        </div>
-        <p className="text-xs text-zinc-400">
-          Full chronological feed — {feed.length} items
-        </p>
-      </div>
-
-      <div className="px-4 mb-6">
+      <div className="px-4 pt-4 mb-6">
         {feed.length > 0 ? (
           <div className="flex flex-col gap-3">
             {feed.map((item, i) => (
