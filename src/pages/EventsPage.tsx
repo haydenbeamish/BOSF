@@ -198,7 +198,7 @@ export function EventsPage() {
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-zinc-800 line-clamp-2 leading-snug">{evt.event_name}</p>
                   <div className="flex items-center gap-2 mt-0.5">
-                    {evt.correct_answer ? (
+                    {evt.status === "completed" && evt.correct_answer ? (
                       <div className="flex items-center gap-1 min-w-0">
                         <Check size={10} className="text-emerald-600 shrink-0" />
                         <p className="text-xs text-emerald-600 truncate">{evt.correct_answer}</p>
