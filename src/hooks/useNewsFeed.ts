@@ -68,10 +68,32 @@ async function fetchNewsFeedData(): Promise<NewsFeedData> {
     return 0;
   });
 
-  // Cap the feed — show plenty of items but not infinite
-  const MAX_FEED_ITEMS = 30;
+  // Cap per type — prevent any single category from dominating the feed
+  const MAX_PER_TYPE = 3;
+  const typeCounts: Record<string, number> = {};
+  const capped = combined.filter((item) => {
+    const count = typeCounts[item.type] ?? 0;
+    if (count >= MAX_PER_TYPE) return false;
+    typeCounts[item.type] = count + 1;
+    return true;
+  });
 
-  return { feedItems: combined.slice(0, MAX_FEED_ITEMS), leaderboard: lb, events: allEvents };
+  // Interleave: avoid runs of 3+ cards of the same type back-to-back.
+  // Walk the sorted list; when we see a third consecutive same-type item,
+  // swap it with the next different-type item found later in the list.
+  for (let i = 2; i < capped.length; i++) {
+    if (capped[i].type === capped[i - 1].type && capped[i].type === capped[i - 2].type) {
+      const swapIdx = capped.findIndex((item, j) => j > i && item.type !== capped[i].type);
+      if (swapIdx !== -1) {
+        [capped[i], capped[swapIdx]] = [capped[swapIdx], capped[i]];
+      }
+    }
+  }
+
+  // Cap the feed — show plenty of items but not infinite
+  const MAX_FEED_ITEMS = 25;
+
+  return { feedItems: capped.slice(0, MAX_FEED_ITEMS), leaderboard: lb, events: allEvents };
 }
 
 /** Produce a dedup key for a feed item based on type + context */
@@ -99,15 +121,19 @@ export function useNewsFeed() {
     if (!data?.feedItems.length || dataKey === banterKey) return;
 
     let cancelled = false;
-    const toEnhance = data.feedItems.slice(0, 25);
+    // Skip odds_alert from AI enhancement — they render structured odds data, not text
+    const toEnhance = data.feedItems.filter((f) => f.type !== "odds_alert").slice(0, 25);
 
     enhanceBanter(toEnhance).then((enhanced) => {
       if (cancelled) return;
       if (enhanced && enhanced.length === toEnhance.length) {
-        const merged = data.feedItems.map((item, i) => {
-          if (i < enhanced.length && enhanced[i]?.headline && enhanced[i]?.subtext) {
-            return { ...item, headline: enhanced[i].headline, subtext: enhanced[i].subtext };
+        let enhIdx = 0;
+        const merged = data.feedItems.map((item) => {
+          if (item.type === "odds_alert") return item;
+          if (enhIdx < enhanced.length && enhanced[enhIdx]?.headline && enhanced[enhIdx]?.subtext) {
+            return { ...item, headline: enhanced[enhIdx].headline, subtext: enhanced[enhIdx++].subtext };
           }
+          enhIdx++;
           return item;
         });
         setEnhancedFeed(merged);

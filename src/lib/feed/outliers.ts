@@ -1,6 +1,6 @@
 import type { CompetitionEvent, Prediction, Participant } from "../../types";
 
-const MAX_OUTLIERS = 15;
+const MAX_OUTLIERS = 4;
 
 export { MAX_OUTLIERS };
 
