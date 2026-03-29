@@ -156,6 +156,34 @@ const TYPE_CONFIG: Record<
 
 const DEFAULT_CONFIG = TYPE_CONFIG.event_result;
 
+/** Human-readable labels for feed item types */
+const TYPE_LABELS: Record<string, string> = {
+  event_result: "Event Result",
+  perfect_pick: "Perfect Pick",
+  everyone_wrong: "Everyone Wrong",
+  winning_streak: "Winning Streak",
+  losing_streak: "Losing Streak",
+  outlier_alert: "Outlier Alert",
+  close_race: "Close Race",
+  hot_take: "Hot Take",
+  odds_alert: "Odds",
+  contrarian_pick: "Group vs Bookies",
+  underdog_backer: "Underdog Pick",
+  winners_list: "Winners & Losers",
+  group_consensus: "Group Consensus",
+  leader_banter: "Leaderboard",
+  last_place_banter: "Last Place",
+  pick_summary: "Pick Summary",
+  result_commentary: "Commentary",
+  pre_event_odds: "Pre-Event Odds",
+  new_leader: "New Leader",
+  new_spud: "New Spud",
+  upset_alert: "Upset Alert",
+  accuracy_check: "Accuracy",
+  lunch_liability: "Lunch Liability",
+  picks_open: "Picks Open",
+};
+
 interface FeedCardProps {
   item: FeedItem;
   index: number;
@@ -212,6 +240,9 @@ export function FeedCard({ item, index }: FeedCardProps) {
         </div>
 
         <div className="flex-1 min-w-0">
+          <p className="text-[10px] font-semibold uppercase tracking-wider text-zinc-400 mb-0.5">
+            {TYPE_LABELS[item.type] ?? item.type.replace(/_/g, " ")}
+          </p>
           <p className="font-display font-bold text-sm leading-snug text-zinc-800">
             {item.headline}
           </p>

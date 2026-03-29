@@ -59,8 +59,8 @@ export const PERFECT_PICK_TEMPLATES = [
 
 export const EVERYONE_WRONG_TEMPLATES = [
   (event: string) => ({
-    headline: `What a pack of useless bloody idiots`,
-    subtext: `Not a single correct pick on ${event}. Collective IQ of a dead goldfish.`,
+    headline: `${event} — not one of you got it right`,
+    subtext: `Zero correct picks. Collective IQ of a dead goldfish.`,
   }),
   (event: string) => ({
     headline: `Complete shitshow on ${event}`,
@@ -106,8 +106,8 @@ export const EVENT_RESULT_TEMPLATES = [
 
 export const CLOSE_RACE_TEMPLATES = [
   (name1: string, name2: string, gap: number) => ({
-    headline: `Neck and neck — someone's about to choke`,
-    subtext: `${name1} leads ${name2} by just ${gap} point${gap === 1 ? "" : "s"}. One shit pick and the whole thing flips. Clench up.`,
+    headline: `${name1} vs ${name2} — neck and neck`,
+    subtext: `Just ${gap} point${gap === 1 ? "" : "s"} in it. One shit pick and the whole thing flips. Clench up.`,
   }),
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   (name1: string, name2: string, _gap: number) => ({
