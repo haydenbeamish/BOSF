@@ -30,10 +30,19 @@ async function fetchNewsFeedData(): Promise<NewsFeedData> {
     ...allEvents.filter((e) => !resultsEventIds.has(e.id)),
   ];
 
-  // Normalise backend feed items into our FeedItem shape
+  // Normalise backend feed items into our FeedItem shape, filtering out
+  // boring types that clog the feed (plain pick summaries, generic odds, consensus)
+  const BORING_TYPES = new Set([
+    "pick_summary",
+    "group_consensus",
+    "odds_alert",
+    "pre_event_odds",
+    "event_result",
+  ]);
+
   const backendItems = backendFeedRaw
     .map((raw) => normalizeBackendFeedItem(raw))
-    .filter((item): item is FeedItem => item !== null);
+    .filter((item): item is FeedItem => item !== null && !BORING_TYPES.has(item.type));
 
   // Generate client-side feed items as supplement
   const clientItems = generateNewsFeed(
@@ -61,7 +70,10 @@ async function fetchNewsFeedData(): Promise<NewsFeedData> {
     return 0;
   });
 
-  return { feedItems: combined, leaderboard: lb, events: allEvents };
+  // Cap the feed — only the most interesting items make the cut
+  const MAX_FEED_ITEMS = 15;
+
+  return { feedItems: combined.slice(0, MAX_FEED_ITEMS), leaderboard: lb, events: allEvents };
 }
 
 /** Produce a dedup key for a feed item based on type + context */

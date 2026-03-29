@@ -53,7 +53,7 @@ export function Podium({ entries, onSelect }: PodiumProps) {
               </p>
               <p className="text-lg font-display font-extrabold text-zinc-500">{second.total_points}</p>
               {second.penalty > 0 && (
-                <p className="text-[10px] font-semibold text-zinc-400">${second.penalty}</p>
+                <p className="text-[10px] font-semibold text-zinc-400">-${second.penalty}</p>
               )}
             </motion.div>
           )}
@@ -83,7 +83,7 @@ export function Podium({ entries, onSelect }: PodiumProps) {
             {first.penalty === 0 ? (
               <p className="text-[10px] font-semibold text-emerald-500">Free lunch!</p>
             ) : (
-              <p className="text-[10px] font-semibold text-zinc-400">${first.penalty}</p>
+              <p className="text-[10px] font-semibold text-zinc-400">-${first.penalty}</p>
             )}
           </motion.div>
 
@@ -106,7 +106,7 @@ export function Podium({ entries, onSelect }: PodiumProps) {
               </p>
               <p className="text-lg font-display font-extrabold text-amber-700">{third.total_points}</p>
               {third.penalty > 0 && (
-                <p className="text-[10px] font-semibold text-zinc-400">${third.penalty}</p>
+                <p className="text-[10px] font-semibold text-zinc-400">-${third.penalty}</p>
               )}
             </motion.div>
           )}

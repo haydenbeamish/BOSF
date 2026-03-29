@@ -83,7 +83,7 @@ export function RankRow({ entry, isSpud, index }: RankRowProps) {
             "text-[10px] font-semibold tabular-nums mt-0.5",
             isSpud ? "text-red-400" : "text-zinc-400"
           )}>
-            ${entry.penalty}
+            -${entry.penalty}
           </p>
         )}
       </div>
