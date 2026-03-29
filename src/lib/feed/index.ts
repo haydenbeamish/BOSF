@@ -9,7 +9,6 @@ import {
   LOSING_STREAK_TEMPLATES,
   OUTLIER_TEMPLATES,
   CLOSE_RACE_TEMPLATES,
-  WINNERS_LIST_TEMPLATES,
   LEADER_BANTER_TEMPLATES,
   LAST_PLACE_BANTER_TEMPLATES,
   NEW_LEADER_TEMPLATES,
@@ -48,9 +47,6 @@ export const LUNCH_CONTRIBUTIONS: { position: number; contribution: number }[] =
   { position: 14, contribution: 325 },
 ];
 
-/** Only show event_result cards for the N most recent completed events */
-const MAX_RECENT_RESULTS = 5;
-
 export function generateNewsFeed(
   events: CompetitionEvent[],
   participants: Participant[],
@@ -63,10 +59,8 @@ export function generateNewsFeed(
     .filter((e) => e.status === "completed" && e.correct_answer)
     .sort((a, b) => (b.display_order ?? 0) - (a.display_order ?? 0));
 
-  // 1. Event results — only recent events to avoid flooding with old results
-  const recentCompleted = completedEvents.slice(0, MAX_RECENT_RESULTS);
-
-  for (const event of recentCompleted) {
+  // 1. Event results — show all completed events
+  for (const event of completedEvents) {
     const preds = allPredictions.filter((p) => Number(p.event_id) === Number(event.id));
     const correctCount = preds.filter((p) => Boolean(p.is_correct)).length;
 
@@ -77,6 +71,40 @@ export function generateNewsFeed(
       correctCount,
       preds.length
     );
+
+    // Attach odds data if the event had bookmaker odds
+    const odds = (event.favourite && event.favourite_odds)
+      ? {
+          favourite: event.favourite,
+          favouriteOdds: event.favourite_odds,
+          underdog: event.underdog ?? undefined,
+          underdogOdds: event.underdog_odds ?? undefined,
+        }
+      : undefined;
+
+    // Build picks distribution showing who predicted what
+    let picks: FeedItem["picks"];
+    if (preds.length > 0) {
+      const groups: Record<string, { label: string; names: string[] }> = {};
+      for (const pred of preds) {
+        const key = pred.prediction.toLowerCase().trim();
+        if (!groups[key]) {
+          groups[key] = { label: pred.prediction.trim(), names: [] };
+        }
+        groups[key].names.push(pred.participant_name ?? "Unknown");
+      }
+      const correctKey = event.correct_answer!.toLowerCase().trim();
+      const options = Object.entries(groups)
+        .map(([key, { label, names }]) => ({
+          label,
+          count: names.length,
+          names,
+          isFavourite: key === correctKey,
+        }))
+        .sort((a, b) => b.count - a.count);
+      picks = { options, total: preds.length };
+    }
+
     feed.push({
       id: `result-${event.id}`,
       type: "event_result",
@@ -88,6 +116,8 @@ export function generateNewsFeed(
       sport: event.sport,
       timestamp: event.event_date ?? event.created_at,
       priority: 7,
+      odds,
+      picks,
     });
 
     // Nobody got it right — always hilarious, higher priority
@@ -134,40 +164,10 @@ export function generateNewsFeed(
       }
     }
 
-    // Winners list — only when the split is lopsided (≤30% won OR ≥70% won = drama)
-    if (correctCount > 0 && correctCount < preds.length && preds.length >= 3) {
-      const winRatio = correctCount / preds.length;
-      if (winRatio <= 0.3 || winRatio >= 0.7) {
-        const winners = preds
-          .filter((p) => p.is_correct === true || (p.is_correct as unknown) === 1)
-          .map((p) => p.participant_name ?? "Unknown");
-        const losers = preds
-          .filter((p) => !p.is_correct && (p.is_correct as unknown) !== 1)
-          .map((p) => p.participant_name ?? "Unknown");
-        const t = hashPick(WINNERS_LIST_TEMPLATES, `winners-${event.id}`);
-        const { headline: h, subtext: s } = t(
-          event.event_name,
-          winners.join(", "),
-          losers.join(", ")
-        );
-        feed.push({
-          id: `winners-${event.id}`,
-          type: "winners_list",
-          emoji: "\u{1F4B0}",
-          headline: h,
-          subtext: s,
-          eventId: event.id,
-          eventName: event.event_name,
-          sport: event.sport,
-          timestamp: event.event_date ?? event.created_at,
-          priority: 8,
-        });
-      }
-    }
   }
 
-  // 2. Upset alerts — bookmaker favourite lost (recent events only)
-  for (const event of recentCompleted) {
+  // 2. Upset alerts — bookmaker favourite lost
+  for (const event of completedEvents) {
     if (!event.favourite || !event.favourite_odds) continue;
     const favouriteKey = event.favourite.toLowerCase().trim();
     const answerKey = event.correct_answer!.toLowerCase().trim();
