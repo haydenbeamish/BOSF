@@ -124,7 +124,7 @@ export function PlayerPage() {
                 {participant.name}
               </h1>
               <p className="text-3xl font-display font-extrabold text-gradient-accent mt-1">
-                {total_points} <span className="text-sm text-zinc-400 font-body font-normal">pts</span>
+                {Number(total_points).toFixed(1)} <span className="text-sm text-zinc-400 font-body font-normal">pts</span>
               </p>
             </div>
           </div>
