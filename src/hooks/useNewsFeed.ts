@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { getResults, getLeaderboard, getEvents } from "../data/api";
+import { getResults, getLeaderboard, getEvents, getFeed } from "../data/api";
 import { generateNewsFeed, type FeedItem } from "../lib/newsfeed";
+import { normalizeBackendFeedItem } from "../lib/feed/normalize";
 import { enhanceBanter } from "../data/ai";
 import type { LeaderboardEntry, CompetitionEvent } from "../types";
 
@@ -12,10 +13,11 @@ interface NewsFeedData {
 }
 
 async function fetchNewsFeedData(): Promise<NewsFeedData> {
-  const [results, lb, allEvents] = await Promise.all([
+  const [results, lb, allEvents, backendFeedRaw] = await Promise.all([
     getResults(),
     getLeaderboard(),
     getEvents(),
+    getFeed({ limit: 100 }).catch(() => [] as unknown[]),
   ]);
 
   const allPredictions = results.predictions ?? [];
@@ -28,14 +30,46 @@ async function fetchNewsFeedData(): Promise<NewsFeedData> {
     ...allEvents.filter((e) => !resultsEventIds.has(e.id)),
   ];
 
-  const feedItems = generateNewsFeed(
+  // Normalise backend feed items into our FeedItem shape
+  const backendItems = backendFeedRaw
+    .map((raw) => normalizeBackendFeedItem(raw))
+    .filter((item): item is FeedItem => item !== null);
+
+  // Generate client-side feed items as supplement
+  const clientItems = generateNewsFeed(
     mergedEvents,
     results.participants ?? [],
     allPredictions,
     lb
   );
 
-  return { feedItems, leaderboard: lb, events: allEvents };
+  // Merge: backend items take priority, deduplicate by matching type+eventId or type+playerId
+  const backendKeys = new Set(
+    backendItems.map((item) => feedItemKey(item))
+  );
+
+  const uniqueClientItems = clientItems.filter(
+    (item) => !backendKeys.has(feedItemKey(item))
+  );
+
+  const combined = [...backendItems, ...uniqueClientItems];
+
+  // Sort: highest priority first, then by timestamp (newest first)
+  combined.sort((a, b) => {
+    if (b.priority !== a.priority) return b.priority - a.priority;
+    if (a.timestamp && b.timestamp) return b.timestamp.localeCompare(a.timestamp);
+    return 0;
+  });
+
+  return { feedItems: combined, leaderboard: lb, events: allEvents };
+}
+
+/** Produce a dedup key for a feed item based on type + context */
+function feedItemKey(item: FeedItem): string {
+  if (item.eventId && item.playerId) return `${item.type}-e${item.eventId}-p${item.playerId}`;
+  if (item.eventId) return `${item.type}-e${item.eventId}`;
+  if (item.playerId) return `${item.type}-p${item.playerId}`;
+  return item.id;
 }
 
 export function useNewsFeed() {

@@ -13,7 +13,10 @@ export type FeedItemType =
   | "winners_list"
   | "group_consensus"
   | "leader_banter"
-  | "last_place_banter";
+  | "last_place_banter"
+  | "pick_summary"
+  | "result_commentary"
+  | "pre_event_odds";
 
 export interface FeedItem {
   id: string;
@@ -28,4 +31,29 @@ export interface FeedItem {
   sport?: string;
   timestamp?: string;
   priority: number;
+}
+
+/**
+ * Shape of a feed item returned by the backend /api/competition/feed endpoint.
+ * We normalise these into FeedItem before display.
+ */
+export interface BackendFeedItem {
+  id: number | string;
+  type: string;
+  headline?: string;
+  title?: string;
+  subtext?: string;
+  body?: string;
+  description?: string;
+  emoji?: string;
+  player_name?: string;
+  participant_name?: string;
+  player_id?: number;
+  participant_id?: number;
+  event_id?: number;
+  event_name?: string;
+  sport?: string;
+  timestamp?: string;
+  created_at?: string;
+  priority?: number;
 }
