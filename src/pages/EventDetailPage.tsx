@@ -130,7 +130,7 @@ export function EventDetailPage() {
               <StatusPill status={event.status} />
               <span className="text-xs text-zinc-400">{event.sport}</span>
               <Badge variant="gold" size="sm">
-                <Star size={8} /> {event.points_value} pt{event.points_value !== 1 ? "s" : ""}
+                <Star size={8} /> {event.points_value} pt pool
               </Badge>
             </div>
             {event.event_date && (
@@ -154,20 +154,27 @@ export function EventDetailPage() {
               </div>
             </div>
             {predictions.length > 0 && (
-              <div className="flex items-center justify-between mt-3 pt-3 border-t border-zinc-100">
-                <p className="text-xs text-zinc-400">
-                  {correctCount} of {predictions.length} got it right
-                </p>
-                <span className={cn(
-                  "text-xs font-bold",
-                  correctCount === 0 ? "text-red-500" :
-                  correctCount === predictions.length ? "text-emerald-600" :
-                  "text-zinc-500"
-                )}>
-                  {correctCount === 0 ? "Total wipeout" :
-                   correctCount === predictions.length ? "Clean sweep!" :
-                   `${Math.round((correctCount / predictions.length) * 100)}% correct`}
-                </span>
+              <div className="mt-3 pt-3 border-t border-zinc-100">
+                <div className="flex items-center justify-between">
+                  <p className="text-xs text-zinc-400">
+                    {correctCount} of {predictions.length} got it right
+                  </p>
+                  <span className={cn(
+                    "text-xs font-bold",
+                    correctCount === 0 ? "text-red-500" :
+                    correctCount === predictions.length ? "text-emerald-600" :
+                    "text-zinc-500"
+                  )}>
+                    {correctCount === 0 ? "Total wipeout" :
+                     correctCount === predictions.length ? "Clean sweep!" :
+                     `${Math.round((correctCount / predictions.length) * 100)}% correct`}
+                  </span>
+                </div>
+                {correctCount > 0 && (
+                  <p className="text-xs text-emerald-600 font-semibold mt-1">
+                    {event.points_value} pts shared {correctCount > 1 ? `between ${correctCount}` : ""} — {Number((event.points_value / correctCount).toFixed(2))} pts each
+                  </p>
+                )}
               </div>
             )}
           </GlassCard>

@@ -124,7 +124,7 @@ export function PlayerPage() {
                 {participant.name}
               </h1>
               <p className="text-3xl font-display font-extrabold text-gradient-accent mt-1">
-                {total_points} <span className="text-sm text-zinc-400 font-body font-normal">pts</span>
+                {Number(total_points).toFixed(1)} <span className="text-sm text-zinc-400 font-body font-normal">pts</span>
               </p>
             </div>
           </div>
@@ -230,11 +230,18 @@ export function PlayerPage() {
                     )}
                   </p>
                 </div>
-                <div className={cn(
-                  "w-7 h-7 rounded-lg flex items-center justify-center shrink-0",
-                  pred.is_correct ? "bg-emerald-100" : "bg-red-100"
-                )}>
-                  {pred.is_correct ? <Check size={14} className="text-emerald-600" /> : <X size={14} className="text-red-400" />}
+                <div className="flex items-center gap-2 shrink-0">
+                  {pred.is_correct && pred.points_earned > 0 && (
+                    <span className="text-xs font-bold text-emerald-600 tabular-nums">
+                      +{Number.isInteger(pred.points_earned) ? pred.points_earned : pred.points_earned.toFixed(1)}
+                    </span>
+                  )}
+                  <div className={cn(
+                    "w-7 h-7 rounded-lg flex items-center justify-center",
+                    pred.is_correct ? "bg-emerald-100" : "bg-red-100"
+                  )}>
+                    {pred.is_correct ? <Check size={14} className="text-emerald-600" /> : <X size={14} className="text-red-400" />}
+                  </div>
                 </div>
               </motion.div>
             ))}

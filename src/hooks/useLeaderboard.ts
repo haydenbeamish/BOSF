@@ -1,7 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
 import type { LeaderboardEntry } from "../types";
-import { getLeaderboard, getResults } from "../data/api";
+import { getLeaderboard, getResults, getEvents } from "../data/api";
 import { LUNCH_CONTRIBUTIONS } from "../lib/feed/index";
+import { recalculatePoints } from "../lib/points";
 
 export type FormResult = "W" | "L";
 
@@ -13,8 +14,11 @@ export interface EnhancedLeaderboardEntry extends LeaderboardEntry {
 }
 
 async function fetchLeaderboardData(): Promise<EnhancedLeaderboardEntry[]> {
-  const [leaderboard, results] = await Promise.all([getLeaderboard(), getResults()]);
+  const [leaderboard, results, allEvents] = await Promise.all([getLeaderboard(), getResults(), getEvents()]);
   const allPredictions = results.predictions ?? [];
+
+  // Recalculate points using the pool system (14 pts divided by correct count)
+  const recalculated = recalculatePoints(allEvents, allPredictions);
 
   const decidedByPlayer: Record<number, { correct: number; decided: number }> = {};
   // Collect decided predictions per player for form guide (sorted by event_id desc = most recent first)
@@ -42,23 +46,34 @@ async function fetchLeaderboardData(): Promise<EnhancedLeaderboardEntry[]> {
     preds.sort((a, b) => b.event_id - a.event_id);
   }
 
-  return leaderboard.map((entry, index) => {
+  const enhanced = leaderboard.map((entry) => {
     const stats = decidedByPlayer[entry.id];
     const decided = stats?.decided ?? 0;
     const correct = stats?.correct ?? entry.correct_predictions;
-    const position = index + 1;
-    const lunchEntry = LUNCH_CONTRIBUTIONS.find((lc) => lc.position === position);
-    const penalty = lunchEntry?.contribution ?? LUNCH_CONTRIBUTIONS[LUNCH_CONTRIBUTIONS.length - 1].contribution;
     const playerPreds = decidedPredsByPlayer[entry.id] ?? [];
     const form: FormResult[] = playerPreds.slice(0, 5).map((p) => (p.is_correct ? "W" : "L"));
+    // Use recalculated pool-based points if available, otherwise keep backend value
+    const poolPoints = recalculated.get(entry.id);
+    const total_points = poolPoints !== undefined ? Math.round(poolPoints * 100) / 100 : entry.total_points;
     return {
       ...entry,
+      total_points,
       decided_predictions: decided,
       win_rate: decided > 0 ? Math.round((correct / decided) * 100) : 0,
-      penalty,
+      penalty: 0,
       form,
     };
   });
+
+  // Re-sort by recalculated points (descending) and assign rank + lunch penalty
+  enhanced.sort((a, b) => b.total_points - a.total_points);
+  enhanced.forEach((entry, index) => {
+    entry.rank = index + 1;
+    const lunchEntry = LUNCH_CONTRIBUTIONS.find((lc) => lc.position === index + 1);
+    entry.penalty = lunchEntry?.contribution ?? LUNCH_CONTRIBUTIONS[LUNCH_CONTRIBUTIONS.length - 1].contribution;
+  });
+
+  return enhanced;
 }
 
 export function useLeaderboard() {

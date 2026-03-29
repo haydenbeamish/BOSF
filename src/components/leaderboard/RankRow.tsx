@@ -75,7 +75,7 @@ export function RankRow({ entry, isSpud, index }: RankRowProps) {
           "font-display font-extrabold text-base tabular-nums",
           entry.rank === 1 ? "text-amber-600" : isSpud ? "text-red-500" : "text-zinc-800"
         )}>
-          {entry.total_points}
+          {entry.total_points.toFixed(1)}
         </span>
         <p className="text-[9px] font-semibold uppercase tracking-wider text-zinc-400">pts</p>
         {entry.penalty > 0 && (

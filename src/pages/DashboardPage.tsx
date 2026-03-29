@@ -91,7 +91,7 @@ export function DashboardPage() {
         />
         <StatCard
           label="Top Score"
-          value={leader?.total_points ?? 0}
+          value={(leader?.total_points ?? 0).toFixed(1)}
           icon={<Flame size={14} />}
           accent="gold"
           delay={0.15}
@@ -135,7 +135,7 @@ export function DashboardPage() {
                   {entry.name}
                 </span>
                 <span className="font-display font-extrabold text-sm tabular-nums text-zinc-600">
-                  {entry.total_points}
+                  {entry.total_points.toFixed(1)}
                 </span>
               </motion.div>
             ))}
@@ -167,7 +167,7 @@ export function DashboardPage() {
                 </p>
                 <div className="flex items-center gap-3 mt-1">
                   <span className="text-sm font-display font-extrabold text-gradient-gold">
-                    {leader.total_points} pts
+                    {leader.total_points.toFixed(1)} pts
                   </span>
                   <span className="text-xs text-zinc-400">
                     {leader.correct_predictions} correct
