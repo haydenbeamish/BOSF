@@ -458,11 +458,14 @@ export function generateNewsFeed(
     }
   }
 
-  // Sort: highest priority first, then by timestamp (newest first)
+  // Sort: newest first (chronological), then by priority as tiebreaker
   feed.sort((a, b) => {
-    if (b.priority !== a.priority) return b.priority - a.priority;
-    if (a.timestamp && b.timestamp) return b.timestamp.localeCompare(a.timestamp);
-    return 0;
+    if (a.timestamp && b.timestamp) {
+      const cmp = b.timestamp.localeCompare(a.timestamp);
+      if (cmp !== 0) return cmp;
+    } else if (a.timestamp) return -1;
+    else if (b.timestamp) return 1;
+    return b.priority - a.priority;
   });
 
   return feed;
