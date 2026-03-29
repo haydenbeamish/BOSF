@@ -222,6 +222,9 @@ export function FeedCard({ item, index }: FeedCardProps) {
               {item.subtext}
             </p>
           )}
+          {item.picks && item.picks.total > 0 && (
+            <PicksDisplay picks={item.picks} />
+          )}
           {item.sport && (
             <span className="inline-block mt-1.5 text-[10px] font-semibold uppercase tracking-wider text-zinc-400 bg-zinc-100 rounded-full px-2 py-0.5">
               {item.sport}
@@ -230,6 +233,53 @@ export function FeedCard({ item, index }: FeedCardProps) {
         </div>
       </div>
     </motion.div>
+  );
+}
+
+function PicksDisplay({ picks }: { picks: NonNullable<FeedItem["picks"]> }) {
+  return (
+    <div className="mt-2 space-y-1.5">
+      <p className="text-[11px] font-semibold uppercase tracking-wider text-zinc-400">
+        Picks ({picks.total})
+      </p>
+      {picks.options.map((opt) => {
+        const pct = Math.round((opt.count / picks.total) * 100);
+        return (
+          <div key={opt.label}>
+            <div className="flex items-center justify-between mb-0.5">
+              <span
+                className={cn(
+                  "text-[12px] font-semibold truncate",
+                  opt.isFavourite ? "text-emerald-700" : "text-zinc-700"
+                )}
+              >
+                {opt.label}
+                {opt.isFavourite && (
+                  <span className="ml-1 text-[10px] text-emerald-500 font-normal">
+                    (fav)
+                  </span>
+                )}
+              </span>
+              <span className="text-[11px] font-bold tabular-nums text-zinc-500">
+                {pct}%
+              </span>
+            </div>
+            <div className="flex h-1.5 rounded-full overflow-hidden bg-zinc-100 mb-0.5">
+              <div
+                className={cn(
+                  "rounded-full transition-all",
+                  opt.isFavourite ? "bg-emerald-500" : "bg-blue-500"
+                )}
+                style={{ width: `${pct}%` }}
+              />
+            </div>
+            <p className="text-[11px] text-zinc-400 leading-tight truncate">
+              {opt.names.join(", ")}
+            </p>
+          </div>
+        );
+      })}
+    </div>
   );
 }
 
