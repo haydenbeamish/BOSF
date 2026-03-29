@@ -16,6 +16,8 @@ import {
   Users,
   Crown,
   Banknote,
+  ClipboardList,
+  MessageSquare,
 } from "lucide-react";
 import { cn } from "../../lib/cn";
 import type { FeedItem } from "../../lib/newsfeed";
@@ -98,6 +100,21 @@ const TYPE_CONFIG: Record<
     icon: Banknote,
     accent: "text-red-600",
     stripe: "bg-red-500",
+  },
+  pick_summary: {
+    icon: ClipboardList,
+    accent: "text-sky-600",
+    stripe: "bg-sky-500",
+  },
+  result_commentary: {
+    icon: MessageSquare,
+    accent: "text-emerald-600",
+    stripe: "bg-emerald-500",
+  },
+  pre_event_odds: {
+    icon: BarChart3,
+    accent: "text-blue-600",
+    stripe: "bg-blue-500",
   },
 };
 
