@@ -1,6 +1,6 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Check, X, Clock, Sparkles, RefreshCw, Star, Users } from "lucide-react";
+import { Check, X, Clock, Sparkles, RefreshCw, Users } from "lucide-react";
 import { useEvent } from "../hooks/useEvent";
 import { SportIcon } from "../components/ui/SportIcon";
 import { StatusPill } from "../components/ui/StatusPill";
@@ -129,9 +129,6 @@ export function EventDetailPage() {
             <div className="flex items-center gap-2 mt-2 flex-wrap">
               <StatusPill status={event.status} />
               <span className="text-xs text-zinc-400">{event.sport}</span>
-              <Badge variant="gold" size="sm">
-                <Star size={8} /> {event.points_value} pt pool
-              </Badge>
             </div>
             {event.event_date && (
               <p className="text-xs text-zinc-400 mt-2">
