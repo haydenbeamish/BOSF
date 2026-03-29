@@ -68,25 +68,32 @@ function AnimatedRoutes() {
   );
 }
 
-const SCROLL_DELTA = 10;
+const SCROLL_DELTA = 3;
 
 export default function App() {
   const mainRef = useRef<HTMLElement>(null);
   const [headerHidden, setHeaderHidden] = useState(false);
   const lastScrollY = useRef(0);
+  const ticking = useRef(false);
 
   const handleScroll = useCallback(() => {
-    const el = mainRef.current;
-    if (!el) return;
-    const currentY = el.scrollTop;
-    const delta = currentY - lastScrollY.current;
-    if (delta > SCROLL_DELTA && currentY > 56) {
-      setHeaderHidden(true);
-      lastScrollY.current = currentY;
-    } else if (delta < -SCROLL_DELTA) {
-      setHeaderHidden(false);
-      lastScrollY.current = currentY;
-    }
+    if (ticking.current) return;
+    ticking.current = true;
+    requestAnimationFrame(() => {
+      const el = mainRef.current;
+      if (el) {
+        const currentY = el.scrollTop;
+        const delta = currentY - lastScrollY.current;
+        if (delta > SCROLL_DELTA && currentY > 48) {
+          setHeaderHidden(true);
+          lastScrollY.current = currentY;
+        } else if (delta < -SCROLL_DELTA) {
+          setHeaderHidden(false);
+          lastScrollY.current = currentY;
+        }
+      }
+      ticking.current = false;
+    });
   }, []);
 
   const resetHeader = useCallback(() => {
