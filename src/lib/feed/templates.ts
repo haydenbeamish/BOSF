@@ -116,21 +116,6 @@ export const CLOSE_RACE_TEMPLATES = [
   }),
 ];
 
-export const ODDS_ALERT_TEMPLATES = [
-  (event: string, favourite: string, odds: string) => ({
-    headline: `${event} — bookies have spoken`,
-    subtext: `${favourite} at ${odds}. Go against it if you've got the balls, but don't come crying when you're wrong.`,
-  }),
-  (event: string, favourite: string, odds: string) => ({
-    headline: `Odds are in for ${event}`,
-    subtext: `${favourite} at ${odds}. Half of you will still somehow stuff this up.`,
-  }),
-  (event: string, favourite: string, odds: string) => ({
-    headline: `${event} is coming — ${favourite} (${odds})`,
-    subtext: `The bookies reckon they know. Do you? Probably not, you useless lot.`,
-  }),
-];
-
 export const CONTRARIAN_PICK_TEMPLATES = [
   (event: string, favourite: string, favOdds: string, popularPick: string) => ({
     headline: `The group thinks they're smarter than the bookies`,

@@ -36,6 +36,7 @@ async function fetchNewsFeedData(): Promise<NewsFeedData> {
     "pick_summary",
     "group_consensus",
     "pre_event_odds",
+    "odds_alert",
   ]);
 
   const backendItems = backendFeedRaw
@@ -68,10 +69,20 @@ async function fetchNewsFeedData(): Promise<NewsFeedData> {
     return 0;
   });
 
+  // Cap per type — prevent any single category from dominating the feed
+  const MAX_PER_TYPE = 3;
+  const typeCounts: Record<string, number> = {};
+  const capped = combined.filter((item) => {
+    const count = typeCounts[item.type] ?? 0;
+    if (count >= MAX_PER_TYPE) return false;
+    typeCounts[item.type] = count + 1;
+    return true;
+  });
+
   // Cap the feed — show plenty of items but not infinite
   const MAX_FEED_ITEMS = 30;
 
-  return { feedItems: combined.slice(0, MAX_FEED_ITEMS), leaderboard: lb, events: allEvents };
+  return { feedItems: capped.slice(0, MAX_FEED_ITEMS), leaderboard: lb, events: allEvents };
 }
 
 /** Produce a dedup key for a feed item based on type + context */
