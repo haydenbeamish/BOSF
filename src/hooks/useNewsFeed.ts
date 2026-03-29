@@ -140,9 +140,12 @@ async function fetchNewsFeedData(): Promise<NewsFeedData> {
   });
 
   // Cap per type — prevent any single category from dominating the feed
+  // Result types are uncapped so every completed event shows its result
+  const UNCAPPED_TYPES = new Set(["event_result"]);
   const MAX_PER_TYPE = 3;
   const typeCounts: Record<string, number> = {};
   const capped = combined.filter((item) => {
+    if (UNCAPPED_TYPES.has(item.type)) return true;
     const count = typeCounts[item.type] ?? 0;
     if (count >= MAX_PER_TYPE) return false;
     typeCounts[item.type] = count + 1;
@@ -162,7 +165,7 @@ async function fetchNewsFeedData(): Promise<NewsFeedData> {
   }
 
   // Cap the feed — show plenty of items but not infinite
-  const MAX_FEED_ITEMS = 25;
+  const MAX_FEED_ITEMS = 50;
 
   return { feedItems: capped.slice(0, MAX_FEED_ITEMS), leaderboard: lb, events: allEvents };
 }
