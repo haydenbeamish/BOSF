@@ -22,6 +22,10 @@ const TYPE_EMOJI: Record<string, string> = {
   pick_summary: "\u{1F4CB}",
   result_commentary: "\u{1F3C6}",
   pre_event_odds: "\u{1F4CA}",
+  upset_alert: "\u{1F4A5}",
+  accuracy_check: "\u{1F4C8}",
+  lunch_liability: "\u{1F4B3}",
+  picks_open: "\u{1F514}",
 };
 
 /** Default priority per feed item type */
@@ -46,6 +50,10 @@ const TYPE_PRIORITY: Record<string, number> = {
   underdog_backer: 5,
   group_consensus: 4,
   hot_take: 4,
+  upset_alert: 9,
+  accuracy_check: 6,
+  lunch_liability: 6,
+  picks_open: 8,
 };
 
 /** Known type aliases the backend might use — map to our FeedItemType */

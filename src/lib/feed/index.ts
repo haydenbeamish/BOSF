@@ -14,6 +14,10 @@ import {
   LAST_PLACE_BANTER_TEMPLATES,
   NEW_LEADER_TEMPLATES,
   NEW_SPUD_TEMPLATES,
+  UPSET_ALERT_TEMPLATES,
+  ACCURACY_TEMPLATES,
+  LUNCH_LIABILITY_TEMPLATES,
+  PICKS_OPEN_TEMPLATES,
 } from "./templates";
 import { computeStreaks, STREAK_THRESHOLD } from "./streaks";
 import { findOutliers, MAX_OUTLIERS } from "./outliers";
@@ -44,6 +48,9 @@ export const LUNCH_CONTRIBUTIONS: { position: number; contribution: number }[] =
   { position: 14, contribution: 325 },
 ];
 
+/** Only show event_result cards for the N most recent completed events */
+const MAX_RECENT_RESULTS = 5;
+
 export function generateNewsFeed(
   events: CompetitionEvent[],
   participants: Participant[],
@@ -56,12 +63,13 @@ export function generateNewsFeed(
     .filter((e) => e.status === "completed" && e.correct_answer)
     .sort((a, b) => (b.display_order ?? 0) - (a.display_order ?? 0));
 
-  // 1. Event results — show who won for every completed event
-  for (const event of completedEvents) {
+  // 1. Event results — only recent events to avoid flooding with old results
+  const recentCompleted = completedEvents.slice(0, MAX_RECENT_RESULTS);
+
+  for (const event of recentCompleted) {
     const preds = allPredictions.filter((p) => Number(p.event_id) === Number(event.id));
     const correctCount = preds.filter((p) => Boolean(p.is_correct)).length;
 
-    // Result for every event — who won
     const template = hashPick(EVENT_RESULT_TEMPLATES, `result-${event.id}`);
     const { headline, subtext } = template(
       event.event_name,
@@ -158,9 +166,33 @@ export function generateNewsFeed(
     }
   }
 
-  // Group consensus removed — too noisy, not interesting enough for the feed
+  // 2. Upset alerts — bookmaker favourite lost (recent events only)
+  for (const event of recentCompleted) {
+    if (!event.favourite || !event.favourite_odds) continue;
+    const favouriteKey = event.favourite.toLowerCase().trim();
+    const answerKey = event.correct_answer!.toLowerCase().trim();
+    if (favouriteKey === answerKey) continue;
+    // Only flag upsets where the favourite had short odds (was strongly favoured)
+    if (event.favourite_odds > 2.5) continue;
 
-  // 2. Streaks per participant
+    const favOdds = `$${event.favourite_odds.toFixed(2)}`;
+    const t = hashPick(UPSET_ALERT_TEMPLATES, `upset-${event.id}`);
+    const { headline, subtext } = t(event.event_name, event.correct_answer!, event.favourite, favOdds);
+    feed.push({
+      id: `upset-${event.id}`,
+      type: "upset_alert",
+      emoji: "\u{1F4A5}",
+      headline,
+      subtext,
+      eventId: event.id,
+      eventName: event.event_name,
+      sport: event.sport,
+      timestamp: event.event_date ?? event.created_at,
+      priority: 9,
+    });
+  }
+
+  // 3. Streaks per participant
   for (const participant of participants) {
     const { winStreak, loseStreak } = computeStreaks(
       participant.id,
@@ -199,7 +231,7 @@ export function generateNewsFeed(
     }
   }
 
-  // 3. Outlier alerts for upcoming events
+  // 4. Outlier alerts for upcoming events
   const outliers = findOutliers(events, allPredictions, participants);
   for (const outlier of outliers.slice(0, MAX_OUTLIERS)) {
     const uid = `${outlier.prediction.event_id}-${outlier.prediction.participant_id}`;
@@ -225,7 +257,7 @@ export function generateNewsFeed(
     });
   }
 
-  // 4. Close race at the top of the leaderboard
+  // 5. Close race at the top of the leaderboard
   if (leaderboard.length >= 2) {
     const first = leaderboard[0];
     const second = leaderboard[1];
@@ -245,7 +277,7 @@ export function generateNewsFeed(
     }
   }
 
-  // 5. Leader & last-place banter (fires when there are completed events)
+  // 6. Leader & last-place banter (fires when there are completed events)
   if (completedEvents.length > 0 && leaderboard.length >= 2) {
     const leader = leaderboard[0];
     const lastPlace = leaderboard[leaderboard.length - 1];
@@ -279,9 +311,37 @@ export function generateNewsFeed(
     });
   }
 
-  // 6. New leader / new spud detection
-  // If the current leader only leads by the points value of the most recent event,
-  // they likely just took the lead — call it out. Same logic for last place.
+  // 7. Lunch liability for mid-table players who owe significant amounts
+  if (completedEvents.length > 0 && leaderboard.length >= 6) {
+    // Pick the person in the "danger zone" — high contribution but not last place
+    // (last place already has dedicated banter above)
+    const dangerZoneStart = Math.max(Math.floor(leaderboard.length * 0.6), 3);
+    const dangerEntries = leaderboard.slice(dangerZoneStart, leaderboard.length - 1);
+    if (dangerEntries.length > 0) {
+      // Pick the one whose lunch bill is the scariest
+      const worst = dangerEntries[dangerEntries.length - 1];
+      const worstPos = leaderboard.findIndex((e) => e.id === worst.id);
+      const contribution = LUNCH_CONTRIBUTIONS[Math.min(worstPos, LUNCH_CONTRIBUTIONS.length - 1)];
+      if (contribution && contribution.contribution >= 40) {
+        const amount = `$${contribution.contribution}`;
+        const position = `${worstPos + 1}${ordinalSuffix(worstPos + 1)}`;
+        const t = hashPick(LUNCH_LIABILITY_TEMPLATES, `liability-${worst.id}`);
+        const { headline, subtext } = t(worst.name, amount, position);
+        feed.push({
+          id: `lunch-liability-${worst.id}`,
+          type: "lunch_liability",
+          emoji: "\u{1F4B3}",
+          headline,
+          subtext,
+          playerName: worst.name,
+          playerId: worst.id,
+          priority: 6,
+        });
+      }
+    }
+  }
+
+  // 8. New leader / new spud detection
   if (completedEvents.length >= 2 && leaderboard.length >= 3) {
     const leader = leaderboard[0];
     const second = leaderboard[1];
@@ -290,8 +350,6 @@ export function generateNewsFeed(
     const mostRecentEvent = completedEvents[0];
     const pointsValue = mostRecentEvent?.points_value ?? 1;
 
-    // New leader: leader's margin over 2nd is within the last event's points
-    // (meaning before that event, they were behind or tied)
     const leaderGap = leader.total_points - second.total_points;
     if (leaderGap > 0 && leaderGap <= pointsValue) {
       const t = hashPick(NEW_LEADER_TEMPLATES, `newleader-${leader.id}`);
@@ -308,7 +366,6 @@ export function generateNewsFeed(
       });
     }
 
-    // New spud: last place's deficit from 2nd-last is within the last event's points
     const spudGap = secondLast.total_points - lastPlace.total_points;
     if (spudGap > 0 && spudGap <= pointsValue) {
       const t = hashPick(NEW_SPUD_TEMPLATES, `newspud-${lastPlace.id}`);
@@ -326,8 +383,80 @@ export function generateNewsFeed(
     }
   }
 
-  // 7. Odds-based alerts
+  // 9. Accuracy check — highlight the best and worst hit rates
+  if (leaderboard.length >= 4 && completedEvents.length >= 3) {
+    const withAccuracy = leaderboard
+      .filter((e) => e.total_predictions >= 3)
+      .map((e) => ({
+        ...e,
+        pct: Math.round((e.correct_predictions / e.total_predictions) * 100),
+      }));
+
+    if (withAccuracy.length >= 2) {
+      // Best accuracy
+      const best = withAccuracy.reduce((a, b) => a.pct > b.pct ? a : b);
+      if (best.pct > 0) {
+        const t = hashPick(ACCURACY_TEMPLATES, `acc-best-${best.id}`);
+        const { headline, subtext } = t(best.name, `${best.pct}%`, best.correct_predictions, best.total_predictions);
+        feed.push({
+          id: `accuracy-best`,
+          type: "accuracy_check",
+          emoji: "\u{1F4C8}",
+          headline,
+          subtext,
+          playerName: best.name,
+          playerId: best.id,
+          priority: 6,
+        });
+      }
+
+      // Worst accuracy
+      const worst = withAccuracy.reduce((a, b) => a.pct < b.pct ? a : b);
+      if (worst.id !== best.id) {
+        const t = hashPick(ACCURACY_TEMPLATES, `acc-worst-${worst.id}`);
+        const { headline, subtext } = t(worst.name, `${worst.pct}%`, worst.correct_predictions, worst.total_predictions);
+        feed.push({
+          id: `accuracy-worst`,
+          type: "accuracy_check",
+          emoji: "\u{1F4C9}",
+          headline,
+          subtext,
+          playerName: worst.name,
+          playerId: worst.id,
+          priority: 6,
+        });
+      }
+    }
+  }
+
+  // 10. Odds-based alerts
   feed.push(...generateOddsFeedItems(events, allPredictions, participants));
+
+  // 11. Picks open — nudge for upcoming events with low participation
+  if (participants.length >= 3) {
+    const upcomingEvents = events.filter((e) => e.status === "upcoming" || e.status === "in_progress");
+    for (const event of upcomingEvents) {
+      const pickCount = allPredictions.filter((p) => Number(p.event_id) === Number(event.id)).length;
+      const ratio = pickCount / participants.length;
+      // Only nudge when less than half have picked and at least 1 person has (so it's active)
+      if (ratio < 0.5 && pickCount >= 1) {
+        const t = hashPick(PICKS_OPEN_TEMPLATES, `picksopen-${event.id}`);
+        const { headline, subtext } = t(event.event_name, pickCount, participants.length);
+        feed.push({
+          id: `picks-open-${event.id}`,
+          type: "picks_open",
+          emoji: "\u{1F514}",
+          headline,
+          subtext,
+          eventId: event.id,
+          eventName: event.event_name,
+          sport: event.sport,
+          timestamp: event.event_date ?? event.close_date ?? undefined,
+          priority: 8,
+        });
+      }
+    }
+  }
 
   // Sort: highest priority first, then by timestamp (newest first)
   feed.sort((a, b) => {
@@ -337,4 +466,15 @@ export function generateNewsFeed(
   });
 
   return feed;
+}
+
+function ordinalSuffix(n: number): string {
+  const v = n % 100;
+  if (v >= 11 && v <= 13) return "th";
+  switch (n % 10) {
+    case 1: return "st";
+    case 2: return "nd";
+    case 3: return "rd";
+    default: return "th";
+  }
 }

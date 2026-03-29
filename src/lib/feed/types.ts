@@ -18,7 +18,11 @@ export type FeedItemType =
   | "result_commentary"
   | "pre_event_odds"
   | "new_leader"
-  | "new_spud";
+  | "new_spud"
+  | "upset_alert"
+  | "accuracy_check"
+  | "lunch_liability"
+  | "picks_open";
 
 export interface FeedItem {
   id: string;
@@ -33,6 +37,13 @@ export interface FeedItem {
   sport?: string;
   timestamp?: string;
   priority: number;
+  /** Structured odds data for visual rendering on odds_alert cards */
+  odds?: {
+    favourite: string;
+    favouriteOdds: number;
+    underdog?: string;
+    underdogOdds?: number;
+  };
 }
 
 /**
