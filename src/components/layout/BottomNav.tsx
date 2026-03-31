@@ -1,6 +1,6 @@
 import { NavLink, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
-import { LayoutDashboard, Trophy, Users, CalendarDays, Newspaper } from "lucide-react";
+import { LayoutDashboard, Trophy, CalendarDays, Newspaper } from "lucide-react";
 import { cn } from "../../lib/cn";
 
 const tabs = [
@@ -8,7 +8,6 @@ const tabs = [
   { to: "/news", label: "News", icon: Newspaper },
   { to: "/events", label: "Events", icon: CalendarDays },
   { to: "/leaderboard", label: "Board", icon: Trophy },
-  { to: "/members", label: "Members", icon: Users },
 ];
 
 export function BottomNav() {

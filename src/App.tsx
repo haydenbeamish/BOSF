@@ -1,5 +1,5 @@
 import { lazy, Suspense, useEffect, useRef, useState, useCallback } from "react";
-import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import { Header } from "./components/layout/Header";
 import { BottomNav } from "./components/layout/BottomNav";
@@ -10,7 +10,6 @@ const DashboardPage = lazy(() => import("./pages/DashboardPage"));
 const LeaderboardPage = lazy(() => import("./pages/LeaderboardPage"));
 const EventDetailPage = lazy(() => import("./pages/EventDetailPage"));
 const PlayerPage = lazy(() => import("./pages/PlayerPage"));
-const MembersPage = lazy(() => import("./pages/MembersPage"));
 const EventsPage = lazy(() => import("./pages/EventsPage"));
 const NewsPage = lazy(() => import("./pages/NewsPage"));
 const NotFoundPage = lazy(() => import("./pages/NotFoundPage"));
@@ -60,7 +59,7 @@ function AnimatedRoutes() {
           <Route path="/leaderboard" element={<LeaderboardPage />} />
           <Route path="/events/:id" element={<EventDetailPage />} />
           <Route path="/player/:id" element={<PlayerPage />} />
-          <Route path="/members" element={<MembersPage />} />
+          <Route path="/members" element={<Navigate to="/leaderboard" replace />} />
           <Route path="*" element={<NotFoundPage />} />
         </Routes>
       </motion.div>
