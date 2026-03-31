@@ -71,6 +71,17 @@ function enrichFeedItemWithOddsAndPicks(
         .sort((a, b) => b.count - a.count);
 
       enriched.picks = { options, total: eventPreds.length };
+
+      // For contrarian_pick items from the backend, generate an informative subtext
+      // if the majority pick differs from the bookies' favourite
+      if (item.type === "contrarian_pick") {
+        const topOption = options[0];
+        if (topOption && topOption.label.toLowerCase() !== favouriteKey) {
+          const pctGroup = Math.round((topOption.count / eventPreds.length) * 100);
+          const favOdds = `$${event.favourite_odds!.toFixed(2)}`;
+          enriched.subtext = `The bookies had ${event.favourite} at ${favOdds}, but ${pctGroup}% of the group went with ${topOption.label} instead.`;
+        }
+      }
     }
   }
 

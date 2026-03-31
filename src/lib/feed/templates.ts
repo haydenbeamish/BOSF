@@ -118,16 +118,16 @@ export const CLOSE_RACE_TEMPLATES = [
 
 export const CONTRARIAN_PICK_TEMPLATES = [
   (event: string, favourite: string, favOdds: string, popularPick: string, pctGroup: number) => ({
-    headline: `${pctGroup}% of you are backing "${popularPick}" on ${event}`,
-    subtext: `Bookies have ${favourite} at ${favOdds}. One side is going to look very stupid.`,
+    headline: `Group vs bookies on ${event}`,
+    subtext: `The bookies had ${favourite} at ${favOdds}, but ${pctGroup}% of the group went with ${popularPick} instead.`,
   }),
   (event: string, favourite: string, favOdds: string, popularPick: string, pctGroup: number) => ({
-    headline: `Bookies vs the group on ${event}`,
-    subtext: `${favourite} (${favOdds}) is the market pick but ${pctGroup}% of you went with "${popularPick}".`,
+    headline: `The group is backing against the market on ${event}`,
+    subtext: `Bookies have ${favourite} at ${favOdds}, but ${pctGroup}% of you went with ${popularPick} instead.`,
   }),
   (event: string, favourite: string, favOdds: string, popularPick: string, pctGroup: number) => ({
-    headline: `${event}: the group disagrees with the bookies`,
-    subtext: `${pctGroup}% backed "${popularPick}" over ${favourite} (${favOdds}). Brave or brain-dead?`,
+    headline: `${event}: group vs bookies`,
+    subtext: `The bookies fancied ${favourite} at ${favOdds}, yet ${pctGroup}% of the group picked ${popularPick}. One side is about to look very silly.`,
   }),
 ];
 
