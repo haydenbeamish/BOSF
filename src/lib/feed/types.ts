@@ -79,4 +79,15 @@ export interface BackendFeedItem {
   timestamp?: string;
   created_at?: string;
   priority?: number;
+  detail?: string;
+  metadata?: {
+    event_id?: number;
+    event_name?: string;
+    sport?: string;
+    favourite?: string;
+    favourite_odds?: number;
+    underdog?: string;
+    underdog_odds?: number;
+    [key: string]: unknown;
+  };
 }

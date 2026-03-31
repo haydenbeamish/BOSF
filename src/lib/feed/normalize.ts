@@ -95,18 +95,32 @@ export function normalizeBackendFeedItem(raw: unknown): FeedItem | null {
   const rawType = String(item.type ?? "result_commentary").toLowerCase().trim();
   const type: FeedItemType = TYPE_ALIASES[rawType] ?? (rawType as FeedItemType);
 
+  const meta = item.metadata ?? {};
+
+  // Build odds from metadata if present
+  const odds =
+    meta.favourite && meta.favourite_odds != null
+      ? {
+          favourite: meta.favourite,
+          favouriteOdds: meta.favourite_odds,
+          underdog: meta.underdog ?? undefined,
+          underdogOdds: meta.underdog_odds ?? undefined,
+        }
+      : undefined;
+
   return {
     id: `backend-${item.id ?? Math.random().toString(36).slice(2)}`,
     type,
     emoji: item.emoji || TYPE_EMOJI[type] || "\u{1F4E2}",
     headline,
-    subtext,
+    subtext: subtext || item.detail || "",
     playerName: item.player_name || item.participant_name,
     playerId: item.player_id ?? item.participant_id,
-    eventId: item.event_id,
-    eventName: item.event_name,
-    sport: item.sport,
+    eventId: item.event_id ?? meta.event_id,
+    eventName: item.event_name ?? meta.event_name,
+    sport: item.sport ?? meta.sport,
     timestamp: item.timestamp || item.created_at,
     priority: item.priority ?? TYPE_PRIORITY[type] ?? 5,
+    ...(odds ? { odds } : {}),
   };
 }
