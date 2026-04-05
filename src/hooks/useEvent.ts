@@ -5,6 +5,7 @@ export function useEvent(id: number) {
   const { data: event = null, isLoading: loading, error, refetch } = useQuery({
     queryKey: ["event", id],
     queryFn: () => getEvent(id),
+    enabled: id > 0 && !isNaN(id),
   });
 
   return {

@@ -74,9 +74,10 @@ export function EventDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const numId = Number(id);
+  const isValid = Boolean(id) && !isNaN(numId) && numId > 0;
   const { event, loading, error, retry } = useEvent(numId);
 
-  if (!id || isNaN(numId)) {
+  if (!isValid) {
     return <EmptyState icon={<X size={28} />} title="Invalid event" description="This event doesn't exist." />;
   }
   if (error) {
@@ -132,7 +133,7 @@ export function EventDetailPage() {
             </div>
             {event.event_date && (
               <p className="text-xs text-zinc-400 mt-2">
-                {new Date(event.event_date).toLocaleDateString("en-AU", { weekday: "short", day: "numeric", month: "short", year: "numeric" })}
+                {new Date(event.event_date + "T00:00:00").toLocaleDateString("en-AU", { weekday: "short", day: "numeric", month: "short", year: "numeric" })}
               </p>
             )}
           </div>
@@ -255,7 +256,10 @@ export function EventDetailPage() {
                   {group.predictions.map((pred, i) => (
                     <div
                       key={pred.id ?? `${pred.participant_id}-${i}`}
+                      role="button"
+                      tabIndex={0}
                       onClick={() => navigate(`/player/${pred.participant_id}`)}
+                      onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); navigate(`/player/${pred.participant_id}`); } }}
                       className={cn(
                         "flex items-center gap-3 px-3 py-2.5 rounded-xl border cursor-pointer active:scale-[0.98] transition-all",
                         group.isCorrect === true

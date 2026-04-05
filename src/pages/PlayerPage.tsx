@@ -18,6 +18,7 @@ export function PlayerPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const numId = Number(id);
+  const isValid = Boolean(id) && !isNaN(numId) && numId > 0;
   const { data, loading, error, retry } = usePlayer(numId);
 
   // Compute derived stats
@@ -72,7 +73,7 @@ export function PlayerPage() {
     return { wins, losses, pending, winRate, decided, pendingList, total_points, bestSport, currentStreak, streakType, formGuide };
   }, [data]);
 
-  if (!id || isNaN(numId)) {
+  if (!isValid) {
     return <EmptyState icon={<X size={28} />} title="Invalid player" description="This player doesn't exist." />;
   }
   if (error) {
@@ -209,10 +210,13 @@ export function PlayerPage() {
             {decided.map((pred, i) => (
               <motion.div
                 key={pred.id ?? `d-${pred.event_id}-${i}`}
+                role="button"
+                tabIndex={0}
                 initial={{ opacity: 0, x: -10 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.2 + Math.min(i * 0.02, 0.4) }}
                 onClick={() => navigate(`/events/${pred.event_id}`)}
+                onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); navigate(`/events/${pred.event_id}`); } }}
                 className={cn(
                   "flex items-center gap-3 px-3 py-2.5 rounded-2xl border cursor-pointer active:scale-[0.98] transition-all",
                   pred.is_correct
@@ -259,10 +263,13 @@ export function PlayerPage() {
             {pendingList.map((pred, i) => (
               <motion.div
                 key={pred.id ?? `p-${pred.event_id}-${i}`}
+                role="button"
+                tabIndex={0}
                 initial={{ opacity: 0, x: -10 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.15 + Math.min(i * 0.02, 0.4) }}
                 onClick={() => navigate(`/events/${pred.event_id}`)}
+                onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); navigate(`/events/${pred.event_id}`); } }}
                 className="flex items-center gap-3 px-3 py-2.5 rounded-2xl border border-zinc-200/60 bg-white cursor-pointer active:scale-[0.98] transition-all shadow-sm"
               >
                 <SportIcon sport={pred.sport || "AFL"} size="sm" />

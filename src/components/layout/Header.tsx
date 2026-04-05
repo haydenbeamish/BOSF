@@ -27,14 +27,16 @@ export function Header({ hidden = false }: { hidden?: boolean }) {
   }, [queryClient]);
 
   function handleBack() {
+    // Use history.length to determine if there's a previous page in the session
+    const hasPreviousPage = window.history.length > 1;
     if (location.pathname.startsWith("/events/")) {
-      if (window.history.state?.idx > 0) {
+      if (hasPreviousPage) {
         navigate(-1);
       } else {
         navigate("/events");
       }
     } else if (location.pathname.startsWith("/player/")) {
-      if (window.history.state?.idx > 0) {
+      if (hasPreviousPage) {
         navigate(-1);
       } else {
         navigate("/members");

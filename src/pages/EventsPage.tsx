@@ -1,8 +1,8 @@
 import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { ChevronRight, Check, CalendarDays, CheckCircle2 } from "lucide-react";
-import { getEventDisplayDate, formatEventDate } from "../lib/dates";
+import { ChevronRight, CalendarDays, CheckCircle2, Check } from "lucide-react";
+import { getEventDisplayDate, formatEventDate, compareByDisplayDate } from "../lib/dates";
 import { useEvents } from "../hooks/useEvents";
 import { Skeleton } from "../components/ui/Skeleton";
 import { EmptyState } from "../components/ui/EmptyState";
@@ -66,16 +66,7 @@ export function EventsPage() {
 
   const upcomingEvents = base
     .filter((e) => e.status === "upcoming" || e.status === "in_progress")
-    .sort((a, b) => {
-      // Sort by display date (the later of event_date / close_date) so season-long
-      // in-progress events sit at their natural end-of-season position.
-      const dateA = a.close_date && a.close_date > (a.event_date ?? "") ? a.close_date : (a.event_date ?? "");
-      const dateB = b.close_date && b.close_date > (b.event_date ?? "") ? b.close_date : (b.event_date ?? "");
-      if (dateA && dateB) return dateA.localeCompare(dateB);
-      if (dateA) return -1;
-      if (dateB) return 1;
-      return (a.display_order ?? 0) - (b.display_order ?? 0);
-    });
+    .sort(compareByDisplayDate);
 
   const decidedEvents = base
     .filter((e) => e.status === "completed")
@@ -202,10 +193,13 @@ export function EventsPage() {
             {displayEvents.map((evt, i) => (
               <motion.div
                 key={evt.id}
+                role="button"
+                tabIndex={0}
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: Math.min(i * 0.025, 0.5), duration: 0.3 }}
                 onClick={() => navigate(`/events/${evt.id}`)}
+                onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); navigate(`/events/${evt.id}`); } }}
                 className={cn(
                   "flex items-center gap-3 px-3 py-2.5 rounded-2xl border cursor-pointer active:scale-[0.98] hover:shadow-md hover:-translate-y-0.5 transition-all shadow-sm",
                   evt.status === "completed"
@@ -219,25 +213,26 @@ export function EventsPage() {
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-zinc-800 line-clamp-2 leading-snug">{evt.event_name}</p>
                   <div className="flex items-center gap-2 mt-0.5">
-                    {evt.status === "completed" && evt.correct_answer ? (
-                      <div className="flex items-center gap-1 min-w-0">
-                        <Check size={10} className="text-emerald-600 shrink-0" />
-                        <p className="text-xs text-emerald-600 truncate">{evt.correct_answer}</p>
-                      </div>
-                    ) : evt.status === "in_progress" ? (
-                      <div className="flex items-center gap-1.5">
-                        <StatusPill status="in_progress" />
-                        {formatEventDate(getEventDisplayDate(evt.event_date, evt.close_date)) && (
-                          <p className="text-xs text-zinc-400">
-                            ends {formatEventDate(getEventDisplayDate(evt.event_date, evt.close_date))}
-                          </p>
-                        )}
-                      </div>
-                    ) : formatEventDate(getEventDisplayDate(evt.event_date, evt.close_date)) ? (
-                      <p className="text-xs text-zinc-400">
-                        {formatEventDate(getEventDisplayDate(evt.event_date, evt.close_date))}
-                      </p>
-                    ) : null}
+                    {(() => {
+                      if (evt.status === "completed" && evt.correct_answer) {
+                        return (
+                          <div className="flex items-center gap-1 min-w-0">
+                            <Check size={10} className="text-emerald-600 shrink-0" />
+                            <p className="text-xs text-emerald-600 truncate">{evt.correct_answer}</p>
+                          </div>
+                        );
+                      }
+                      const displayDate = formatEventDate(getEventDisplayDate(evt.event_date, evt.close_date));
+                      if (evt.status === "in_progress") {
+                        return (
+                          <div className="flex items-center gap-1.5">
+                            <StatusPill status="in_progress" />
+                            {displayDate && <p className="text-xs text-zinc-400">ends {displayDate}</p>}
+                          </div>
+                        );
+                      }
+                      return displayDate ? <p className="text-xs text-zinc-400">{displayDate}</p> : null;
+                    })()}
                   </div>
                 </div>
                 <ChevronRight size={14} className="text-zinc-300 shrink-0" />

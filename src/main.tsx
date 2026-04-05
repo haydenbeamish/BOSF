@@ -1,6 +1,6 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
-import { QueryClient } from "@tanstack/react-query";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
 import { createSyncStoragePersister } from "@tanstack/query-sync-storage-persister";
 import "./index.css";
@@ -20,21 +20,35 @@ const queryClient = new QueryClient({
   },
 });
 
-const persister = createSyncStoragePersister({
-  storage: window.localStorage,
-  key: "bosf-cache",
-});
+let persister: ReturnType<typeof createSyncStoragePersister> | null = null;
+try {
+  persister = createSyncStoragePersister({
+    storage: window.localStorage,
+    key: "bosf-cache",
+  });
+} catch {
+  // localStorage unavailable (private browsing, etc.) — fall back to no persistence
+}
 
-createRoot(document.getElementById("root")!).render(
+const root = document.getElementById("root");
+if (!root) throw new Error("Root element #root not found in document");
+
+createRoot(root).render(
   <StrictMode>
-    <PersistQueryClientProvider
-      client={queryClient}
-      persistOptions={{
-        persister,
-        maxAge: 24 * 60 * 60 * 1000, // Persist for up to 24 hours
-      }}
-    >
-      <App />
-    </PersistQueryClientProvider>
+    {persister ? (
+      <PersistQueryClientProvider
+        client={queryClient}
+        persistOptions={{
+          persister,
+          maxAge: 24 * 60 * 60 * 1000,
+        }}
+      >
+        <App />
+      </PersistQueryClientProvider>
+    ) : (
+      <QueryClientProvider client={queryClient}>
+        <App />
+      </QueryClientProvider>
+    )}
   </StrictMode>
 );

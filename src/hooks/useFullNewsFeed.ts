@@ -4,88 +4,21 @@ import { getResults, getLeaderboard, getEvents, getFeed } from "../data/api";
 import { generateNewsFeed, type FeedItem } from "../lib/newsfeed";
 import { normalizeBackendFeedItem } from "../lib/feed/normalize";
 import { enhanceBanter } from "../data/ai";
-import type { LeaderboardEntry, CompetitionEvent, Prediction, Participant } from "../types";
+import type { LeaderboardEntry, CompetitionEvent } from "../types";
+import {
+  enrichFeedItemWithOddsAndPicks,
+  feedItemKey,
+  mergeBanterIntoFeed,
+  BORING_TYPES,
+  BORING_HEADLINE_PREFIXES,
+  STALE_WHEN_COMPLETED,
+  UNCAPPED_TYPES,
+} from "./newsfeed-shared";
 
 interface FullNewsFeedData {
   feedItems: FeedItem[];
   leaderboard: LeaderboardEntry[];
   events: CompetitionEvent[];
-}
-
-/**
- * Enrich a backend feed item with structured odds & picks data
- * when the item references an event that has odds and predictions.
- */
-function enrichFeedItemWithOddsAndPicks(
-  item: FeedItem,
-  events: CompetitionEvent[],
-  predictions: Prediction[],
-  participants: Participant[]
-): FeedItem {
-  const ODDS_TYPES = new Set(["odds_alert", "contrarian_pick", "underdog_backer", "pre_event_odds", "picks_open"]);
-  if (!ODDS_TYPES.has(item.type)) return item;
-  if (!item.eventId) return item;
-
-  const event = events.find((e) => Number(e.id) === Number(item.eventId));
-  if (!event || !event.favourite || !event.favourite_odds) return item;
-
-  const enriched = { ...item };
-
-  if (!enriched.odds) {
-    enriched.odds = {
-      favourite: event.favourite,
-      favouriteOdds: event.favourite_odds,
-      underdog: event.underdog ?? undefined,
-      underdogOdds: event.underdog_odds ?? undefined,
-    };
-  }
-
-  if (!enriched.picks) {
-    const eventPreds = predictions.filter(
-      (p) => Number(p.event_id) === Number(event.id)
-    );
-    if (eventPreds.length > 0) {
-      const participantMap = new Map(
-        participants.map((p) => [Number(p.id), p.name])
-      );
-      const groups: Record<string, { label: string; names: string[] }> = {};
-      for (const pred of eventPreds) {
-        const key = pred.prediction.toLowerCase().trim();
-        if (!groups[key]) {
-          groups[key] = { label: pred.prediction.trim(), names: [] };
-        }
-        const name =
-          participantMap.get(Number(pred.participant_id)) ??
-          pred.participant_name ??
-          "Unknown";
-        groups[key].names.push(name);
-      }
-      const favouriteKey = event.favourite.toLowerCase().trim();
-      const options = Object.entries(groups)
-        .map(([key, { label, names }]) => ({
-          label,
-          count: names.length,
-          names,
-          isFavourite: key === favouriteKey,
-        }))
-        .sort((a, b) => b.count - a.count);
-
-      enriched.picks = { options, total: eventPreds.length };
-
-      // For contrarian_pick items from the backend, generate an informative subtext
-      // if the majority pick differs from the bookies' favourite
-      if (item.type === "contrarian_pick") {
-        const topOption = options[0];
-        if (topOption && topOption.label.toLowerCase() !== favouriteKey) {
-          const pctGroup = Math.round((topOption.count / eventPreds.length) * 100);
-          const favOdds = `$${event.favourite_odds!.toFixed(2)}`;
-          enriched.subtext = `The bookies had ${event.favourite} at ${favOdds}, but ${pctGroup}% of the group went with ${topOption.label} instead.`;
-        }
-      }
-    }
-  }
-
-  return enriched;
 }
 
 async function fetchFullNewsFeedData(): Promise<FullNewsFeedData> {
@@ -103,16 +36,6 @@ async function fetchFullNewsFeedData(): Promise<FullNewsFeedData> {
     ...(results.events ?? []),
     ...allEvents.filter((e) => !resultsEventIds.has(e.id)),
   ];
-
-  // Normalise backend feed items — filter out boring admin types only
-  const BORING_TYPES = new Set([
-    "pick_summary",
-    "group_consensus",
-    "pre_event_odds",
-    "odds_vs_picks",
-  ]);
-
-  const BORING_HEADLINE_PREFIXES = ["Date Check", "Odds vs picks:"];
 
   const backendItems = backendFeedRaw
     .map((raw) => normalizeBackendFeedItem(raw))
@@ -132,29 +55,18 @@ async function fetchFullNewsFeedData(): Promise<FullNewsFeedData> {
     lb
   );
 
-  // Merge: backend items take priority, deduplicate
-  const backendKeys = new Set(
-    backendItems.map((item) => feedItemKey(item))
-  );
-
+  const backendKeys = new Set(backendItems.map((item) => feedItemKey(item)));
   const uniqueClientItems = clientItems.filter(
     (item) => !backendKeys.has(feedItemKey(item))
   );
 
   const combined = [...backendItems, ...uniqueClientItems];
 
-  // Remove odds/contrarian/underdog items for completed events — they're stale
   const completedEventIds = new Set(
     mergedEvents
       .filter((e) => e.status === "completed")
       .map((e) => Number(e.id))
   );
-  const STALE_WHEN_COMPLETED = new Set([
-    "odds_alert",
-    "contrarian_pick",
-    "underdog_backer",
-    "picks_open",
-  ]);
   const filtered = combined.filter((item) => {
     if (!item.eventId) return true;
     if (!STALE_WHEN_COMPLETED.has(item.type)) return true;
@@ -171,8 +83,7 @@ async function fetchFullNewsFeedData(): Promise<FullNewsFeedData> {
     return b.priority - a.priority;
   });
 
-  // Cap per type — prevent odds-related types from flooding the feed
-  const UNCAPPED_TYPES = new Set(["event_result"]);
+  // Cap per type
   const MAX_PER_TYPE = 3;
   const typeCounts: Record<string, number> = {};
   const capped = filtered.filter((item) => {
@@ -184,15 +95,7 @@ async function fetchFullNewsFeedData(): Promise<FullNewsFeedData> {
   });
 
   const MAX_FEED_ITEMS = 100;
-
   return { feedItems: capped.slice(0, MAX_FEED_ITEMS), leaderboard: lb, events: allEvents };
-}
-
-function feedItemKey(item: FeedItem): string {
-  if (item.eventId && item.playerId) return `${item.type}-e${item.eventId}-p${item.playerId}`;
-  if (item.eventId) return `${item.type}-e${item.eventId}`;
-  if (item.playerId) return `${item.type}-p${item.playerId}`;
-  return item.id;
 }
 
 export function useFullNewsFeed() {
@@ -206,6 +109,13 @@ export function useFullNewsFeed() {
 
   const dataKey = data?.feedItems.map(f => f.id).join(",") ?? null;
 
+  // Clear stale enhanced feed when underlying data changes
+  useEffect(() => {
+    if (dataKey !== banterKey) {
+      setEnhancedFeed(null);
+    }
+  }, [dataKey, banterKey]);
+
   useEffect(() => {
     if (!data?.feedItems.length || dataKey === banterKey) return;
 
@@ -215,15 +125,7 @@ export function useFullNewsFeed() {
     enhanceBanter(toEnhance).then((enhanced) => {
       if (cancelled) return;
       if (enhanced && enhanced.length === toEnhance.length) {
-        let enhIdx = 0;
-        const merged = data.feedItems.map((item) => {
-          if (item.type === "odds_alert") return item;
-          if (enhIdx < enhanced.length && enhanced[enhIdx]?.headline && enhanced[enhIdx]?.subtext) {
-            return { ...item, headline: enhanced[enhIdx].headline, subtext: enhanced[enhIdx++].subtext };
-          }
-          enhIdx++;
-          return item;
-        });
+        const merged = mergeBanterIntoFeed(data.feedItems, toEnhance, enhanced);
         setEnhancedFeed(merged);
         setBanterKey(dataKey);
       }

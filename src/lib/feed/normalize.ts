@@ -109,7 +109,7 @@ export function normalizeBackendFeedItem(raw: unknown): FeedItem | null {
       : undefined;
 
   return {
-    id: `backend-${item.id ?? Math.random().toString(36).slice(2)}`,
+    id: `backend-${item.id ?? `${rawType}-${(item.event_id ?? "")}-${(item.player_id ?? item.participant_id ?? "")}-${headline.slice(0, 20)}`}`,
     type,
     emoji: item.emoji || TYPE_EMOJI[type] || "\u{1F4E2}",
     headline,
