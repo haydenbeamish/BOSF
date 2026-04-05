@@ -244,11 +244,12 @@ app.get("/api/health", (_req, res) => {
 
 // --- Static file serving (production) ---
 app.use(express.static(join(__dirname, "dist")));
-// SPA catch-all: only serve index.html for non-API routes
-app.get("*", (req, res) => {
-  if (req.path.startsWith("/api/")) {
-    return res.status(404).json({ error: "API endpoint not found" });
-  }
+// API 404 handler — must come before the SPA catch-all
+app.use("/api", (_req, res) => {
+  res.status(404).json({ error: "API endpoint not found" });
+});
+// SPA catch-all: serve index.html for all non-API routes (Express 5 syntax)
+app.use((req, res) => {
   res.sendFile(join(__dirname, "dist", "index.html"));
 });
 

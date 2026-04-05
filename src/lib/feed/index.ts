@@ -72,7 +72,7 @@ export function generateNewsFeed(
   // 1. Event results — show all completed events
   for (const event of completedEvents) {
     const preds = predsByEventId.get(Number(event.id)) ?? [];
-    const correctCount = preds.filter((p) => Boolean(p.is_correct)).length;
+    const correctCount = preds.filter((p) => isCorrect(p.is_correct)).length;
 
     const template = hashPick(EVENT_RESULT_TEMPLATES, `result-${event.id}`);
     const { headline, subtext } = template(

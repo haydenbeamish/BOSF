@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import type { LeaderboardEntry } from "../types";
 import { getLeaderboard, getResults } from "../data/api";
+import { isCorrect } from "../lib/predictions";
 import { LUNCH_CONTRIBUTIONS } from "../lib/feed/index";
 
 export type FormResult = "W" | "L";
@@ -25,7 +26,7 @@ async function fetchLeaderboardData(): Promise<EnhancedLeaderboardEntry[]> {
         decidedByPlayer[pred.participant_id] = { correct: 0, decided: 0 };
       }
       decidedByPlayer[pred.participant_id].decided++;
-      if (pred.is_correct === true) {
+      if (isCorrect(pred.is_correct)) {
         decidedByPlayer[pred.participant_id].correct++;
       }
       if (!decidedPredsByPlayer[pred.participant_id]) {
@@ -33,7 +34,7 @@ async function fetchLeaderboardData(): Promise<EnhancedLeaderboardEntry[]> {
       }
       decidedPredsByPlayer[pred.participant_id].push({
         event_id: pred.event_id,
-        is_correct: pred.is_correct === true,
+        is_correct: isCorrect(pred.is_correct),
       });
     }
   }

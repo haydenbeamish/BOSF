@@ -203,7 +203,7 @@ export async function getStats(): Promise<StatsOverview> {
   ]);
 
   // Build the full lunch contributions table (14 positions) with participant names
-  const { LUNCH_CONTRIBUTIONS } = await import(/* webpackChunkName: "feed" */ "../lib/feed/index");
+  const { LUNCH_CONTRIBUTIONS } = await import("../lib/feed/index");
   const lunch_contributions: LunchContribution[] = LUNCH_CONTRIBUTIONS.map((entry) => {
     const player = lb[entry.position - 1];
     return {
