@@ -59,7 +59,9 @@ function normalizeEvent(e: Record<string, unknown>): CompetitionEvent {
 }
 
 export async function getEvents(status?: string): Promise<CompetitionEvent[]> {
-  const query = status ? `?status=${status}` : "";
+  const params = new URLSearchParams();
+  if (status) params.set("status", status);
+  const query = params.toString() ? `?${params}` : "";
   const data = await fetchJson<unknown>(`/events${query}`);
   return toArray<Record<string, unknown>>(data, "events", "data", "results").map(normalizeEvent);
 }
@@ -201,7 +203,7 @@ export async function getStats(): Promise<StatsOverview> {
   ]);
 
   // Build the full lunch contributions table (14 positions) with participant names
-  const { LUNCH_CONTRIBUTIONS } = await import("../lib/feed/index");
+  const { LUNCH_CONTRIBUTIONS } = await import(/* webpackChunkName: "feed" */ "../lib/feed/index");
   const lunch_contributions: LunchContribution[] = LUNCH_CONTRIBUTIONS.map((entry) => {
     const player = lb[entry.position - 1];
     return {

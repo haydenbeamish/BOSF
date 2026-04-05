@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import { Bot } from "lucide-react";
 import { askAI } from "../../data/ai";
@@ -16,9 +16,18 @@ export function PlayerInsight({ name, wins, losses, pending, totalPoints, winRat
   const [insight, setInsight] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
+  // Use a stable key based on the player name to avoid re-fetching when stats change slightly
+  const fetchedForRef = useRef<string | null>(null);
 
   useEffect(() => {
+    // Only fetch once per player name
+    if (fetchedForRef.current === name) return;
+    fetchedForRef.current = name;
+
     let cancelled = false;
+    setLoading(true);
+    setError(false);
+    setInsight(null);
 
     const context = `Player stats for ${name}: ${wins} wins, ${losses} losses, ${pending} pending, ${totalPoints} total points, ${winRate}% win rate.`;
     const message = `Give a one-liner roast or hype-up (depending on their stats) for ${name} in the BOSF punting competition. Keep it under 100 characters. Be funny, savage but good-natured. Australian style banter. Just the one-liner, no quotes.`;

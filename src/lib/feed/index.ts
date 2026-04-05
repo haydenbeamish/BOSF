@@ -1,4 +1,5 @@
 import type { CompetitionEvent, Prediction, LeaderboardEntry, Participant } from "../../types";
+import { isCorrect } from "../predictions";
 import type { FeedItem } from "./types";
 import {
   hashPick,
@@ -55,13 +56,22 @@ export function generateNewsFeed(
 ): FeedItem[] {
   const feed: FeedItem[] = [];
 
+  // Pre-index predictions by event ID for O(1) lookups
+  const predsByEventId = new Map<number, Prediction[]>();
+  for (const pred of allPredictions) {
+    const eid = Number(pred.event_id);
+    const arr = predsByEventId.get(eid);
+    if (arr) arr.push(pred);
+    else predsByEventId.set(eid, [pred]);
+  }
+
   const completedEvents = events
     .filter((e) => e.status === "completed" && e.correct_answer)
     .sort((a, b) => (b.display_order ?? 0) - (a.display_order ?? 0));
 
   // 1. Event results — show all completed events
   for (const event of completedEvents) {
-    const preds = allPredictions.filter((p) => Number(p.event_id) === Number(event.id));
+    const preds = predsByEventId.get(Number(event.id)) ?? [];
     const correctCount = preds.filter((p) => Boolean(p.is_correct)).length;
 
     const template = hashPick(EVENT_RESULT_TEMPLATES, `result-${event.id}`);
@@ -140,7 +150,7 @@ export function generateNewsFeed(
 
     // Only one person got it right — lone genius moment
     if (correctCount === 1) {
-      const winner = preds.find((p) => p.is_correct === true || (p.is_correct as unknown) === 1);
+      const winner = preds.find((p) => isCorrect(p.is_correct));
       if (winner) {
         const t = hashPick(PERFECT_PICK_TEMPLATES, `perfect-${event.id}`);
         const { headline: h, subtext: s } = t(
@@ -397,7 +407,7 @@ export function generateNewsFeed(
       const best = withAccuracy.reduce((a, b) => a.pct > b.pct ? a : b);
       if (best.pct > 0) {
         const t = hashPick(ACCURACY_TEMPLATES, `acc-best-${best.id}`);
-        const { headline, subtext } = t(best.name, `${best.pct}%`, best.correct_predictions, best.total_predictions);
+        const { headline, subtext } = t(best.name, best.pct, best.correct_predictions, best.total_predictions);
         feed.push({
           id: `accuracy-best`,
           type: "accuracy_check",
@@ -414,7 +424,7 @@ export function generateNewsFeed(
       const worst = withAccuracy.reduce((a, b) => a.pct < b.pct ? a : b);
       if (worst.id !== best.id) {
         const t = hashPick(ACCURACY_TEMPLATES, `acc-worst-${worst.id}`);
-        const { headline, subtext } = t(worst.name, `${worst.pct}%`, worst.correct_predictions, worst.total_predictions);
+        const { headline, subtext } = t(worst.name, worst.pct, worst.correct_predictions, worst.total_predictions);
         feed.push({
           id: `accuracy-worst`,
           type: "accuracy_check",
@@ -436,7 +446,7 @@ export function generateNewsFeed(
   if (participants.length >= 3) {
     const upcomingEvents = events.filter((e) => e.status === "upcoming" || e.status === "in_progress");
     for (const event of upcomingEvents) {
-      const pickCount = allPredictions.filter((p) => Number(p.event_id) === Number(event.id)).length;
+      const pickCount = (predsByEventId.get(Number(event.id)) ?? []).length;
       const ratio = pickCount / participants.length;
       // Only nudge when less than half have picked and at least 1 person has (so it's active)
       if (ratio < 0.5 && pickCount >= 1) {

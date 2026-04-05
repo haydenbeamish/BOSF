@@ -12,6 +12,7 @@ export function usePlayer(id: number) {
   const { data = null, isLoading: loading, error, refetch } = useQuery<PlayerData>({
     queryKey: ["player", id],
     queryFn: () => getParticipant(id),
+    enabled: id > 0 && !isNaN(id),
   });
 
   return {

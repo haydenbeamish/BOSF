@@ -315,8 +315,8 @@ function PicksDisplay({ picks }: { picks: NonNullable<FeedItem["picks"]> }) {
 
 function OddsDisplay({ odds }: { odds: NonNullable<FeedItem["odds"]> }) {
   // Implied probability: 1/odds, then normalise so bar sums to 100%
-  const favImplied = 1 / odds.favouriteOdds;
-  const undImplied = odds.underdogOdds ? 1 / odds.underdogOdds : 0;
+  const favImplied = odds.favouriteOdds > 0 ? 1 / odds.favouriteOdds : 0;
+  const undImplied = odds.underdogOdds && odds.underdogOdds > 0 ? 1 / odds.underdogOdds : 0;
   const total = favImplied + undImplied;
   const favPct = total > 0 ? Math.round((favImplied / total) * 100) : 100;
   const undPct = 100 - favPct;

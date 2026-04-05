@@ -107,7 +107,7 @@ export function LeaderboardPage() {
           <p className="text-xs text-amber-700 font-medium">
             {topGap === 0
               ? `${entries[0].name} and ${entries[1].name} are tied at the top!`
-              : `Only ${topGap.toFixed(1)} point${topGap === 1 ? "" : "s"} between 1st and 2nd — it's a tight race!`}
+              : `Only ${topGap.toFixed(1)} point${Math.abs(topGap - 1) < 0.01 ? "" : "s"} between 1st and 2nd — it's a tight race!`}
           </p>
         </motion.div>
       )}
@@ -131,7 +131,6 @@ export function LeaderboardPage() {
                 entry={entry}
                 isSpud={spud?.id === entry.id}
                 index={i}
-                totalEntries={entries.length}
               />
             ))}
           </div>
