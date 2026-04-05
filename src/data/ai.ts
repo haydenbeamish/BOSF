@@ -1,6 +1,6 @@
 import type { FeedItem } from "../lib/newsfeed";
 
-const AI_BASE = import.meta.env.DEV ? "" : "";
+const AI_BASE = "";
 
 interface BanterResult {
   headline: string;

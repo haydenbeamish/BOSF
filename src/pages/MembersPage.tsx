@@ -103,7 +103,10 @@ export function MembersPage() {
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: Math.min(i * 0.04, 0.5), duration: 0.3 }}
+              role="button"
+              tabIndex={0}
               onClick={() => navigate(`/player/${member.id}`)}
+              onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); navigate(`/player/${member.id}`); } }}
               className="flex items-center gap-3 px-4 py-3.5 rounded-2xl border border-zinc-200/60 bg-white cursor-pointer active:scale-[0.98] hover:shadow-md hover:-translate-y-0.5 transition-all shadow-sm"
             >
               <div className="relative">
@@ -156,7 +159,7 @@ export function MembersPage() {
                   "font-display font-extrabold text-base tabular-nums",
                   member.rank === 1 ? "text-amber-600" : "text-zinc-800"
                 )}>
-                  {member.total_points}
+                  {member.total_points.toFixed(1)}
                 </p>
                 <p className="text-[9px] font-semibold uppercase tracking-wider text-zinc-400">pts</p>
               </div>

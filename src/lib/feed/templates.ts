@@ -252,13 +252,13 @@ export const UPSET_ALERT_TEMPLATES = [
 ];
 
 export const ACCURACY_TEMPLATES = [
-  (name: string, pct: string, correct: number, total: number) => ({
-    headline: `${name} is running at ${pct}`,
-    subtext: `${correct} from ${total}. ${Number(pct.replace('%','')) >= 70 ? "Annoyingly good." : Number(pct.replace('%','')) <= 30 ? "Embarrassingly shit." : "Thoroughly mid."}`,
+  (name: string, pct: number, correct: number, total: number) => ({
+    headline: `${name} is running at ${pct}%`,
+    subtext: `${correct} from ${total}. ${pct >= 70 ? "Annoyingly good." : pct <= 30 ? "Embarrassingly shit." : "Thoroughly mid."}`,
   }),
-  (name: string, pct: string, correct: number, total: number) => ({
-    headline: `${name}: ${correct}/${total} — ${pct} hit rate`,
-    subtext: `${Number(pct.replace('%','')) >= 70 ? "Making it look too easy, the smug bastard." : Number(pct.replace('%','')) <= 30 ? "Shouldn't be allowed to make picks anymore." : "Right in the pack. Nothing to brag about."}`,
+  (name: string, pct: number, correct: number, total: number) => ({
+    headline: `${name}: ${correct}/${total} — ${pct}% hit rate`,
+    subtext: `${pct >= 70 ? "Making it look too easy, the smug bastard." : pct <= 30 ? "Shouldn't be allowed to make picks anymore." : "Right in the pack. Nothing to brag about."}`,
   }),
 ];
 
