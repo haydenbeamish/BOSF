@@ -3,6 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Trophy, Target, Clock, Check, X, Flame, RefreshCw, Zap } from "lucide-react";
 import { usePlayer } from "../hooks/usePlayer";
+import { isCorrect, isIncorrect } from "../lib/predictions";
 import { Avatar } from "../components/ui/Avatar";
 import { GlassCard } from "../components/ui/GlassCard";
 import { Badge } from "../components/ui/Badge";
@@ -25,26 +26,26 @@ export function PlayerPage() {
   const stats = useMemo(() => {
     if (!data) return null;
     const { predictions, total_points } = data;
-    const wins = predictions.filter((p) => p.is_correct === true).length;
-    const losses = predictions.filter((p) => p.is_correct === false).length;
-    const pending = predictions.filter((p) => p.is_correct === null).length;
+    const wins = predictions.filter((p) => isCorrect(p.is_correct)).length;
+    const losses = predictions.filter((p) => isIncorrect(p.is_correct)).length;
+    const pending = predictions.filter((p) => p.is_correct === null || p.is_correct === undefined).length;
     const winRate = (wins + losses) > 0 ? Math.round((wins / (wins + losses)) * 100) : 0;
 
     // Sort decided by most recent (highest event_id = most recently created)
     const decided = predictions
-      .filter((p) => p.is_correct !== null)
+      .filter((p) => p.is_correct !== null && p.is_correct !== undefined)
       .sort((a, b) => (b.event_id ?? 0) - (a.event_id ?? 0));
     const pendingList = predictions
-      .filter((p) => p.is_correct === null)
+      .filter((p) => p.is_correct === null || p.is_correct === undefined)
       .sort((a, b) => (a.event_id ?? 0) - (b.event_id ?? 0));
 
     // Best sport: sport with highest win rate (min 2 decided)
     const sportStats: Record<string, { wins: number; total: number }> = {};
     for (const pred of predictions) {
-      if (pred.is_correct !== null && pred.sport) {
+      if (pred.is_correct !== null && pred.is_correct !== undefined && pred.sport) {
         if (!sportStats[pred.sport]) sportStats[pred.sport] = { wins: 0, total: 0 };
         sportStats[pred.sport].total++;
-        if (pred.is_correct) sportStats[pred.sport].wins++;
+        if (isCorrect(pred.is_correct)) sportStats[pred.sport].wins++;
       }
     }
     const bestSport = Object.entries(sportStats)
@@ -56,11 +57,11 @@ export function PlayerPage() {
     let currentStreak = 0;
     let streakType: "win" | "lose" | null = null;
     for (const pred of decided) {
-      if (pred.is_correct === true) {
+      if (isCorrect(pred.is_correct)) {
         if (streakType === "lose") break;
         streakType = "win";
         currentStreak++;
-      } else if (pred.is_correct === false) {
+      } else if (isIncorrect(pred.is_correct)) {
         if (streakType === "win") break;
         streakType = "lose";
         currentStreak++;
@@ -68,7 +69,7 @@ export function PlayerPage() {
     }
 
     // Form guide: last 10 decided results (most recent first)
-    const formGuide: FormResult[] = decided.slice(0, 10).map((p) => (p.is_correct ? "W" : "L"));
+    const formGuide: FormResult[] = decided.slice(0, 10).map((p) => (isCorrect(p.is_correct) ? "W" : "L"));
 
     return { wins, losses, pending, winRate, decided, pendingList, total_points, bestSport, currentStreak, streakType, formGuide };
   }, [data]);

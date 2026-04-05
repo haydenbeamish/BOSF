@@ -72,8 +72,8 @@ export function EventsPage() {
     .filter((e) => e.status === "completed")
     .sort((a, b) => {
       if (a.event_date && b.event_date) return b.event_date.localeCompare(a.event_date);
-      if (a.event_date) return 1;
-      if (b.event_date) return -1;
+      if (a.event_date) return -1;
+      if (b.event_date) return 1;
       return (b.display_order ?? 0) - (a.display_order ?? 0);
     });
 

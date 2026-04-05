@@ -2,6 +2,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Check, X, Clock, Sparkles, RefreshCw, Users } from "lucide-react";
 import { useEvent } from "../hooks/useEvent";
+import { isCorrect } from "../lib/predictions";
 import { SportIcon } from "../components/ui/SportIcon";
 import { StatusPill } from "../components/ui/StatusPill";
 import { Avatar } from "../components/ui/Avatar";
@@ -108,7 +109,7 @@ export function EventDetailPage() {
   const isDecided = event.status === "completed";
 
   const predictions = event.predictions ?? [];
-  const correctCount = predictions.filter((p) => p.is_correct === true).length;
+  const correctCount = predictions.filter((p) => isCorrect(p.is_correct)).length;
   const groups = groupPredictions(predictions);
   const uniqueAnswers = groups.length;
 
