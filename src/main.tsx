@@ -24,7 +24,7 @@ let persister: ReturnType<typeof createSyncStoragePersister> | null = null;
 try {
   persister = createSyncStoragePersister({
     storage: window.localStorage,
-    key: "bosf-cache",
+    key: "bosf-cache-v2",
   });
 } catch {
   // localStorage unavailable (private browsing, etc.) — fall back to no persistence
