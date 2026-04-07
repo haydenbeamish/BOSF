@@ -9,7 +9,7 @@ import App from "./App";
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 2 * 60 * 1000,          // Data fresh for 2 minutes
+      staleTime: 0,                       // Always re-fetch in background (stale-while-revalidate)
       gcTime: 24 * 60 * 60 * 1000,       // Keep cached data for 24 hours
       retry: 1,
       refetchOnWindowFocus: true,         // Refresh when user tabs back
@@ -24,7 +24,7 @@ let persister: ReturnType<typeof createSyncStoragePersister> | null = null;
 try {
   persister = createSyncStoragePersister({
     storage: window.localStorage,
-    key: "bosf-cache-v2",
+    key: "bosf-cache-v3",
   });
 } catch {
   // localStorage unavailable (private browsing, etc.) — fall back to no persistence
