@@ -12,6 +12,7 @@ import { Skeleton } from "../components/ui/Skeleton";
 import { EmptyState } from "../components/ui/EmptyState";
 import { EventNews } from "../components/feed/EventNews";
 import { cn } from "../lib/cn";
+import { formatEventDate, getEventDisplayDate } from "../lib/dates";
 
 interface PredictionGroup {
   answer: string;
@@ -132,11 +133,10 @@ export function EventDetailPage() {
               <StatusPill status={event.status} />
               <span className="text-xs text-zinc-400">{event.sport}</span>
             </div>
-            {event.event_date && (
-              <p className="text-xs text-zinc-400 mt-2">
-                {new Date(event.event_date + "T00:00:00").toLocaleDateString("en-AU", { weekday: "short", day: "numeric", month: "short", year: "numeric" })}
-              </p>
-            )}
+            {(() => {
+              const displayDate = formatEventDate(getEventDisplayDate(event.event_date, event.close_date));
+              return displayDate ? <p className="text-xs text-zinc-400 mt-2">{displayDate}</p> : null;
+            })()}
           </div>
         </div>
 
