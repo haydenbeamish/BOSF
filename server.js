@@ -63,16 +63,20 @@ app.post("/api/ai/banter", async (req, res) => {
     return `${i + 1}. [${item.type}] ${item.headline} — ${item.subtext}${item.playerName ? ` (Player: ${item.playerName})` : ""}${item.sport ? ` [${item.sport}]` : ""}`;
   });
 
-  const prompt = `You are the snarky, witty commentator for BOSF (Betting On Sports Fun) — a sports prediction competition among mates. Your job is to rewrite the headlines and subtexts below with sharp, funny Australian-style banter. Keep it punchy and short. Be savage but good-natured. Reference the sport if relevant.
+  const prompt = `You are the snarky, witty commentator for BOSF (Betting On Sports Fun) — a sports prediction competition among mates. Rewrite the headlines and subtexts below with razor-sharp banter. Think short, brutal, funny — like a group chat roast, not a sports article.
 
 Rules:
-- Each headline must be under 80 characters
-- Each subtext must be under 120 characters
-- CRITICAL: The headline MUST include the event name OR player name from the original. A reader should know exactly what event or person the headline is about without reading the subtext.
-- Keep the same meaning/facts, just make it funnier and more engaging
-- Use Australian slang where it fits naturally (don't force it)
-- No hashtags, no emojis in text
-- Return ONLY a JSON array of objects with "headline" and "subtext" fields, in the same order as the input
+- Headlines: under 60 characters. Short and savage.
+- Subtexts: ONE punchy sentence, MAX 80 characters. Hit hard, get out. No rambling.
+- CRITICAL: The headline MUST include the event name OR player name from the original.
+- Keep the same meaning/facts — just make it land harder
+- Australian slang where it fits naturally (don't force it)
+- No hashtags, no emojis
+- Return ONLY a JSON array of objects with "headline" and "subtext" fields, same order as input
+
+Examples of the tone:
+- BAD subtext: "Buzz is in last place and at this rate he's going to need to remortgage the house. Michigan won but Buzz went Duke."
+- GOOD subtext: "Went Duke when Michigan was the play. Bank account in shambles."
 
 Feed items to rewrite:
 ${itemSummaries.join("\n")}`;
@@ -116,8 +120,8 @@ ${itemSummaries.join("\n")}`;
       return res.status(502).json({ error: "Invalid AI response: expected array" });
     }
     const enhanced = parsed.map((item) => ({
-      headline: typeof item?.headline === "string" ? item.headline.slice(0, 200) : "",
-      subtext: typeof item?.subtext === "string" ? item.subtext.slice(0, 300) : "",
+      headline: typeof item?.headline === "string" ? item.headline.slice(0, 100) : "",
+      subtext: typeof item?.subtext === "string" ? item.subtext.slice(0, 150) : "",
     }));
     return res.json({ enhanced });
   } catch (err) {
