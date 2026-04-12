@@ -185,12 +185,14 @@ export async function getFeed(options?: {
   offset?: number;
   type?: string;
   since?: string;
+  category?: string;
 }): Promise<unknown[]> {
   const params = new URLSearchParams();
   if (options?.limit) params.set("limit", String(options.limit));
   if (options?.offset) params.set("offset", String(options.offset));
   if (options?.type) params.set("type", options.type);
   if (options?.since) params.set("since", options.since);
+  if (options?.category) params.set("category", options.category);
   const query = params.toString() ? `?${params}` : "";
   const data = await fetchJson<unknown>(`/feed${query}`);
   return toArray<unknown>(data, "feed", "items", "data", "results");

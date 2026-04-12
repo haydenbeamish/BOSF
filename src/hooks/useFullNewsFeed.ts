@@ -26,7 +26,7 @@ async function fetchFullNewsFeedData(): Promise<FullNewsFeedData> {
     getResults(),
     getLeaderboard(),
     getEvents(),
-    getFeed({ limit: 100 }).catch(() => [] as unknown[]),
+    getFeed({ limit: 100, category: "bosf" }).catch(() => [] as unknown[]),
   ]);
 
   const allPredictions = results.predictions ?? [];
