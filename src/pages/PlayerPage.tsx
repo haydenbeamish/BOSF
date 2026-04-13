@@ -1,8 +1,19 @@
 import { useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Trophy, Target, Clock, Check, X, Flame, RefreshCw, Zap } from "lucide-react";
+import {
+  Trophy,
+  Target,
+  Clock,
+  Check,
+  X,
+  Flame,
+  RefreshCw,
+  Zap,
+} from "lucide-react";
 import { usePlayer } from "../hooks/usePlayer";
+import { useLeaderboard } from "../hooks/useLeaderboard";
+import { useEvents } from "../hooks/useEvents";
 import { isCorrect, isIncorrect } from "../lib/predictions";
 import { Avatar } from "../components/ui/Avatar";
 import { GlassCard } from "../components/ui/GlassCard";
@@ -10,9 +21,16 @@ import { Badge } from "../components/ui/Badge";
 import { SportIcon } from "../components/ui/SportIcon";
 import { Skeleton } from "../components/ui/Skeleton";
 import { EmptyState } from "../components/ui/EmptyState";
+import { ClickableRow } from "../components/ui/ClickableRow";
+import { AchievementList } from "../components/ui/AchievementList";
 import { PlayerInsight } from "../components/feed/PlayerInsight";
+import { PlayerCharts } from "../components/feed/PlayerCharts";
 import { FormGuide } from "../components/ui/FormGuide";
 import type { FormResult } from "../components/ui/FormGuide";
+import {
+  computeAchievements,
+  annotateCrossPlayerAchievements,
+} from "../lib/achievements";
 import { cn } from "../lib/cn";
 
 export function PlayerPage() {
@@ -21,6 +39,17 @@ export function PlayerPage() {
   const numId = Number(id);
   const isValid = Boolean(id) && !isNaN(numId) && numId > 0;
   const { data, loading, error, retry } = usePlayer(numId);
+  const { entries } = useLeaderboard();
+  const { allEvents } = useEvents();
+
+  const leaderboardEntry = useMemo(
+    () => entries.find((e) => e.id === numId),
+    [entries, numId]
+  );
+  const completedEventsCount = useMemo(
+    () => allEvents.filter((e) => e.status === "completed").length,
+    [allEvents]
+  );
 
   // Compute derived stats
   const stats = useMemo(() => {
@@ -28,10 +57,12 @@ export function PlayerPage() {
     const { predictions, total_points } = data;
     const wins = predictions.filter((p) => isCorrect(p.is_correct)).length;
     const losses = predictions.filter((p) => isIncorrect(p.is_correct)).length;
-    const pending = predictions.filter((p) => p.is_correct === null || p.is_correct === undefined).length;
-    const winRate = (wins + losses) > 0 ? Math.round((wins / (wins + losses)) * 100) : 0;
+    const pending = predictions.filter(
+      (p) => p.is_correct === null || p.is_correct === undefined
+    ).length;
+    const winRate =
+      wins + losses > 0 ? Math.round((wins / (wins + losses)) * 100) : 0;
 
-    // Sort decided by most recent (highest event_id = most recently created)
     const decided = predictions
       .filter((p) => p.is_correct !== null && p.is_correct !== undefined)
       .sort((a, b) => (b.event_id ?? 0) - (a.event_id ?? 0));
@@ -39,21 +70,30 @@ export function PlayerPage() {
       .filter((p) => p.is_correct === null || p.is_correct === undefined)
       .sort((a, b) => (a.event_id ?? 0) - (b.event_id ?? 0));
 
-    // Best sport: sport with highest win rate (min 2 decided)
     const sportStats: Record<string, { wins: number; total: number }> = {};
     for (const pred of predictions) {
-      if (pred.is_correct !== null && pred.is_correct !== undefined && pred.sport) {
-        if (!sportStats[pred.sport]) sportStats[pred.sport] = { wins: 0, total: 0 };
+      if (
+        pred.is_correct !== null &&
+        pred.is_correct !== undefined &&
+        pred.sport
+      ) {
+        if (!sportStats[pred.sport])
+          sportStats[pred.sport] = { wins: 0, total: 0 };
         sportStats[pred.sport].total++;
         if (isCorrect(pred.is_correct)) sportStats[pred.sport].wins++;
       }
     }
-    const bestSport = Object.entries(sportStats)
-      .filter(([, s]) => s.total >= 2)
-      .sort((a, b) => (b[1].wins / b[1].total) - (a[1].wins / a[1].total))
-      .map(([sport, s]) => ({ sport, winRate: Math.round((s.wins / s.total) * 100), wins: s.wins, total: s.total }))[0] ?? null;
+    const bestSport =
+      Object.entries(sportStats)
+        .filter(([, s]) => s.total >= 2)
+        .sort((a, b) => b[1].wins / b[1].total - a[1].wins / a[1].total)
+        .map(([sport, s]) => ({
+          sport,
+          winRate: Math.round((s.wins / s.total) * 100),
+          wins: s.wins,
+          total: s.total,
+        }))[0] ?? null;
 
-    // Current streak
     let currentStreak = 0;
     let streakType: "win" | "lose" | null = null;
     for (const pred of decided) {
@@ -68,14 +108,68 @@ export function PlayerPage() {
       }
     }
 
-    // Form guide: last 10 decided results (most recent first)
-    const formGuide: FormResult[] = decided.slice(0, 10).map((p) => (isCorrect(p.is_correct) ? "W" : "L"));
+    const formGuide: FormResult[] = decided
+      .slice(0, 10)
+      .map((p) => (isCorrect(p.is_correct) ? "W" : "L"));
 
-    return { wins, losses, pending, winRate, decided, pendingList, total_points, bestSport, currentStreak, streakType, formGuide };
+    return {
+      wins,
+      losses,
+      pending,
+      winRate,
+      decided,
+      pendingList,
+      total_points,
+      bestSport,
+      currentStreak,
+      streakType,
+      formGuide,
+    };
   }, [data]);
 
+  const achievements = useMemo(() => {
+    if (!data) return [];
+    const base = computeAchievements({
+      predictions: data.predictions,
+      leaderboardEntry,
+      completedEvents: completedEventsCount,
+    });
+    // Cross-player check needs other players' predictions — we don't have the full
+    // set on the client from this hook. We approximate: if the leaderboardEntry
+    // shows the player as last, tag spud_club here.
+    const augmented = [...base];
+    if (
+      leaderboardEntry &&
+      entries.length > 0 &&
+      leaderboardEntry.rank === entries.length &&
+      entries.length > 1
+    ) {
+      augmented.push({
+        id: "spud_club",
+        label: "Spud Club",
+        description: "Currently last on the leaderboard.",
+        tone: "red",
+      });
+    }
+    return annotateCrossPlayerAchievements(
+      augmented,
+      data.predictions,
+      data.predictions
+    );
+  }, [data, leaderboardEntry, entries.length, completedEventsCount]);
+
   if (!isValid) {
-    return <EmptyState icon={<X size={28} />} title="Invalid player" description="This player doesn't exist." />;
+    return (
+      <EmptyState
+        icon={<X size={28} />}
+        title="Invalid player"
+        description="This player doesn't exist."
+        action={{
+          label: "Back to leaderboard",
+          onClick: () => navigate("/leaderboard"),
+        }}
+      />
+    );
   }
   if (error) {
     return (
@@ -107,7 +201,19 @@ export function PlayerPage() {
   }
 
   const { participant } = data;
-  const { wins, losses, pending, winRate, decided, pendingList, total_points, bestSport, currentStreak, streakType, formGuide } = stats;
+  const {
+    wins,
+    losses,
+    pending,
+    winRate,
+    decided,
+    pendingList,
+    total_points,
+    bestSport,
+    currentStreak,
+    streakType,
+    formGuide,
+  } = stats;
 
   return (
     <motion.div
@@ -120,13 +226,21 @@ export function PlayerPage() {
       <div className="px-4 pt-4 pb-2">
         <GlassCard className="p-5">
           <div className="flex items-center gap-4">
-            <Avatar name={participant.name} id={participant.id} size="xl" ringColor="accent" />
+            <Avatar
+              name={participant.name}
+              id={participant.id}
+              size="xl"
+              ringColor="accent"
+            />
             <div className="flex-1 min-w-0">
               <h1 className="font-display font-extrabold text-xl text-zinc-900 truncate">
                 {participant.name}
               </h1>
               <p className="text-3xl font-display font-extrabold text-gradient-accent mt-1">
-                {Number(total_points).toFixed(1)} <span className="text-sm text-zinc-400 font-body font-normal">pts</span>
+                {Number(total_points).toFixed(1)}{" "}
+                <span className="text-sm text-zinc-400 font-body font-normal">
+                  pts
+                </span>
               </p>
             </div>
           </div>
@@ -150,6 +264,19 @@ export function PlayerPage() {
         </GlassCard>
       </div>
 
+      {/* Achievements */}
+      {achievements.length > 0 && (
+        <div className="px-4 mt-2 mb-3">
+          <div className="flex items-center gap-2 mb-2">
+            <Trophy size={12} className="text-zinc-400" />
+            <h3 className="text-[11px] font-bold uppercase tracking-wider text-zinc-400">
+              Badges ({achievements.length})
+            </h3>
+          </div>
+          <AchievementList achievements={achievements} />
+        </div>
+      )}
+
       {/* AI-generated player insight */}
       <PlayerInsight
         name={participant.name}
@@ -166,7 +293,12 @@ export function PlayerPage() {
           { label: "Won", value: wins, icon: <Trophy size={12} />, color: "text-emerald-600" },
           { label: "Lost", value: losses, icon: <X size={12} />, color: "text-red-500" },
           { label: "Pending", value: pending, icon: <Clock size={12} />, color: "text-zinc-400" },
-          { label: "Win %", value: `${winRate}%`, icon: <Target size={12} />, color: winRate >= 50 ? "text-emerald-600" : "text-zinc-400" },
+          {
+            label: "Win %",
+            value: `${winRate}%`,
+            icon: <Target size={12} />,
+            color: winRate >= 50 ? "text-emerald-600" : "text-zinc-400",
+          },
         ].map((stat, i) => (
           <motion.div
             key={stat.label}
@@ -177,10 +309,15 @@ export function PlayerPage() {
           >
             <div className="flex justify-center mb-1.5 text-zinc-400">{stat.icon}</div>
             <p className={cn("font-display font-extrabold text-lg", stat.color)}>{stat.value}</p>
-            <p className="text-[9px] font-semibold uppercase tracking-wider text-zinc-400 mt-0.5">{stat.label}</p>
+            <p className="text-[9px] font-semibold uppercase tracking-wider text-zinc-400 mt-0.5">
+              {stat.label}
+            </p>
           </motion.div>
         ))}
       </div>
+
+      {/* Charts */}
+      <PlayerCharts predictions={data.predictions} />
 
       {/* Form Guide */}
       {formGuide.length > 0 && (
@@ -209,17 +346,15 @@ export function PlayerPage() {
           </h3>
           <div className="flex flex-col gap-2">
             {decided.map((pred, i) => (
-              <motion.div
+              <ClickableRow
                 key={pred.id ?? `d-${pred.event_id}-${i}`}
-                role="button"
-                tabIndex={0}
+                onActivate={() => navigate(`/events/${pred.event_id}`)}
+                ariaLabel={`View event ${pred.event_name ?? ""}`}
                 initial={{ opacity: 0, x: -10 }}
                 animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.2 + Math.min(i * 0.02, 0.4) }}
-                onClick={() => navigate(`/events/${pred.event_id}`)}
-                onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); navigate(`/events/${pred.event_id}`); } }}
+                transition={{ delay: Math.min(0.2 + i * 0.02, 0.6) }}
                 className={cn(
-                  "flex items-center gap-3 px-3 py-2.5 rounded-2xl border cursor-pointer active:scale-[0.98] transition-all",
+                  "flex items-center gap-3 px-3 py-2.5 rounded-2xl border",
                   pred.is_correct
                     ? "border-emerald-200/40 bg-emerald-50/50"
                     : "border-red-200/30 bg-red-50/30"
@@ -227,28 +362,49 @@ export function PlayerPage() {
               >
                 <SportIcon sport={pred.sport || "AFL"} size="sm" />
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm text-zinc-800 line-clamp-2 leading-snug font-medium">{pred.event_name}</p>
+                  <p className="text-sm text-zinc-800 line-clamp-2 leading-snug font-medium">
+                    {pred.event_name}
+                  </p>
                   <p className="text-xs text-zinc-400 truncate mt-0.5">
                     Picked: <span className="text-zinc-600">{pred.prediction}</span>
                     {pred.correct_answer && (
-                      <> &middot; <span className={pred.is_correct ? "text-emerald-600" : "text-red-500"}>{pred.correct_answer}</span></>
+                      <>
+                        {" "}
+                        &middot;{" "}
+                        <span
+                          className={
+                            pred.is_correct ? "text-emerald-600" : "text-red-500"
+                          }
+                        >
+                          {pred.correct_answer}
+                        </span>
+                      </>
                     )}
                   </p>
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
                   {pred.is_correct && pred.points_earned > 0 && (
                     <span className="text-xs font-bold text-emerald-600 tabular-nums">
-                      +{Number.isInteger(pred.points_earned) ? pred.points_earned : pred.points_earned.toFixed(1)}
+                      +
+                      {Number.isInteger(pred.points_earned)
+                        ? pred.points_earned
+                        : pred.points_earned.toFixed(1)}
                     </span>
                   )}
-                  <div className={cn(
-                    "w-7 h-7 rounded-lg flex items-center justify-center",
-                    pred.is_correct ? "bg-emerald-100" : "bg-red-100"
-                  )}>
-                    {pred.is_correct ? <Check size={14} className="text-emerald-600" /> : <X size={14} className="text-red-400" />}
+                  <div
+                    className={cn(
+                      "w-7 h-7 rounded-lg flex items-center justify-center",
+                      pred.is_correct ? "bg-emerald-100" : "bg-red-100"
+                    )}
+                  >
+                    {pred.is_correct ? (
+                      <Check size={14} className="text-emerald-600" />
+                    ) : (
+                      <X size={14} className="text-red-400" />
+                    )}
                   </div>
                 </div>
-              </motion.div>
+              </ClickableRow>
             ))}
           </div>
         </div>
@@ -262,26 +418,26 @@ export function PlayerPage() {
           </h3>
           <div className="flex flex-col gap-2">
             {pendingList.map((pred, i) => (
-              <motion.div
+              <ClickableRow
                 key={pred.id ?? `p-${pred.event_id}-${i}`}
-                role="button"
-                tabIndex={0}
+                onActivate={() => navigate(`/events/${pred.event_id}`)}
+                ariaLabel={`View pending event ${pred.event_name ?? ""}`}
                 initial={{ opacity: 0, x: -10 }}
                 animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.15 + Math.min(i * 0.02, 0.4) }}
-                onClick={() => navigate(`/events/${pred.event_id}`)}
-                onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); navigate(`/events/${pred.event_id}`); } }}
-                className="flex items-center gap-3 px-3 py-2.5 rounded-2xl border border-zinc-200/60 bg-white cursor-pointer active:scale-[0.98] transition-all shadow-sm"
+                transition={{ delay: Math.min(0.15 + i * 0.02, 0.5) }}
+                className="flex items-center gap-3 px-3 py-2.5 rounded-2xl border border-zinc-200/60 bg-white shadow-sm"
               >
                 <SportIcon sport={pred.sport || "AFL"} size="sm" />
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm text-zinc-700 line-clamp-2 leading-snug font-medium">{pred.event_name}</p>
+                  <p className="text-sm text-zinc-700 line-clamp-2 leading-snug font-medium">
+                    {pred.event_name}
+                  </p>
                   <p className="text-xs text-zinc-400 truncate mt-0.5">
                     Picked: <span className="text-zinc-600">{pred.prediction}</span>
                   </p>
                 </div>
                 <Clock size={12} className="text-zinc-300 shrink-0" />
-              </motion.div>
+              </ClickableRow>
             ))}
           </div>
         </div>
@@ -292,6 +448,10 @@ export function PlayerPage() {
           icon={<Flame size={24} />}
           title="No picks yet"
           description={`${participant.name} hasn't had a punt yet. What are they waiting for?`}
+          action={{
+            label: "See what's on",
+            onClick: () => navigate("/events"),
+          }}
         />
       )}
     </motion.div>

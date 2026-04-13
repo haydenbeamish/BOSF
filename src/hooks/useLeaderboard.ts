@@ -74,6 +74,8 @@ export function useLeaderboard() {
     queryFn: fetchLeaderboardData,
   });
 
+  // The "spud" is the player sitting strictly below everyone else. If the
+  // bottom two are tied on points, there is no sole spud — return null.
   const spud = (() => {
     if (entries.length < 2) return null;
     const last = entries[entries.length - 1];

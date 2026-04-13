@@ -2,6 +2,7 @@ import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import type { CompetitionEvent } from "../types";
 import { getEvents } from "../data/api";
+import { chooseLivePollInterval } from "./useLivePollInterval";
 
 
 export function useEvents() {
@@ -10,6 +11,7 @@ export function useEvents() {
   const { data: events = [], isLoading: loading, error, refetch } = useQuery({
     queryKey: ["events"],
     queryFn: () => getEvents(),
+    refetchInterval: (query) => chooseLivePollInterval(query.state.data),
   });
 
   const categories = useMemo(() => {

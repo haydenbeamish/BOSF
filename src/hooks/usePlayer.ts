@@ -9,7 +9,15 @@ interface PlayerData {
 }
 
 export function usePlayer(id: number) {
-  const { data = null, isLoading: loading, error, refetch } = useQuery<PlayerData>({
+  // React Query's built-in structuralSharing ensures that `data` keeps the same
+  // reference when the payload hasn't changed — so `useMemo([data])` downstream
+  // only re-runs on real changes. No custom `select` needed.
+  const {
+    data = null,
+    isLoading: loading,
+    error,
+    refetch,
+  } = useQuery<PlayerData, Error, PlayerData>({
     queryKey: ["player", id],
     queryFn: () => getParticipant(id),
     enabled: id > 0 && !isNaN(id),
@@ -19,6 +27,8 @@ export function usePlayer(id: number) {
     data,
     loading,
     error: error ? (error instanceof Error ? error.message : String(error)) : null,
-    retry: () => { refetch(); },
+    retry: () => {
+      refetch();
+    },
   };
 }

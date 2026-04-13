@@ -10,6 +10,22 @@ interface State {
   error: Error | null;
 }
 
+/** Best-effort — never throws. Keeps failures invisible to the user. */
+function reportToServer(entry: Record<string, unknown>) {
+  try {
+    fetch("/api/log-error", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(entry),
+      keepalive: true,
+    }).catch(() => {
+      /* swallow */
+    });
+  } catch {
+    /* swallow */
+  }
+}
+
 export class ErrorBoundary extends Component<Props, State> {
   state: State = { hasError: false, error: null };
 
@@ -18,7 +34,16 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, info: React.ErrorInfo) {
+    // Always log locally so devs see it in the browser console.
     console.error("ErrorBoundary caught:", error, info.componentStack);
+    // Ship a minimal report to the server for production visibility.
+    reportToServer({
+      message: error.message,
+      stack: error.stack,
+      componentStack: info.componentStack ?? "",
+      url: typeof window !== "undefined" ? window.location.href : "",
+      userAgent: typeof navigator !== "undefined" ? navigator.userAgent : "",
+    });
   }
 
   handleReset = () => {
@@ -40,7 +65,7 @@ export class ErrorBoundary extends Component<Props, State> {
           </p>
           <button
             onClick={this.handleReset}
-            className="px-5 py-2.5 rounded-xl bg-accent text-white text-sm font-semibold active:scale-95 transition-transform"
+            className="px-5 py-2.5 rounded-xl bg-emerald-600 text-white text-sm font-semibold active:scale-95 transition-transform"
           >
             Try Again
           </button>

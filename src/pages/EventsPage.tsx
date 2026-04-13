@@ -1,18 +1,78 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { ChevronRight, CalendarDays, CheckCircle2, Check } from "lucide-react";
-import { getEventDisplayDate, formatEventDate, compareByDisplayDate } from "../lib/dates";
+import { CalendarDays, CheckCircle2, Zap } from "lucide-react";
+import { getEventDisplayDate, compareByDisplayDate } from "../lib/dates";
 import { useEvents } from "../hooks/useEvents";
 import { Skeleton } from "../components/ui/Skeleton";
 import { EmptyState } from "../components/ui/EmptyState";
-import { SportIcon } from "../components/ui/SportIcon";
-import { StatusPill } from "../components/ui/StatusPill";
+import { EventListItem } from "../components/ui/EventListItem";
 import { getCategoryInfo } from "../lib/categories";
 import { cn } from "../lib/cn";
-import { Zap } from "lucide-react";
+import type { CompetitionEvent } from "../types";
 
 type EventTab = "upcoming" | "decided";
+
+function startOfDay(d: Date): number {
+  const copy = new Date(d);
+  copy.setHours(0, 0, 0, 0);
+  return copy.getTime();
+}
+
+function dayLabel(ms: number): string {
+  const d = new Date(ms);
+  const today = startOfDay(new Date());
+  const diffDays = Math.round((ms - today) / (24 * 60 * 60 * 1000));
+  if (diffDays === 0) return "Today";
+  if (diffDays === 1) return "Tomorrow";
+  if (diffDays === -1) return "Yesterday";
+  const fmt = d.toLocaleDateString("en-AU", {
+    weekday: "short",
+    day: "numeric",
+    month: "short",
+  });
+  // Prepend "Last" for events in the past beyond yesterday
+  if (diffDays < -1 && diffDays > -7) return `Last ${d.toLocaleDateString("en-AU", { weekday: "long" })}`;
+  return fmt;
+}
+
+function eventBucketMs(event: CompetitionEvent): number | null {
+  const d = getEventDisplayDate(event.event_date, event.close_date);
+  if (!d) return null;
+  const safe = d.includes("T") ? d : d + "T00:00:00";
+  const t = new Date(safe).getTime();
+  return Number.isFinite(t) ? startOfDay(new Date(t)) : null;
+}
+
+interface DayGroup {
+  key: string;
+  label: string;
+  events: CompetitionEvent[];
+}
+
+function groupByDay(events: CompetitionEvent[]): DayGroup[] {
+  const bucket = new Map<number, CompetitionEvent[]>();
+  const undated: CompetitionEvent[] = [];
+  for (const e of events) {
+    const ms = eventBucketMs(e);
+    if (ms == null) undated.push(e);
+    else {
+      const arr = bucket.get(ms);
+      if (arr) arr.push(e);
+      else bucket.set(ms, [e]);
+    }
+  }
+  const sortedKeys = [...bucket.keys()].sort((a, b) => a - b);
+  const groups: DayGroup[] = sortedKeys.map((k) => ({
+    key: String(k),
+    label: dayLabel(k),
+    events: bucket.get(k)!,
+  }));
+  if (undated.length) {
+    groups.push({ key: "undated", label: "Season long", events: undated });
+  }
+  return groups;
+}
 
 export function EventsPage() {
   const navigate = useNavigate();
@@ -39,13 +99,41 @@ export function EventsPage() {
     }
   }, [selectedCategory]);
 
+  const { upcomingGroups, decidedEvents, thisWeekCount } = useMemo(() => {
+    const base =
+      selectedCategory === "All"
+        ? allEvents
+        : allEvents.filter((e) => e.sport === selectedCategory);
+
+    const upcoming = base
+      .filter((e) => e.status === "upcoming" || e.status === "in_progress")
+      .sort(compareByDisplayDate);
+
+    const decided = base
+      .filter((e) => e.status === "completed")
+      .sort((a, b) => {
+        if (a.event_date && b.event_date) return b.event_date.localeCompare(a.event_date);
+        if (a.event_date) return -1;
+        if (b.event_date) return 1;
+        return (b.display_order ?? 0) - (a.display_order ?? 0);
+      });
+
+    const sevenDaysMs = startOfDay(new Date()) + 7 * 24 * 60 * 60 * 1000;
+    const thisWeek = upcoming.filter((e) => {
+      const ms = eventBucketMs(e);
+      return ms != null && ms <= sevenDaysMs;
+    }).length;
+
+    return {
+      upcomingGroups: groupByDay(upcoming),
+      decidedEvents: decided,
+      thisWeekCount: thisWeek,
+    };
+  }, [allEvents, selectedCategory]);
+
   if (error) {
     return (
-      <EmptyState
-        icon={<Zap size={28} />}
-        title="Couldn't load events"
-        description={error}
-      />
+      <EmptyState icon={<Zap size={28} />} title="Couldn't load events" description={error} />
     );
   }
 
@@ -62,22 +150,6 @@ export function EventsPage() {
     );
   }
 
-  const base = selectedCategory === "All" ? allEvents : allEvents.filter((e) => e.sport === selectedCategory);
-
-  const upcomingEvents = base
-    .filter((e) => e.status === "upcoming" || e.status === "in_progress")
-    .sort(compareByDisplayDate);
-
-  const decidedEvents = base
-    .filter((e) => e.status === "completed")
-    .sort((a, b) => {
-      if (a.event_date && b.event_date) return b.event_date.localeCompare(a.event_date);
-      if (a.event_date) return -1;
-      if (b.event_date) return 1;
-      return (b.display_order ?? 0) - (a.display_order ?? 0);
-    });
-
-  const displayEvents = activeTab === "upcoming" ? upcomingEvents : decidedEvents;
   const upcomingCount = statusCounts.upcoming + statusCounts.live;
   const decidedCount = statusCounts.completed;
 
@@ -99,38 +171,48 @@ export function EventsPage() {
           />
           <button
             onClick={() => setActiveTab("upcoming")}
+            aria-pressed={activeTab === "upcoming"}
             className={cn(
               "relative z-10 flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-semibold transition-colors duration-200",
-              activeTab === "upcoming"
-                ? "text-zinc-900"
-                : "text-zinc-400"
+              activeTab === "upcoming" ? "text-zinc-900" : "text-zinc-400"
             )}
           >
             <CalendarDays size={13} />
             Upcoming
             {upcomingCount > 0 && (
-              <span className={cn(
-                "text-[10px] rounded-full px-1.5 py-0.5 font-bold transition-colors duration-200",
-                activeTab === "upcoming" ? "bg-emerald-100 text-emerald-700" : "bg-zinc-200 text-zinc-500"
-              )}>{upcomingCount}</span>
+              <span
+                className={cn(
+                  "text-[10px] rounded-full px-1.5 py-0.5 font-bold transition-colors duration-200",
+                  activeTab === "upcoming"
+                    ? "bg-emerald-100 text-emerald-700"
+                    : "bg-zinc-200 text-zinc-500"
+                )}
+              >
+                {upcomingCount}
+              </span>
             )}
           </button>
           <button
             onClick={() => setActiveTab("decided")}
+            aria-pressed={activeTab === "decided"}
             className={cn(
               "relative z-10 flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-semibold transition-colors duration-200",
-              activeTab === "decided"
-                ? "text-zinc-900"
-                : "text-zinc-400"
+              activeTab === "decided" ? "text-zinc-900" : "text-zinc-400"
             )}
           >
             <CheckCircle2 size={13} />
             Decided
             {decidedCount > 0 && (
-              <span className={cn(
-                "text-[10px] rounded-full px-1.5 py-0.5 font-bold transition-colors duration-200",
-                activeTab === "decided" ? "bg-emerald-100 text-emerald-700" : "bg-zinc-200 text-zinc-500"
-              )}>{decidedCount}</span>
+              <span
+                className={cn(
+                  "text-[10px] rounded-full px-1.5 py-0.5 font-bold transition-colors duration-200",
+                  activeTab === "decided"
+                    ? "bg-emerald-100 text-emerald-700"
+                    : "bg-zinc-200 text-zinc-500"
+                )}
+              >
+                {decidedCount}
+              </span>
             )}
           </button>
         </div>
@@ -151,6 +233,7 @@ export function EventsPage() {
                   key={cat}
                   ref={isActive ? activeTabRef : null}
                   onClick={() => setSelectedCategory(cat)}
+                  aria-pressed={isActive}
                   className={cn(
                     "flex items-center gap-1.5 whitespace-nowrap rounded-full px-3.5 py-1.5 text-xs font-semibold transition-all shrink-0 active:scale-95",
                     isActive
@@ -166,80 +249,100 @@ export function EventsPage() {
           </div>
         </div>
 
+        {/* This Week pinned callout */}
+        {activeTab === "upcoming" && thisWeekCount > 0 && (
+          <div className="flex items-center gap-2 mt-2 mb-1 px-1">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-600">
+              This Week
+            </span>
+            <span className="text-[10px] rounded-full bg-emerald-100 text-emerald-700 px-1.5 py-0.5 font-bold">
+              {thisWeekCount}
+            </span>
+          </div>
+        )}
+
         {/* Events list */}
         <AnimatePresence mode="wait">
-        {displayEvents.length === 0 ? (
-          <motion.div
-            key={`empty-${activeTab}`}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.15 }}
-            className="text-center py-12 text-zinc-400 text-sm"
-          >
-            {activeTab === "upcoming"
-              ? `No upcoming${selectedCategory === "All" ? "" : " " + selectedCategory} events. Check back soon, punter!`
-              : `No decided${selectedCategory === "All" ? "" : " " + selectedCategory} events yet. Sit tight!`}
-          </motion.div>
-        ) : (
-          <motion.div
-            key={`list-${activeTab}`}
-            initial={{ opacity: 0, y: 4 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -4 }}
-            transition={{ duration: 0.2 }}
-            className="flex flex-col gap-1.5 pt-1"
-          >
-            {displayEvents.map((evt, i) => (
+          {activeTab === "upcoming" ? (
+            upcomingGroups.length === 0 ? (
               <motion.div
-                key={evt.id}
-                role="button"
-                tabIndex={0}
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: Math.min(i * 0.025, 0.5), duration: 0.3 }}
-                onClick={() => navigate(`/events/${evt.id}`)}
-                onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); navigate(`/events/${evt.id}`); } }}
-                className={cn(
-                  "flex items-center gap-3 px-3 py-2.5 rounded-2xl border cursor-pointer active:scale-[0.98] hover:shadow-md hover:-translate-y-0.5 transition-all shadow-sm",
-                  evt.status === "completed"
-                    ? "border-zinc-200/60 bg-white"
-                    : evt.status === "in_progress"
-                    ? "border-amber-200/50 bg-amber-50/30"
-                    : "border-zinc-200/60 bg-white"
-                )}
+                key="empty-upcoming"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.15 }}
+                className="py-8 flex flex-col items-center gap-3 text-center"
               >
-                <SportIcon sport={evt.sport} />
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-zinc-800 line-clamp-2 leading-snug">{evt.event_name}</p>
-                  <div className="flex items-center gap-2 mt-0.5">
-                    {(() => {
-                      if (evt.status === "completed" && evt.correct_answer) {
-                        return (
-                          <div className="flex items-center gap-1 min-w-0">
-                            <Check size={10} className="text-emerald-600 shrink-0" />
-                            <p className="text-xs text-emerald-600 truncate">{evt.correct_answer}</p>
-                          </div>
-                        );
-                      }
-                      const displayDate = formatEventDate(getEventDisplayDate(evt.event_date, evt.close_date));
-                      if (evt.status === "in_progress") {
-                        return (
-                          <div className="flex items-center gap-1.5">
-                            <StatusPill status="in_progress" />
-                            {displayDate && <p className="text-xs text-zinc-400">ends {displayDate}</p>}
-                          </div>
-                        );
-                      }
-                      return displayDate ? <p className="text-xs text-zinc-400">{displayDate}</p> : null;
-                    })()}
-                  </div>
-                </div>
-                <ChevronRight size={14} className="text-zinc-300 shrink-0" />
+                <p className="text-sm text-zinc-400">
+                  No upcoming{selectedCategory === "All" ? "" : " " + selectedCategory} events.
+                </p>
+                <button
+                  onClick={() => navigate("/leaderboard")}
+                  className="px-4 py-2 rounded-xl bg-emerald-50 text-emerald-700 text-sm font-semibold active:scale-95 transition-transform"
+                >
+                  See the standings
+                </button>
               </motion.div>
-            ))}
-          </motion.div>
-        )}
+            ) : (
+              <motion.div
+                key="list-upcoming"
+                initial={{ opacity: 0, y: 4 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -4 }}
+                transition={{ duration: 0.2 }}
+                className="flex flex-col gap-4 pt-1"
+              >
+                {upcomingGroups.map((group) => (
+                  <div key={group.key} className="flex flex-col gap-1.5">
+                    <div className="flex items-center gap-2 px-1">
+                      <h3 className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">
+                        {group.label}
+                      </h3>
+                      <span className="text-[10px] text-zinc-300">&middot;</span>
+                      <span className="text-[10px] text-zinc-400">
+                        {group.events.length} event{group.events.length !== 1 ? "s" : ""}
+                      </span>
+                    </div>
+                    {group.events.map((evt, i) => (
+                      <EventListItem key={evt.id} event={evt} index={i} />
+                    ))}
+                  </div>
+                ))}
+              </motion.div>
+            )
+          ) : decidedEvents.length === 0 ? (
+            <motion.div
+              key="empty-decided"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.15 }}
+              className="py-8 flex flex-col items-center gap-3 text-center"
+            >
+              <p className="text-sm text-zinc-400">
+                No decided{selectedCategory === "All" ? "" : " " + selectedCategory} events yet.
+              </p>
+              <button
+                onClick={() => setActiveTab("upcoming")}
+                className="px-4 py-2 rounded-xl bg-emerald-50 text-emerald-700 text-sm font-semibold active:scale-95 transition-transform"
+              >
+                See what's coming up
+              </button>
+            </motion.div>
+          ) : (
+            <motion.div
+              key="list-decided"
+              initial={{ opacity: 0, y: 4 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -4 }}
+              transition={{ duration: 0.2 }}
+              className="flex flex-col gap-1.5 pt-1"
+            >
+              {decidedEvents.map((evt, i) => (
+                <EventListItem key={evt.id} event={evt} index={i} />
+              ))}
+            </motion.div>
+          )}
         </AnimatePresence>
       </div>
     </motion.div>

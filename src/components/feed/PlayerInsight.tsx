@@ -20,31 +20,31 @@ export function PlayerInsight({ name, wins, losses, pending, totalPoints, winRat
   const fetchedForRef = useRef<string | null>(null);
 
   useEffect(() => {
-    // Only fetch once per player name
+    // Only fetch once per player name.
     if (fetchedForRef.current === name) return;
     fetchedForRef.current = name;
 
     let cancelled = false;
-    setLoading(true);
-    setError(false);
-    setInsight(null);
-
     const context = `Player stats for ${name}: ${wins} wins, ${losses} losses, ${pending} pending, ${totalPoints} total points, ${winRate}% win rate.`;
     const message = `Give a one-liner roast or hype-up (depending on their stats) for ${name} in the BOSF punting competition. Keep it under 100 characters. Be funny, savage but good-natured. Australian style banter. Just the one-liner, no quotes.`;
 
-    askAI(message, context).then((reply) => {
-      if (cancelled) return;
-      if (reply) setInsight(reply);
-      setLoading(false);
-    }).catch(() => {
-      if (!cancelled) {
+    askAI(message, context)
+      .then((reply) => {
+        if (cancelled) return;
+        if (reply) setInsight(reply);
+        setLoading(false);
+      })
+      .catch(() => {
+        if (cancelled) return;
         setError(true);
         setLoading(false);
-      }
-    });
+      });
 
-    return () => { cancelled = true; };
-  }, [name, wins, losses, pending, totalPoints, winRate]);
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [name]);
 
   if (!loading && !insight && !error) return null;
   if (error) return null;

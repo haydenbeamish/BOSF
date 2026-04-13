@@ -77,12 +77,10 @@ export const OUTLIER_TEMPLATES = [
     headline: `${name} has lost the plot on ${event}`,
     subtext: `Picked "${prediction}" while everyone went "${popular}". Madman or moron.`,
   }),
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   (name: string, prediction: string, event: string, _popular: string) => ({
     headline: `${name} going kamikaze on ${event}`,
     subtext: `"${prediction}" — nobody else had the balls to go there.`,
   }),
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   (name: string, prediction: string, event: string, _popular: string) => ({
     headline: `What is ${name} smoking?`,
     subtext: `"${prediction}" against the pack on ${event}. Genius or psych eval.`,
@@ -109,7 +107,6 @@ export const CLOSE_RACE_TEMPLATES = [
     headline: `${name1} vs ${name2} — ${gap}pt${gap === 1 ? "" : "s"} in it`,
     subtext: `One shit pick and it flips. Clench up.`,
   }),
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   (name1: string, name2: string, _gap: number) => ({
     headline: `${name1} vs ${name2} — scenes incoming`,
     subtext: `Razor thin gap. Someone's about to bottle it.`,
