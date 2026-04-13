@@ -232,40 +232,50 @@ export function DashboardPage() {
         </div>
       )}
 
-      {/* News Feed */}
-      <div className="px-4 mb-6">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-2">
-            <Newspaper size={14} className="text-zinc-400" />
-            <h2 className="text-[11px] font-bold uppercase tracking-wider text-zinc-400">
-              News Feed
-            </h2>
+      {/* News Feed — hide the section entirely when there are no teasers
+          (hero already covers the one-item case; no feed at all => CTA). */}
+      {restFeed.length > 0 ? (
+        <div className="px-4 mb-6">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <Newspaper size={14} className="text-zinc-400" />
+              <h2 className="text-[11px] font-bold uppercase tracking-wider text-zinc-400">
+                More News
+              </h2>
+            </div>
+            <button
+              onClick={() => navigate("/news")}
+              className="text-[11px] font-semibold text-emerald-600 tap-target px-2 -mr-2"
+            >
+              View full feed
+            </button>
           </div>
-          <button
-            onClick={() => navigate("/news")}
-            className="text-[11px] font-semibold text-emerald-600 tap-target px-2 -mr-2"
-          >
-            View full feed
-          </button>
-        </div>
-        {restFeed.length > 0 ? (
           <div className="flex flex-col gap-3">
             {restFeed.map((item, i) => (
               <FeedCard key={item.id} item={item} index={i + 1} />
             ))}
           </div>
-        ) : heroItem ? null : (
-          <div className="text-center py-8 text-zinc-400 text-sm flex flex-col items-center gap-3">
-            <p>No news yet — check back when events start getting decided.</p>
-            <button
-              onClick={() => navigate("/events")}
-              className="px-4 py-2 rounded-xl bg-emerald-50 text-emerald-700 text-sm font-semibold active:scale-95 transition-transform"
-            >
-              Browse events
-            </button>
-          </div>
-        )}
-      </div>
+        </div>
+      ) : heroItem ? (
+        <div className="px-4 mb-6 flex justify-center">
+          <button
+            onClick={() => navigate("/news")}
+            className="text-[11px] font-semibold text-emerald-600 tap-target px-3"
+          >
+            View full feed →
+          </button>
+        </div>
+      ) : (
+        <div className="px-4 mb-6 text-center py-8 text-zinc-400 text-sm flex flex-col items-center gap-3">
+          <p>No news yet — check back when events start getting decided.</p>
+          <button
+            onClick={() => navigate("/events")}
+            className="px-4 py-2 rounded-xl bg-emerald-50 text-emerald-700 text-sm font-semibold active:scale-95 transition-transform"
+          >
+            Browse events
+          </button>
+        </div>
+      )}
 
     </motion.div>
   );
