@@ -1,7 +1,14 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Trophy, Target, Flame, RefreshCw, TrendingUp, Users, ChevronRight } from "lucide-react";
+import {
+  Trophy,
+  Target,
+  Flame,
+  TrendingUp,
+  Users,
+  ChevronRight,
+} from "lucide-react";
 import { useLeaderboard } from "../hooks/useLeaderboard";
 import { useEvents } from "../hooks/useEvents";
 import { Podium } from "../components/leaderboard/Podium";
@@ -13,26 +20,93 @@ import { Badge } from "../components/ui/Badge";
 import { FormGuide } from "../components/ui/FormGuide";
 import { Skeleton } from "../components/ui/Skeleton";
 import { EmptyState } from "../components/ui/EmptyState";
+import { ClickableRow } from "../components/ui/ClickableRow";
 import { cn } from "../lib/cn";
+import type { EnhancedLeaderboardEntry } from "../hooks/useLeaderboard";
 
 type Tab = "standings" | "members";
+type SortKey = "points" | "win_rate" | "form" | "picks";
+
+const SORT_OPTIONS: { key: SortKey; label: string }[] = [
+  { key: "points", label: "Points" },
+  { key: "win_rate", label: "Win %" },
+  { key: "form", label: "Form" },
+  { key: "picks", label: "Picks" },
+];
+
+/** Score the most-recent-5 form; 1 point per W. Tie-break by most recent first. */
+function formScore(entry: EnhancedLeaderboardEntry): number {
+  let score = 0;
+  for (let i = 0; i < entry.form.length; i++) {
+    // Recent results weighted more heavily
+    const weight = Math.max(1, 5 - i);
+    if (entry.form[i] === "W") score += weight;
+  }
+  return score;
+}
+
+function sortEntries(
+  entries: EnhancedLeaderboardEntry[],
+  key: SortKey
+): EnhancedLeaderboardEntry[] {
+  // Points sort preserves the canonical rank order — don't remutate.
+  if (key === "points") return entries;
+  const copy = [...entries];
+  copy.sort((a, b) => {
+    if (key === "win_rate") return b.win_rate - a.win_rate || b.total_points - a.total_points;
+    if (key === "form") return formScore(b) - formScore(a) || b.total_points - a.total_points;
+    if (key === "picks") return b.total_predictions - a.total_predictions || b.total_points - a.total_points;
+    return 0;
+  });
+  return copy;
+}
 
 export function LeaderboardPage() {
   const { entries, spud, loading, error, retry } = useLeaderboard();
   const { allEvents } = useEvents();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<Tab>("standings");
+  const [sortKey, setSortKey] = useState<SortKey>("points");
+  const [showInactive, setShowInactive] = useState(true);
+
+  const { visibleEntries, groupWinRate, topScore, topGap, completedEvents, tiedAtTop } =
+    useMemo(() => {
+      const totalDecided = entries.reduce((s, e) => s + e.decided_predictions, 0);
+      const totalCorrect = entries.reduce((s, e) => s + e.correct_predictions, 0);
+      const groupWinRate = totalDecided > 0 ? Math.round((totalCorrect / totalDecided) * 100) : 0;
+      const topScore = entries[0]?.total_points ?? 0;
+      const topGap =
+        entries.length >= 2 ? entries[0].total_points - entries[1].total_points : 0;
+      const completedEvents = allEvents.filter((e) => e.status === "completed").length;
+
+      // Count how many entries share the top score
+      const tiedAtTop =
+        entries.length >= 2
+          ? entries.filter((e) => e.total_points === topScore).length
+          : 1;
+
+      const filtered = showInactive
+        ? entries
+        : entries.filter((e) => e.total_predictions > 0);
+
+      return {
+        visibleEntries: sortEntries(filtered, sortKey),
+        groupWinRate,
+        topScore,
+        topGap,
+        completedEvents,
+        tiedAtTop,
+      };
+    }, [entries, allEvents, sortKey, showInactive]);
 
   if (error) {
     return (
-      <EmptyState icon={<Trophy size={28} />} title="Couldn't load standings" description={error}>
-        <button
-          onClick={retry}
-          className="mt-4 flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-50 text-emerald-700 text-sm font-semibold active:scale-95 transition-transform"
-        >
-          <RefreshCw size={14} /> Try again
-        </button>
-      </EmptyState>
+      <EmptyState
+        icon={<Trophy size={28} />}
+        title="Couldn't load standings"
+        description={error}
+        action={{ label: "Try again", onClick: retry }}
+      />
     );
   }
 
@@ -59,16 +133,10 @@ export function LeaderboardPage() {
         icon={<Trophy size={28} />}
         title="No standings yet"
         description="Nothing to see here yet, punter. Sit tight — the action's coming."
+        action={{ label: "See what's on", onClick: () => navigate("/events") }}
       />
     );
   }
-
-  const totalDecided = entries.reduce((s, e) => s + e.decided_predictions, 0);
-  const totalCorrect = entries.reduce((s, e) => s + e.correct_predictions, 0);
-  const groupWinRate = totalDecided > 0 ? Math.round((totalCorrect / totalDecided) * 100) : 0;
-  const topScore = entries[0]?.total_points ?? 0;
-  const topGap = entries.length >= 2 ? entries[0].total_points - entries[1].total_points : 0;
-  const completedEvents = allEvents.filter(e => e.status === "completed").length;
 
   return (
     <motion.div
@@ -102,11 +170,10 @@ export function LeaderboardPage() {
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
+            aria-pressed={activeTab === tab}
             className={cn(
               "flex-1 py-2 rounded-lg text-xs font-bold transition-all capitalize",
-              activeTab === tab
-                ? "bg-white text-zinc-900 shadow-sm"
-                : "text-zinc-400"
+              activeTab === tab ? "bg-white text-zinc-900 shadow-sm" : "text-zinc-400"
             )}
           >
             {tab === "standings" ? "Standings" : "Members"}
@@ -133,9 +200,11 @@ export function LeaderboardPage() {
               >
                 <TrendingUp size={14} className="text-amber-600 shrink-0" />
                 <p className="text-xs text-amber-700 font-medium">
-                  {topGap === 0
-                    ? `${entries[0].name} and ${entries[1].name} are tied at the top!`
-                    : `Only ${topGap.toFixed(1)} point${Math.abs(topGap - 1) < 0.01 ? "" : "s"} between 1st and 2nd — it's a tight race!`}
+                  {tiedAtTop >= 3
+                    ? `${tiedAtTop} punters tied at the top — nobody's running away with it!`
+                    : topGap === 0
+                    ? `${entries[0].name} and ${entries[1].name} tied at the top!`
+                    : `Only ${topGap.toFixed(1)} point${topGap === 1 ? "" : "s"} between 1st and 2nd — tight race.`}
                 </p>
               </motion.div>
             )}
@@ -145,11 +214,48 @@ export function LeaderboardPage() {
 
             {entries.length > 3 && (
               <div className="px-4 mt-2">
-                <h3 className="text-[11px] font-bold uppercase tracking-wider text-zinc-400 mb-3 px-1">
-                  Full Standings
-                </h3>
+                {/* Sort controls */}
+                <div className="flex items-center justify-between mb-3 gap-2">
+                  <h3 className="text-[11px] font-bold uppercase tracking-wider text-zinc-400">
+                    Full Standings
+                  </h3>
+                  <div className="flex items-center gap-1 overflow-x-auto scrollbar-none">
+                    {SORT_OPTIONS.map((opt) => (
+                      <button
+                        key={opt.key}
+                        onClick={() => setSortKey(opt.key)}
+                        aria-pressed={sortKey === opt.key}
+                        className={cn(
+                          "text-[10px] font-semibold px-2 py-1 rounded-full transition-colors whitespace-nowrap",
+                          sortKey === opt.key
+                            ? "bg-emerald-50 text-emerald-700 border border-emerald-200/50"
+                            : "text-zinc-400 border border-transparent"
+                        )}
+                      >
+                        {opt.label}
+                      </button>
+                    ))}
+                    <button
+                      onClick={() => setShowInactive((v) => !v)}
+                      aria-pressed={!showInactive}
+                      className={cn(
+                        "text-[10px] font-semibold px-2 py-1 rounded-full transition-colors whitespace-nowrap ml-1",
+                        !showInactive
+                          ? "bg-emerald-50 text-emerald-700 border border-emerald-200/50"
+                          : "text-zinc-400 border border-transparent"
+                      )}
+                      title={showInactive ? "Hide punters with no picks" : "Show all"}
+                    >
+                      Active only
+                    </button>
+                  </div>
+                </div>
+
                 <div className="flex flex-col gap-2">
-                  {entries.slice(3).map((entry, i) => (
+                  {(sortKey === "points"
+                    ? visibleEntries.slice(3)
+                    : visibleEntries
+                  ).map((entry, i) => (
                     <RankRow
                       key={entry.id}
                       entry={entry}
@@ -178,38 +284,59 @@ export function LeaderboardPage() {
             {/* Group overview */}
             <div className="grid grid-cols-3 gap-2 px-4 mb-4">
               <div className="rounded-xl border border-zinc-200/60 bg-white p-2.5 text-center shadow-sm">
-                <div className="flex justify-center mb-1 text-zinc-400"><Users size={11} /></div>
+                <div className="flex justify-center mb-1 text-zinc-400">
+                  <Users size={11} />
+                </div>
                 <p className="font-display font-extrabold text-sm text-zinc-900">
                   {entries.reduce((s, m) => s + m.total_predictions, 0)}
                 </p>
-                <p className="text-[9px] font-semibold uppercase tracking-wider text-zinc-400">Total Picks</p>
+                <p className="text-[9px] font-semibold uppercase tracking-wider text-zinc-400">
+                  Total Picks
+                </p>
               </div>
               <div className="rounded-xl border border-zinc-200/60 bg-white p-2.5 text-center shadow-sm">
-                <div className="flex justify-center mb-1 text-zinc-400"><Target size={11} /></div>
-                <p className="font-display font-extrabold text-sm text-emerald-600">{groupWinRate}%</p>
-                <p className="text-[9px] font-semibold uppercase tracking-wider text-zinc-400">Avg Win Rate</p>
+                <div className="flex justify-center mb-1 text-zinc-400">
+                  <Target size={11} />
+                </div>
+                <p className="font-display font-extrabold text-sm text-emerald-600">
+                  {groupWinRate}%
+                </p>
+                <p className="text-[9px] font-semibold uppercase tracking-wider text-zinc-400">
+                  Avg Win Rate
+                </p>
               </div>
               <div className="rounded-xl border border-zinc-200/60 bg-white p-2.5 text-center shadow-sm">
-                <div className="flex justify-center mb-1 text-zinc-400"><TrendingUp size={11} /></div>
-                <p className="font-display font-extrabold text-sm text-zinc-900">{completedEvents}</p>
-                <p className="text-[9px] font-semibold uppercase tracking-wider text-zinc-400">Decided</p>
+                <div className="flex justify-center mb-1 text-zinc-400">
+                  <TrendingUp size={11} />
+                </div>
+                <p className="font-display font-extrabold text-sm text-zinc-900">
+                  {completedEvents}
+                </p>
+                <p className="text-[9px] font-semibold uppercase tracking-wider text-zinc-400">
+                  Decided
+                </p>
               </div>
             </div>
 
             <div className="flex flex-col gap-2 px-4">
               {entries.map((member, i) => {
-                const participationRate = completedEvents > 0
-                  ? Math.round((member.decided_predictions / completedEvents) * 100)
-                  : 0;
+                const participationRate =
+                  completedEvents > 0
+                    ? Math.round((member.decided_predictions / completedEvents) * 100)
+                    : 0;
 
                 return (
-                  <motion.div
+                  <ClickableRow
                     key={member.id}
+                    onActivate={() => navigate(`/player/${member.id}`)}
+                    ariaLabel={`${member.name}, rank ${member.rank}, ${member.total_points.toFixed(1)} points`}
                     initial={{ opacity: 0, y: 8 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: Math.min(i * 0.04, 0.5), duration: 0.3 }}
-                    onClick={() => navigate(`/player/${member.id}`)}
-                    className="flex items-center gap-3 px-4 py-3.5 rounded-2xl border border-zinc-200/60 bg-white cursor-pointer active:scale-[0.98] hover:shadow-md hover:-translate-y-0.5 transition-all shadow-sm"
+                    transition={{ delay: Math.min(i * 0.025, 0.3), duration: 0.3 }}
+                    className={cn(
+                      "flex items-center gap-3 px-4 py-3.5 rounded-2xl border border-zinc-200/60 bg-white",
+                      "hover:shadow-md hover:-translate-y-0.5 shadow-sm"
+                    )}
                   >
                     <div className="relative">
                       <Avatar name={member.name} id={member.id} size="lg" />
@@ -217,10 +344,12 @@ export function LeaderboardPage() {
                         {member.rank === 1 ? (
                           <Trophy size={10} className="text-amber-600" />
                         ) : (
-                          <span className={cn(
-                            "text-[9px] font-display font-extrabold",
-                            member.rank <= 3 ? "text-amber-600" : "text-zinc-400"
-                          )}>
+                          <span
+                            className={cn(
+                              "text-[9px] font-display font-extrabold",
+                              member.rank <= 3 ? "text-amber-600" : "text-zinc-400"
+                            )}
+                          >
                             {member.rank}
                           </span>
                         )}
@@ -228,14 +357,21 @@ export function LeaderboardPage() {
                     </div>
 
                     <div className="flex-1 min-w-0">
-                      <p className="font-display font-bold text-sm text-zinc-900 truncate">{member.name}</p>
-                      <div className="flex items-center gap-2 mt-1">
+                      <p className="font-display font-bold text-sm text-zinc-900 truncate">
+                        {member.name}
+                      </p>
+                      <div className="flex items-center gap-2 mt-1 flex-wrap">
                         {member.decided_predictions > 0 ? (
-                          <Badge variant={member.win_rate >= 50 ? "accent" : "default"} size="sm">
+                          <Badge
+                            variant={member.win_rate >= 50 ? "accent" : "default"}
+                            size="sm"
+                          >
                             {member.win_rate}%
                           </Badge>
                         ) : (
-                          <Badge variant="default" size="sm">New</Badge>
+                          <Badge variant="default" size="sm">
+                            New
+                          </Badge>
                         )}
                         <span className="text-[11px] text-zinc-400">
                           {member.correct_predictions}/{member.decided_predictions}
@@ -243,7 +379,9 @@ export function LeaderboardPage() {
                         {participationRate > 0 && participationRate < 100 && (
                           <>
                             <span className="text-[11px] text-zinc-300">&middot;</span>
-                            <span className="text-[11px] text-zinc-400">{participationRate}% active</span>
+                            <span className="text-[11px] text-zinc-400">
+                              {participationRate}% active
+                            </span>
                           </>
                         )}
                       </div>
@@ -254,17 +392,21 @@ export function LeaderboardPage() {
                       )}
                     </div>
 
-                    <div className="text-right shrink-0">
-                      <p className={cn(
-                        "font-display font-extrabold text-base tabular-nums",
-                        member.rank === 1 ? "text-amber-600" : "text-zinc-800"
-                      )}>
+                    <div className="text-right shrink-0 min-w-0">
+                      <p
+                        className={cn(
+                          "font-display font-extrabold text-base tabular-nums",
+                          member.rank === 1 ? "text-amber-600" : "text-zinc-800"
+                        )}
+                      >
                         {Number(member.total_points).toFixed(1)}
                       </p>
-                      <p className="text-[9px] font-semibold uppercase tracking-wider text-zinc-400">pts</p>
+                      <p className="text-[9px] font-semibold uppercase tracking-wider text-zinc-400">
+                        pts
+                      </p>
                     </div>
                     <ChevronRight size={14} className="text-zinc-300 shrink-0" />
-                  </motion.div>
+                  </ClickableRow>
                 );
               })}
             </div>

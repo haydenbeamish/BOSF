@@ -67,7 +67,9 @@ function AnimatedRoutes() {
   );
 }
 
-const SCROLL_DELTA = 3;
+// Header hide/show threshold — bigger = less jittery on small touch drags
+const SCROLL_DELTA = 10;
+const SCROLL_HIDE_AFTER = 80;
 
 export default function App() {
   const mainRef = useRef<HTMLElement>(null);
@@ -83,10 +85,10 @@ export default function App() {
       if (el) {
         const currentY = el.scrollTop;
         const delta = currentY - lastScrollY.current;
-        if (delta > SCROLL_DELTA && currentY > 48) {
+        if (delta > SCROLL_DELTA && currentY > SCROLL_HIDE_AFTER) {
           setHeaderHidden(true);
           lastScrollY.current = currentY;
-        } else if (delta < -SCROLL_DELTA) {
+        } else if (delta < -SCROLL_DELTA || currentY <= 0) {
           setHeaderHidden(false);
           lastScrollY.current = currentY;
         }

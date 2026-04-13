@@ -1,6 +1,15 @@
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Trophy, ChevronRight, Zap, Newspaper, Target, Flame, CalendarDays, RefreshCw } from "lucide-react";
+import {
+  Trophy,
+  ChevronRight,
+  Zap,
+  Newspaper,
+  Target,
+  Flame,
+  CalendarDays,
+  RefreshCw,
+} from "lucide-react";
 import { useNewsFeed } from "../hooks/useNewsFeed";
 import { useLeaderboard } from "../hooks/useLeaderboard";
 import { useEvents } from "../hooks/useEvents";
@@ -9,19 +18,18 @@ import { Avatar } from "../components/ui/Avatar";
 import { StatCard } from "../components/ui/StatCard";
 import { Skeleton } from "../components/ui/Skeleton";
 import { EmptyState } from "../components/ui/EmptyState";
-import { SportIcon } from "../components/ui/SportIcon";
+import { EventListItem } from "../components/ui/EventListItem";
+import { ClickableRow } from "../components/ui/ClickableRow";
 import { FeedCard } from "../components/feed/FeedCard";
 import { Podium } from "../components/leaderboard/Podium";
-import { getEventDisplayDate, formatEventDate, compareByDisplayDate } from "../lib/dates";
+import { SpudBanner } from "../components/leaderboard/SpudBanner";
+import { compareByDisplayDate } from "../lib/dates";
 
 export function DashboardPage() {
   const navigate = useNavigate();
   const { feed, loading, error, retry } = useNewsFeed();
-  const { entries: leaderboard, loading: lbLoading } = useLeaderboard();
-  const {
-    allEvents,
-    loading: eventsLoading,
-  } = useEvents();
+  const { entries: leaderboard, spud, loading: lbLoading } = useLeaderboard();
+  const { allEvents, loading: eventsLoading } = useEvents();
 
   if (error) {
     return (
@@ -59,13 +67,15 @@ export function DashboardPage() {
   const completedEvents = allEvents.filter((e) => e.status === "completed").length;
   const totalEvents = allEvents.length;
 
-  // Sort by display date (the later of event_date / close_date) so season-long
-  // in-progress events (e.g. AFL H&A) appear at their natural end-of-season
-  // position rather than always pinned to the top.
   const upcomingEvents = allEvents
     .filter((e) => e.status === "upcoming" || e.status === "in_progress")
     .sort(compareByDisplayDate)
     .slice(0, 3);
+
+  // Pick the most-recent-in-memory feed item as the "hero" — users want
+  // the biggest news above the fold.
+  const heroItem = feed[0];
+  const restFeed = feed.slice(1);
 
   return (
     <motion.div
@@ -98,10 +108,20 @@ export function DashboardPage() {
         />
       </div>
 
+      {/* Hero feed item — biggest news of the moment */}
+      {heroItem && (
+        <div className="px-4 mb-5">
+          <FeedCard item={heroItem} index={0} />
+        </div>
+      )}
+
       {/* Podium - Top 3 */}
       {leaderboard.length >= 3 && (
         <Podium entries={leaderboard} onSelect={(id) => navigate(`/player/${id}`)} />
       )}
+
+      {/* Show the spud on the dashboard too */}
+      {spud && <SpudBanner spud={spud} />}
 
       {/* Top 5 quick leaderboard (below podium) */}
       {leaderboard.length > 3 && (
@@ -112,23 +132,21 @@ export function DashboardPage() {
             </h2>
             <button
               onClick={() => navigate("/leaderboard")}
-              className="text-[11px] font-semibold text-emerald-600"
+              className="text-[11px] font-semibold text-emerald-600 tap-target px-2 -mr-2"
             >
               View all
             </button>
           </div>
           <GlassCard className="divide-y divide-zinc-100">
             {leaderboard.slice(3, 8).map((entry, i) => (
-              <motion.div
+              <ClickableRow
                 key={entry.id}
-                role="button"
-                tabIndex={0}
+                onActivate={() => navigate(`/player/${entry.id}`)}
+                ariaLabel={`${entry.name}, rank ${entry.rank}`}
                 initial={{ opacity: 0, x: -8 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.15 + i * 0.04 }}
-                onClick={() => navigate(`/player/${entry.id}`)}
-                onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); navigate(`/player/${entry.id}`); } }}
-                className="flex items-center gap-3 px-4 py-3 cursor-pointer active:bg-zinc-50 transition-colors"
+                className="flex items-center gap-3 px-4 py-3"
               >
                 <span className="font-display font-extrabold text-xs text-zinc-400 w-5 text-center">
                   {entry.rank}
@@ -140,7 +158,7 @@ export function DashboardPage() {
                 <span className="font-display font-extrabold text-sm tabular-nums text-zinc-600">
                   {entry.total_points.toFixed(1)}
                 </span>
-              </motion.div>
+              </ClickableRow>
             ))}
           </GlassCard>
         </div>
@@ -179,7 +197,7 @@ export function DashboardPage() {
               </div>
               <button
                 onClick={() => navigate("/leaderboard")}
-                className="p-2 rounded-xl bg-zinc-100 text-zinc-400 active:scale-95 transition-transform"
+                className="flex items-center justify-center w-11 h-11 rounded-xl bg-zinc-100 text-zinc-400 active:scale-95 transition-transform"
                 aria-label="View leaderboard"
               >
                 <ChevronRight size={16} />
@@ -201,31 +219,14 @@ export function DashboardPage() {
             </div>
             <button
               onClick={() => navigate("/events")}
-              className="text-[11px] font-semibold text-emerald-600"
+              className="text-[11px] font-semibold text-emerald-600 tap-target px-2 -mr-2"
             >
               View all
             </button>
           </div>
           <div className="flex flex-col gap-1.5">
             {upcomingEvents.map((evt, i) => (
-              <motion.div
-                key={evt.id}
-                role="button"
-                tabIndex={0}
-                initial={{ opacity: 0, y: 6 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.1 + i * 0.04 }}
-                onClick={() => navigate(`/events/${evt.id}`)}
-                onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); navigate(`/events/${evt.id}`); } }}
-                className="flex items-center gap-3 px-3 py-2.5 rounded-2xl border border-zinc-200/60 bg-white cursor-pointer active:scale-[0.98] hover:shadow-md hover:-translate-y-0.5 transition-all shadow-sm"
-              >
-                <SportIcon sport={evt.sport} size="sm" />
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-zinc-800 line-clamp-2 leading-snug">{evt.event_name}</p>
-                  {(() => { const d = formatEventDate(getEventDisplayDate(evt.event_date, evt.close_date)); return d ? <p className="text-xs text-zinc-400 mt-0.5">{d}</p> : null; })()}
-                </div>
-                <ChevronRight size={14} className="text-zinc-300 shrink-0" />
-              </motion.div>
+              <EventListItem key={evt.id} event={evt} index={i} iconSize="sm" />
             ))}
           </div>
         </div>
@@ -242,20 +243,26 @@ export function DashboardPage() {
           </div>
           <button
             onClick={() => navigate("/news")}
-            className="text-[11px] font-semibold text-emerald-600"
+            className="text-[11px] font-semibold text-emerald-600 tap-target px-2 -mr-2"
           >
             View full feed
           </button>
         </div>
-        {feed.length > 0 ? (
+        {restFeed.length > 0 ? (
           <div className="flex flex-col gap-3">
-            {feed.map((item, i) => (
-              <FeedCard key={item.id} item={item} index={i} />
+            {restFeed.map((item, i) => (
+              <FeedCard key={item.id} item={item} index={i + 1} />
             ))}
           </div>
-        ) : (
-          <div className="text-center py-8 text-zinc-400 text-sm">
-            No news yet — check back when events start getting decided.
+        ) : heroItem ? null : (
+          <div className="text-center py-8 text-zinc-400 text-sm flex flex-col items-center gap-3">
+            <p>No news yet — check back when events start getting decided.</p>
+            <button
+              onClick={() => navigate("/events")}
+              className="px-4 py-2 rounded-xl bg-emerald-50 text-emerald-700 text-sm font-semibold active:scale-95 transition-transform"
+            >
+              Browse events
+            </button>
           </div>
         )}
       </div>

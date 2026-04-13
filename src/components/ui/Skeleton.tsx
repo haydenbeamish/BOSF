@@ -5,8 +5,10 @@ export function Skeleton({ className }: { className?: string }) {
     <div
       role="status"
       aria-busy="true"
-      aria-label="Loading"
+      aria-live="polite"
       className={cn("rounded-2xl bg-zinc-100 skeleton-shimmer", className)}
-    />
+    >
+      <span className="sr-only">Loading…</span>
+    </div>
   );
 }

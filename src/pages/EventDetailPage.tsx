@@ -1,6 +1,16 @@
+import { useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Check, X, Clock, Sparkles, RefreshCw, Users } from "lucide-react";
+import {
+  Check,
+  X,
+  Clock,
+  Sparkles,
+  RefreshCw,
+  Users,
+  BarChart3,
+  Flame,
+} from "lucide-react";
 import { useEvent } from "../hooks/useEvent";
 import { isCorrect } from "../lib/predictions";
 import { SportIcon } from "../components/ui/SportIcon";
@@ -10,6 +20,8 @@ import { GlassCard } from "../components/ui/GlassCard";
 import { Badge } from "../components/ui/Badge";
 import { Skeleton } from "../components/ui/Skeleton";
 import { EmptyState } from "../components/ui/EmptyState";
+import { ClickableRow } from "../components/ui/ClickableRow";
+import { Countdown } from "../components/ui/Countdown";
 import { EventNews } from "../components/feed/EventNews";
 import { cn } from "../lib/cn";
 import { formatEventDate, getEventDisplayDate } from "../lib/dates";
@@ -27,16 +39,19 @@ interface PredictionGroup {
   isCorrect: boolean | null;
   isOutlier: boolean;
   percentage: number;
+  isMostPicked: boolean;
 }
 
-function groupPredictions(predictions: Array<{
-  id?: number;
-  participant_id: number;
-  participant_name?: string;
-  prediction: string;
-  is_correct: boolean | null;
-  points_earned: number;
-}>): PredictionGroup[] {
+function groupPredictions(
+  predictions: Array<{
+    id?: number;
+    participant_id: number;
+    participant_name?: string;
+    prediction: string;
+    is_correct: boolean | null;
+    points_earned: number;
+  }>
+): PredictionGroup[] {
   const groups: Record<string, PredictionGroup> = {};
 
   for (const pred of predictions) {
@@ -48,6 +63,7 @@ function groupPredictions(predictions: Array<{
         isCorrect: pred.is_correct,
         isOutlier: false,
         percentage: 0,
+        isMostPicked: false,
       };
     }
     groups[key].predictions.push(pred);
@@ -56,20 +72,29 @@ function groupPredictions(predictions: Array<{
   const total = predictions.length;
   const threshold = Math.max(1, Math.floor(total * 0.2));
 
-  const sorted = Object.values(groups)
-    .map((g) => ({
-      ...g,
-      percentage: total > 0 ? Math.round((g.predictions.length / total) * 100) : 0,
-      isOutlier: g.predictions.length <= threshold && total >= 3,
-    }))
-    .sort((a, b) => {
-      // Correct answer first, then by count
-      if (a.isCorrect === true && b.isCorrect !== true) return -1;
-      if (b.isCorrect === true && a.isCorrect !== true) return 1;
-      return b.predictions.length - a.predictions.length;
-    });
+  const list = Object.values(groups).map((g) => ({
+    ...g,
+    percentage: total > 0 ? Math.round((g.predictions.length / total) * 100) : 0,
+    isOutlier: g.predictions.length <= threshold && total >= 3,
+  }));
 
-  return sorted;
+  const maxCount = list.reduce((m, g) => Math.max(m, g.predictions.length), 0);
+  for (const g of list) {
+    if (g.predictions.length === maxCount && maxCount > 0) g.isMostPicked = true;
+  }
+
+  list.sort((a, b) => {
+    if (a.isCorrect === true && b.isCorrect !== true) return -1;
+    if (b.isCorrect === true && a.isCorrect !== true) return 1;
+    return b.predictions.length - a.predictions.length;
+  });
+
+  return list;
+}
+
+function impliedProbability(odds: number): number {
+  if (!odds || odds <= 0) return 0;
+  return 1 / odds;
 }
 
 export function EventDetailPage() {
@@ -79,12 +104,37 @@ export function EventDetailPage() {
   const isValid = Boolean(id) && !isNaN(numId) && numId > 0;
   const { event, loading, error, retry } = useEvent(numId);
 
+  const predictions = useMemo(() => event?.predictions ?? [], [event]);
+
+  const { groups, correctCount, uniqueAnswers, mostPicked } = useMemo(() => {
+    const groups = groupPredictions(predictions);
+    const correctCount = predictions.filter((p) => isCorrect(p.is_correct)).length;
+    const mostPicked = groups.find((g) => g.isMostPicked);
+    return {
+      groups,
+      correctCount,
+      uniqueAnswers: groups.length,
+      mostPicked,
+    };
+  }, [predictions]);
+
   if (!isValid) {
-    return <EmptyState icon={<X size={28} />} title="Invalid event" description="This event doesn't exist." />;
+    return (
+      <EmptyState
+        icon={<X size={28} />}
+        title="Invalid event"
+        description="This event doesn't exist."
+        action={{ label: "Back to events", onClick: () => navigate("/events") }}
+      />
+    );
   }
   if (error) {
     return (
-      <EmptyState icon={<X size={28} />} title="Couldn't load event" description={error}>
+      <EmptyState
+        icon={<X size={28} />}
+        title="Couldn't load event"
+        description={error}
+      >
         <button
           onClick={retry}
           className="mt-4 flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-50 text-emerald-700 text-sm font-semibold active:scale-95 transition-transform"
@@ -108,11 +158,14 @@ export function EventDetailPage() {
   }
 
   const isDecided = event.status === "completed";
-
-  const predictions = event.predictions ?? [];
-  const correctCount = predictions.filter((p) => isCorrect(p.is_correct)).length;
-  const groups = groupPredictions(predictions);
-  const uniqueAnswers = groups.length;
+  const isLive = event.status === "in_progress";
+  const hasOdds = Boolean(event.favourite && event.favourite_odds);
+  const upsetOccurred =
+    isDecided &&
+    hasOdds &&
+    event.correct_answer &&
+    event.favourite!.toLowerCase().trim() !==
+      event.correct_answer.toLowerCase().trim();
 
   return (
     <motion.div
@@ -132,13 +185,53 @@ export function EventDetailPage() {
             <div className="flex items-center gap-2 mt-2 flex-wrap">
               <StatusPill status={event.status} />
               <span className="text-xs text-zinc-400">{event.sport}</span>
+              <span className="text-xs text-zinc-400">·</span>
+              <span className="text-xs text-zinc-400">
+                {event.points_value} pts on the line
+              </span>
             </div>
             {(() => {
-              const displayDate = formatEventDate(getEventDisplayDate(event.event_date, event.close_date));
-              return displayDate ? <p className="text-xs text-zinc-400 mt-2">{displayDate}</p> : null;
+              const displayDate = formatEventDate(
+                getEventDisplayDate(event.event_date, event.close_date)
+              );
+              return displayDate ? (
+                <div className="flex items-center gap-2 mt-2 flex-wrap">
+                  <p className="text-xs text-zinc-400">{displayDate}</p>
+                  {!isDecided && (
+                    <Countdown
+                      target={event.event_date ?? event.close_date}
+                      className="text-xs font-semibold text-emerald-600"
+                      prefix={<Clock size={11} className="text-emerald-500" />}
+                    />
+                  )}
+                </div>
+              ) : null;
             })()}
           </div>
         </div>
+
+        {/* Market/odds block */}
+        {hasOdds && !isDecided && (
+          <GlassCard className="mt-4 p-3">
+            <div className="flex items-center gap-2 mb-2">
+              <BarChart3 size={12} className="text-blue-500" />
+              <p className="text-[10px] font-bold uppercase tracking-wider text-blue-600">
+                Bookies say
+              </p>
+              {event.odds_last_updated && (
+                <span className="text-[10px] text-zinc-300">
+                  &middot; updated recently
+                </span>
+              )}
+            </div>
+            <OddsStrip
+              favourite={event.favourite!}
+              favouriteOdds={event.favourite_odds!}
+              underdog={event.underdog}
+              underdogOdds={event.underdog_odds}
+            />
+          </GlassCard>
+        )}
 
         {/* Result banner */}
         {isDecided && event.correct_answer && (
@@ -147,10 +240,19 @@ export function EventDetailPage() {
               <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center shrink-0">
                 <Check size={20} className="text-emerald-600" />
               </div>
-              <div className="flex-1">
-                <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-600 mb-0.5">Result</p>
-                <p className="font-display font-extrabold text-base text-zinc-900">{event.correct_answer}</p>
+              <div className="flex-1 min-w-0">
+                <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-600 mb-0.5">
+                  Result
+                </p>
+                <p className="font-display font-extrabold text-base text-zinc-900 truncate">
+                  {event.correct_answer}
+                </p>
               </div>
+              {upsetOccurred && (
+                <Badge variant="loss" className="shrink-0">
+                  <Flame size={10} /> Upset
+                </Badge>
+              )}
             </div>
             {predictions.length > 0 && (
               <div className="mt-3 pt-3 border-t border-zinc-100">
@@ -158,27 +260,60 @@ export function EventDetailPage() {
                   <p className="text-xs text-zinc-400">
                     {correctCount} of {predictions.length} got it right
                   </p>
-                  <span className={cn(
-                    "text-xs font-bold",
-                    correctCount === 0 ? "text-red-500" :
-                    correctCount === predictions.length ? "text-emerald-600" :
-                    "text-zinc-500"
-                  )}>
-                    {correctCount === 0 ? "Total wipeout" :
-                     correctCount === predictions.length ? "Clean sweep!" :
-                     `${Math.round((correctCount / predictions.length) * 100)}% correct`}
+                  <span
+                    className={cn(
+                      "text-xs font-bold",
+                      correctCount === 0
+                        ? "text-red-500"
+                        : correctCount === predictions.length
+                        ? "text-emerald-600"
+                        : "text-zinc-500"
+                    )}
+                  >
+                    {correctCount === 0
+                      ? "Total wipeout"
+                      : correctCount === predictions.length
+                      ? "Clean sweep!"
+                      : `${Math.round((correctCount / predictions.length) * 100)}% correct`}
                   </span>
                 </div>
                 {correctCount > 0 && (
                   <p className="text-xs text-emerald-600 font-semibold mt-1">
-                    {event.points_value} pts shared {correctCount > 1 ? `between ${correctCount}` : ""} — {Number((event.points_value / correctCount).toFixed(2))} pts each
+                    {event.points_value} pts shared{" "}
+                    {correctCount > 1 ? `between ${correctCount}` : ""} —{" "}
+                    {Number((event.points_value / correctCount).toFixed(2))} pts each
                   </p>
                 )}
+                {/* Most picked vs actual */}
+                {mostPicked &&
+                  event.correct_answer &&
+                  mostPicked.answer.toLowerCase().trim() !==
+                    event.correct_answer.toLowerCase().trim() && (
+                    <div className="mt-2 flex items-center gap-2 rounded-lg bg-zinc-50 border border-zinc-200/60 px-2.5 py-1.5">
+                      <span className="text-[11px] text-zinc-500">
+                        Crowd went <span className="font-bold text-zinc-700">{mostPicked.answer}</span>{" "}
+                        ({mostPicked.percentage}%), actual was{" "}
+                        <span className="font-bold text-emerald-700">{event.correct_answer}</span>
+                      </span>
+                    </div>
+                  )}
               </div>
             )}
           </GlassCard>
         )}
 
+        {/* Live banner */}
+        {isLive && (
+          <div className="mt-4 rounded-xl bg-amber-50 border border-amber-200/50 px-4 py-2.5 flex items-center gap-2">
+            <span className="relative flex h-2.5 w-2.5">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-amber-500"></span>
+            </span>
+            <p className="text-xs text-amber-800 font-semibold">
+              Event is in progress — results coming soon.
+            </p>
+          </div>
+        )}
       </div>
 
       {/* Grouped Predictions */}
@@ -198,7 +333,9 @@ export function EventDetailPage() {
           <div className="text-center py-12">
             <Users size={24} className="mx-auto text-zinc-300 mb-3" />
             <p className="text-sm text-zinc-400 font-medium">No picks yet</p>
-            <p className="text-xs text-zinc-300 mt-1">The punters haven't had their say yet. Give 'em time.</p>
+            <p className="text-xs text-zinc-300 mt-1">
+              The punters haven't had their say yet. Give 'em time.
+            </p>
           </div>
         ) : (
           <div className="flex flex-col gap-4">
@@ -210,14 +347,18 @@ export function EventDetailPage() {
                 transition={{ delay: gi * 0.05, duration: 0.3 }}
               >
                 {/* Group header */}
-                <div className="flex items-center gap-2 mb-2 px-1">
+                <div className="flex items-center gap-2 mb-2 px-1 flex-wrap">
                   <div className="flex-1 flex items-center gap-2 min-w-0">
-                    <span className={cn(
-                      "font-display font-bold text-sm truncate",
-                      group.isCorrect === true ? "text-emerald-700" :
-                      group.isCorrect === false ? "text-red-500" :
-                      "text-zinc-700"
-                    )}>
+                    <span
+                      className={cn(
+                        "font-display font-bold text-sm truncate",
+                        group.isCorrect === true
+                          ? "text-emerald-700"
+                          : group.isCorrect === false
+                          ? "text-red-500"
+                          : "text-zinc-700"
+                      )}
+                    >
                       {group.answer}
                     </span>
                     {group.isCorrect === true && (
@@ -231,13 +372,19 @@ export function EventDetailPage() {
                         <Sparkles size={8} /> Outlier
                       </Badge>
                     )}
+                    {group.isMostPicked && uniqueAnswers > 1 && !group.isOutlier && (
+                      <Badge variant="default" size="sm" className="shrink-0">
+                        Most picked
+                      </Badge>
+                    )}
                   </div>
                   <span className="text-xs text-zinc-400 shrink-0">
-                    {group.predictions.length} pick{group.predictions.length !== 1 ? "s" : ""} ({group.percentage}%)
+                    {group.predictions.length} pick
+                    {group.predictions.length !== 1 ? "s" : ""} ({group.percentage}%)
                   </span>
                 </div>
 
-                {/* Consensus bar - animated */}
+                {/* Consensus bar */}
                 <div className="h-1.5 rounded-full bg-zinc-100 mb-2 mx-1 overflow-hidden">
                   <motion.div
                     initial={{ width: 0 }}
@@ -245,9 +392,11 @@ export function EventDetailPage() {
                     transition={{ delay: gi * 0.05 + 0.2, duration: 0.5, ease: "easeOut" }}
                     className={cn(
                       "h-full rounded-full",
-                      group.isCorrect === true ? "bg-emerald-400" :
-                      group.isCorrect === false ? "bg-red-300" :
-                      "bg-zinc-300"
+                      group.isCorrect === true
+                        ? "bg-emerald-400"
+                        : group.isCorrect === false
+                        ? "bg-red-300"
+                        : "bg-zinc-300"
                     )}
                   />
                 </div>
@@ -255,14 +404,12 @@ export function EventDetailPage() {
                 {/* Participants in this group */}
                 <div className="flex flex-col gap-1.5">
                   {group.predictions.map((pred, i) => (
-                    <div
+                    <ClickableRow
                       key={pred.id ?? `${pred.participant_id}-${i}`}
-                      role="button"
-                      tabIndex={0}
-                      onClick={() => navigate(`/player/${pred.participant_id}`)}
-                      onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); navigate(`/player/${pred.participant_id}`); } }}
+                      onActivate={() => navigate(`/player/${pred.participant_id}`)}
+                      ariaLabel={`View ${pred.participant_name ?? "player"}`}
                       className={cn(
-                        "flex items-center gap-3 px-3 py-2.5 rounded-xl border cursor-pointer active:scale-[0.98] transition-all",
+                        "flex items-center gap-3 px-3 py-2.5 rounded-xl border",
                         group.isCorrect === true
                           ? "border-emerald-200/40 bg-emerald-50/50"
                           : group.isCorrect === false
@@ -270,16 +417,22 @@ export function EventDetailPage() {
                           : "border-zinc-200/60 bg-white"
                       )}
                     >
-                      <Avatar name={pred.participant_name ?? "?"} id={pred.participant_id} size="sm" />
+                      <Avatar
+                        name={pred.participant_name ?? "?"}
+                        id={pred.participant_id}
+                        size="sm"
+                      />
                       <span className="font-display font-semibold text-sm text-zinc-800 flex-1 truncate">
                         {pred.participant_name}
                       </span>
 
                       {isDecided && (
-                        <div className={cn(
-                          "w-6 h-6 rounded-lg flex items-center justify-center shrink-0",
-                          pred.is_correct ? "bg-emerald-100" : "bg-red-100"
-                        )}>
+                        <div
+                          className={cn(
+                            "w-6 h-6 rounded-lg flex items-center justify-center shrink-0",
+                            pred.is_correct ? "bg-emerald-100" : "bg-red-100"
+                          )}
+                        >
                           {pred.is_correct ? (
                             <Check size={12} className="text-emerald-600" />
                           ) : (
@@ -290,7 +443,7 @@ export function EventDetailPage() {
                       {!isDecided && (
                         <Clock size={12} className="text-zinc-400 shrink-0" />
                       )}
-                    </div>
+                    </ClickableRow>
                   ))}
                 </div>
               </motion.div>
@@ -302,6 +455,64 @@ export function EventDetailPage() {
         <EventNews eventName={event.event_name} sport={event.sport} />
       </div>
     </motion.div>
+  );
+}
+
+function OddsStrip({
+  favourite,
+  favouriteOdds,
+  underdog,
+  underdogOdds,
+}: {
+  favourite: string;
+  favouriteOdds: number;
+  underdog: string | null | undefined;
+  underdogOdds: number | null | undefined;
+}) {
+  const favImplied = impliedProbability(favouriteOdds);
+  const undImplied = underdogOdds ? impliedProbability(underdogOdds) : 0;
+  const total = favImplied + undImplied;
+  const favPct = total > 0 ? Math.round((favImplied / total) * 100) : 100;
+  const undPct = 100 - favPct;
+  return (
+    <>
+      <div className="flex items-center gap-3 mb-2">
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-[12px] font-semibold text-emerald-700 truncate">
+              {favourite}
+            </span>
+            <span className="text-[12px] font-bold tabular-nums text-emerald-700 shrink-0">
+              ${favouriteOdds.toFixed(2)}{" "}
+              <span className="opacity-60 font-normal">({favPct}%)</span>
+            </span>
+          </div>
+          {underdog && underdogOdds != null && (
+            <div className="flex items-center justify-between gap-2 mt-0.5">
+              <span className="text-[12px] font-semibold text-blue-600 truncate">
+                {underdog}
+              </span>
+              <span className="text-[12px] font-bold tabular-nums text-blue-600 shrink-0">
+                ${underdogOdds.toFixed(2)}{" "}
+                <span className="opacity-60 font-normal">({undPct}%)</span>
+              </span>
+            </div>
+          )}
+        </div>
+      </div>
+      {underdog && underdogOdds != null && (
+        <div className="flex h-1.5 rounded-full overflow-hidden bg-zinc-100">
+          <div
+            className="bg-emerald-500 rounded-l-full"
+            style={{ width: `${favPct}%` }}
+          />
+          <div
+            className="bg-blue-500 rounded-r-full"
+            style={{ width: `${undPct}%` }}
+          />
+        </div>
+      )}
+    </>
   );
 }
 
