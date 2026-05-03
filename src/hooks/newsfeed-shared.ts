@@ -159,12 +159,26 @@ async function fetchAndBuildFeed(options: BuildFeedOptions): Promise<FeedBuildRe
     lb
   );
 
-  const backendKeys = new Set(backendItems.map((item) => feedItemKey(item)));
+  // Backend feed items for RESULT_TYPES (event_result, perfect_pick,
+  // everyone_wrong, upset_alert) are snapshots written when the result was
+  // first set — if an admin later corrects `correct_answer`, the backend item
+  // keeps the old answer/count. The client always regenerates these from live
+  // event data, so prefer the client version when there's a conflict.
+  const clientResultKeys = new Set(
+    clientItems
+      .filter((item) => RESULT_TYPES.has(item.type))
+      .map((item) => feedItemKey(item))
+  );
+  const freshBackendItems = backendItems.filter(
+    (item) => !RESULT_TYPES.has(item.type) || !clientResultKeys.has(feedItemKey(item))
+  );
+
+  const backendKeys = new Set(freshBackendItems.map((item) => feedItemKey(item)));
   const uniqueClientItems = clientItems.filter(
     (item) => !backendKeys.has(feedItemKey(item))
   );
 
-  const combined = [...backendItems, ...uniqueClientItems];
+  const combined = [...freshBackendItems, ...uniqueClientItems];
 
   const completedEventIds = new Set(
     mergedEvents
