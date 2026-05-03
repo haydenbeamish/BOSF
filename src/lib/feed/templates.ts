@@ -42,36 +42,6 @@ export const WINNING_STREAK_TEMPLATES = [
   }),
 ];
 
-export const PERFECT_PICK_TEMPLATES = [
-  (name: string, event: string) => ({
-    headline: `${name} — certified genius`,
-    subtext: `Only one to nail ${event}. The rest of you, ashamed.`,
-  }),
-  (name: string, event: string) => ({
-    headline: `${name} stood alone on ${event}. Correct.`,
-    subtext: `Only correct pick. Bow down, you pack of sheep.`,
-  }),
-  (name: string, event: string) => ({
-    headline: `${name} has massive balls on ${event}`,
-    subtext: `Sole correct pick. Everyone else copied homework and still failed.`,
-  }),
-];
-
-export const EVERYONE_WRONG_TEMPLATES = [
-  (event: string) => ({
-    headline: `${event} — nobody got it right`,
-    subtext: `Zero correct. Collective IQ of a dead goldfish.`,
-  }),
-  (event: string) => ({
-    headline: `Complete shitshow on ${event}`,
-    subtext: `Zero correct. A blind dog would've done better.`,
-  }),
-  (event: string) => ({
-    headline: `${event} made mugs of the lot of you`,
-    subtext: `Not one correct pick. Embarrassing.`,
-  }),
-];
-
 export const OUTLIER_TEMPLATES = [
   (name: string, prediction: string, event: string, popular: string) => ({
     headline: `${name} has lost the plot on ${event}`,
@@ -84,21 +54,6 @@ export const OUTLIER_TEMPLATES = [
   (name: string, prediction: string, event: string, _popular: string) => ({
     headline: `What is ${name} smoking?`,
     subtext: `"${prediction}" against the pack on ${event}. Genius or psych eval.`,
-  }),
-];
-
-export const EVENT_RESULT_TEMPLATES = [
-  (event: string, answer: string, correct: number, total: number) => ({
-    headline: `${answer} wins ${event}`,
-    subtext: `${correct}/${total} got it right${correct === 0 ? ". Not one of you called it" : correct === total ? ". Too easy" : `. The other ${total - correct}? Cooked.`}`,
-  }),
-  (event: string, answer: string, correct: number, total: number) => ({
-    headline: `${event}: it's ${answer}`,
-    subtext: `${correct}/${total} called it. ${correct === 0 ? "Pathetic. All frauds." : correct < total / 2 ? "Most of you are hopeless." : "Not bad for a bunch of degenerates."}`,
-  }),
-  (event: string, answer: string, correct: number, total: number) => ({
-    headline: `${answer} gets it done — ${event}`,
-    subtext: `${correct === 0 ? "Zero correct. Disgraceful" : correct === total ? "Everyone got it. Snooze" : `${correct}/${total} nailed it. Rest of you, sort it out`}.`,
   }),
 ];
 
@@ -230,21 +185,6 @@ export const NEW_SPUD_TEMPLATES = [
   (name: string, prevSpud: string) => ({
     headline: `Congrats ${name}, you useless spud`,
     subtext: `Dead last. ${prevSpud} sends thanks. Hide the credit card.`,
-  }),
-];
-
-export const UPSET_ALERT_TEMPLATES = [
-  (event: string, winner: string, favourite: string, favOdds: string) => ({
-    headline: `Upset! ${winner} rolls ${favourite} — ${event}`,
-    subtext: `Bookies had ${favourite} at ${favOdds}. If you called it, you're a genius.`,
-  }),
-  (event: string, winner: string, favourite: string, favOdds: string) => ({
-    headline: `${favourite} (${favOdds}) pantsed`,
-    subtext: `${winner} wins ${event}. Bookies wrong. You too if you followed them.`,
-  }),
-  (event: string, winner: string, favourite: string, _favOdds: string) => ({
-    headline: `${event}: bookies in shambles`,
-    subtext: `${winner} over ${favourite}. Tipped the upset? Take a bow.`,
   }),
 ];
 
