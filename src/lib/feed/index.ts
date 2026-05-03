@@ -1,11 +1,7 @@
 import type { CompetitionEvent, Prediction, LeaderboardEntry, Participant } from "../../types";
-import { isCorrect } from "../predictions";
 import type { FeedItem } from "./types";
 import {
   hashPick,
-  EVENT_RESULT_TEMPLATES,
-  EVERYONE_WRONG_TEMPLATES,
-  PERFECT_PICK_TEMPLATES,
   WINNING_STREAK_TEMPLATES,
   LOSING_STREAK_TEMPLATES,
   OUTLIER_TEMPLATES,
@@ -14,7 +10,6 @@ import {
   LAST_PLACE_BANTER_TEMPLATES,
   NEW_LEADER_TEMPLATES,
   NEW_SPUD_TEMPLATES,
-  UPSET_ALERT_TEMPLATES,
   ACCURACY_TEMPLATES,
   LUNCH_LIABILITY_TEMPLATES,
   PICKS_OPEN_TEMPLATES,
@@ -65,144 +60,16 @@ export function generateNewsFeed(
     else predsByEventId.set(eid, [pred]);
   }
 
+  // event_result, everyone_wrong, perfect_pick and upset_alert items are
+  // produced exclusively by the backend `/api/competition/feed` endpoint —
+  // see normalizeBackendFeedItem. Generating them client-side as well caused
+  // duplicate sources of truth for the winner; the backend snapshot is the
+  // canonical record.
   const completedEvents = events
     .filter((e) => e.status === "completed" && e.correct_answer)
     .sort((a, b) => (b.display_order ?? 0) - (a.display_order ?? 0));
 
-  // 1. Event results — show all completed events
-  for (const event of completedEvents) {
-    const preds = predsByEventId.get(Number(event.id)) ?? [];
-    const correctCount = preds.filter((p) => isCorrect(p.is_correct)).length;
-
-    const template = hashPick(EVENT_RESULT_TEMPLATES, `result-${event.id}`);
-    const { headline, subtext } = template(
-      event.event_name,
-      event.correct_answer!,
-      correctCount,
-      preds.length
-    );
-
-    // Attach odds data if the event had bookmaker odds
-    const odds = (event.favourite && event.favourite_odds)
-      ? {
-          favourite: event.favourite,
-          favouriteOdds: event.favourite_odds,
-          underdog: event.underdog ?? undefined,
-          underdogOdds: event.underdog_odds ?? undefined,
-        }
-      : undefined;
-
-    // Build picks distribution showing who predicted what
-    let picks: FeedItem["picks"];
-    if (preds.length > 0) {
-      const groups: Record<string, { label: string; names: string[] }> = {};
-      for (const pred of preds) {
-        const key = pred.prediction.toLowerCase().trim();
-        if (!groups[key]) {
-          groups[key] = { label: pred.prediction.trim(), names: [] };
-        }
-        groups[key].names.push(pred.participant_name ?? "Unknown");
-      }
-      const correctKey = event.correct_answer!.toLowerCase().trim();
-      const options = Object.entries(groups)
-        .map(([key, { label, names }]) => ({
-          label,
-          count: names.length,
-          names,
-          isFavourite: key === correctKey,
-        }))
-        .sort((a, b) => b.count - a.count);
-      picks = { options, total: preds.length };
-    }
-
-    feed.push({
-      id: `result-${event.id}`,
-      type: "event_result",
-      emoji: "\u{1F3C6}",
-      headline,
-      subtext,
-      eventId: event.id,
-      eventName: event.event_name,
-      sport: event.sport,
-      timestamp: event.event_date ?? event.created_at,
-      priority: 7,
-      odds,
-      picks,
-    });
-
-    // Nobody got it right — always hilarious, higher priority
-    if (correctCount === 0 && preds.length > 0) {
-      const t = hashPick(EVERYONE_WRONG_TEMPLATES, `wrong-${event.id}`);
-      const { headline: h, subtext: s } = t(event.event_name);
-      feed.push({
-        id: `wrong-${event.id}`,
-        type: "everyone_wrong",
-        emoji: "\u{1F602}",
-        headline: h,
-        subtext: s,
-        eventId: event.id,
-        eventName: event.event_name,
-        sport: event.sport,
-        timestamp: event.event_date ?? event.created_at,
-        priority: 9,
-      });
-    }
-
-    // Only one person got it right — lone genius moment
-    if (correctCount === 1) {
-      const winner = preds.find((p) => isCorrect(p.is_correct));
-      if (winner) {
-        const t = hashPick(PERFECT_PICK_TEMPLATES, `perfect-${event.id}`);
-        const { headline: h, subtext: s } = t(
-          winner.participant_name ?? "Someone",
-          event.event_name
-        );
-        feed.push({
-          id: `perfect-${event.id}`,
-          type: "perfect_pick",
-          emoji: "\u{1F3AF}",
-          headline: h,
-          subtext: s,
-          playerName: winner.participant_name,
-          playerId: winner.participant_id,
-          eventId: event.id,
-          eventName: event.event_name,
-          sport: event.sport,
-          timestamp: event.event_date ?? event.created_at,
-          priority: 9,
-        });
-      }
-    }
-
-  }
-
-  // 2. Upset alerts — bookmaker favourite lost
-  for (const event of completedEvents) {
-    if (!event.favourite || !event.favourite_odds) continue;
-    const favouriteKey = event.favourite.toLowerCase().trim();
-    const answerKey = event.correct_answer!.toLowerCase().trim();
-    if (favouriteKey === answerKey) continue;
-    // Only flag upsets where the favourite had short odds (was strongly favoured)
-    if (event.favourite_odds > 2.5) continue;
-
-    const favOdds = `$${event.favourite_odds.toFixed(2)}`;
-    const t = hashPick(UPSET_ALERT_TEMPLATES, `upset-${event.id}`);
-    const { headline, subtext } = t(event.event_name, event.correct_answer!, event.favourite, favOdds);
-    feed.push({
-      id: `upset-${event.id}`,
-      type: "upset_alert",
-      emoji: "\u{1F4A5}",
-      headline,
-      subtext,
-      eventId: event.id,
-      eventName: event.event_name,
-      sport: event.sport,
-      timestamp: event.event_date ?? event.created_at,
-      priority: 9,
-    });
-  }
-
-  // 3. Streaks per participant
+  // Streaks per participant
   for (const participant of participants) {
     const { winStreak, loseStreak } = computeStreaks(
       participant.id,
@@ -241,7 +108,7 @@ export function generateNewsFeed(
     }
   }
 
-  // 4. Outlier alerts for upcoming events
+  // Outlier alerts for upcoming events
   const outliers = findOutliers(events, allPredictions, participants);
   for (const outlier of outliers.slice(0, MAX_OUTLIERS)) {
     const uid = `${outlier.prediction.event_id}-${outlier.prediction.participant_id}`;
@@ -267,7 +134,7 @@ export function generateNewsFeed(
     });
   }
 
-  // 5. Close race at the top of the leaderboard
+  // Close race at the top of the leaderboard
   if (leaderboard.length >= 2) {
     const first = leaderboard[0];
     const second = leaderboard[1];
@@ -287,7 +154,7 @@ export function generateNewsFeed(
     }
   }
 
-  // 6. Leader & last-place banter (fires when there are completed events)
+  // Leader & last-place banter (fires when there are completed events)
   if (completedEvents.length > 0 && leaderboard.length >= 2) {
     const leader = leaderboard[0];
     const lastPlace = leaderboard[leaderboard.length - 1];
@@ -321,7 +188,7 @@ export function generateNewsFeed(
     });
   }
 
-  // 7. Lunch liability for mid-table players who owe significant amounts
+  // Lunch liability for mid-table players who owe significant amounts
   if (completedEvents.length > 0 && leaderboard.length >= 6) {
     // Pick the person in the "danger zone" — high contribution but not last place
     // (last place already has dedicated banter above)
@@ -351,7 +218,7 @@ export function generateNewsFeed(
     }
   }
 
-  // 8. New leader / new spud detection
+  // New leader / new spud detection
   if (completedEvents.length >= 2 && leaderboard.length >= 3) {
     const leader = leaderboard[0];
     const second = leaderboard[1];
@@ -393,7 +260,7 @@ export function generateNewsFeed(
     }
   }
 
-  // 9. Accuracy check — highlight the best and worst hit rates
+  // Accuracy check — highlight the best and worst hit rates
   if (leaderboard.length >= 4 && completedEvents.length >= 3) {
     const withAccuracy = leaderboard
       .filter((e) => e.total_predictions >= 3)
@@ -439,10 +306,10 @@ export function generateNewsFeed(
     }
   }
 
-  // 10. Odds-based alerts
+  // Odds-based alerts
   feed.push(...generateOddsFeedItems(events, allPredictions, participants));
 
-  // 11. Picks open — nudge for upcoming events with low participation
+  // Picks open — nudge for upcoming events with low participation
   if (participants.length >= 3) {
     const upcomingEvents = events.filter((e) => e.status === "upcoming" || e.status === "in_progress");
     for (const event of upcomingEvents) {
