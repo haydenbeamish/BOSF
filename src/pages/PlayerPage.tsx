@@ -12,8 +12,6 @@ import {
   Zap,
 } from "lucide-react";
 import { usePlayer } from "../hooks/usePlayer";
-import { useLeaderboard } from "../hooks/useLeaderboard";
-import { useEvents } from "../hooks/useEvents";
 import { isCorrect, isIncorrect } from "../lib/predictions";
 import { Avatar } from "../components/ui/Avatar";
 import { GlassCard } from "../components/ui/GlassCard";
@@ -22,15 +20,10 @@ import { SportIcon } from "../components/ui/SportIcon";
 import { Skeleton } from "../components/ui/Skeleton";
 import { EmptyState } from "../components/ui/EmptyState";
 import { ClickableRow } from "../components/ui/ClickableRow";
-import { AchievementList } from "../components/ui/AchievementList";
 import { PlayerInsight } from "../components/feed/PlayerInsight";
 import { PlayerCharts } from "../components/feed/PlayerCharts";
 import { FormGuide } from "../components/ui/FormGuide";
 import type { FormResult } from "../components/ui/FormGuide";
-import {
-  computeAchievements,
-  annotateCrossPlayerAchievements,
-} from "../lib/achievements";
 import { cn } from "../lib/cn";
 
 export function PlayerPage() {
@@ -39,17 +32,6 @@ export function PlayerPage() {
   const numId = Number(id);
   const isValid = Boolean(id) && !isNaN(numId) && numId > 0;
   const { data, loading, error, retry } = usePlayer(numId);
-  const { entries } = useLeaderboard();
-  const { allEvents } = useEvents();
-
-  const leaderboardEntry = useMemo(
-    () => entries.find((e) => e.id === numId),
-    [entries, numId]
-  );
-  const completedEventsCount = useMemo(
-    () => allEvents.filter((e) => e.status === "completed").length,
-    [allEvents]
-  );
 
   // Compute derived stats
   const stats = useMemo(() => {
@@ -136,37 +118,6 @@ export function PlayerPage() {
       formGuide,
     };
   }, [data]);
-
-  const achievements = useMemo(() => {
-    if (!data) return [];
-    const base = computeAchievements({
-      predictions: data.predictions,
-      leaderboardEntry,
-      completedEvents: completedEventsCount,
-    });
-    // Cross-player check needs other players' predictions — we don't have the full
-    // set on the client from this hook. We approximate: if the leaderboardEntry
-    // shows the player as last, tag spud_club here.
-    const augmented = [...base];
-    if (
-      leaderboardEntry &&
-      entries.length > 0 &&
-      leaderboardEntry.rank === entries.length &&
-      entries.length > 1
-    ) {
-      augmented.push({
-        id: "spud_club",
-        label: "Spud Club",
-        description: "Currently last on the leaderboard.",
-        tone: "red",
-      });
-    }
-    return annotateCrossPlayerAchievements(
-      augmented,
-      data.predictions,
-      data.predictions
-    );
-  }, [data, leaderboardEntry, entries.length, completedEventsCount]);
 
   if (!isValid) {
     return (
@@ -274,18 +225,6 @@ export function PlayerPage() {
         </GlassCard>
       </div>
 
-      {/* Achievements */}
-      {achievements.length > 0 && (
-        <div className="px-4 mt-2 mb-3">
-          <div className="flex items-center gap-2 mb-2">
-            <Trophy size={12} className="text-zinc-400" />
-            <h3 className="text-[11px] font-bold uppercase tracking-wider text-zinc-400">
-              Badges ({achievements.length})
-            </h3>
-          </div>
-          <AchievementList achievements={achievements} />
-        </div>
-      )}
 
       {/* AI-generated player insight */}
       <PlayerInsight
