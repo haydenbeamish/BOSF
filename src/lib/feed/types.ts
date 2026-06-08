@@ -166,6 +166,8 @@ export interface FeedItem {
   };
   /** Structured backend payload for rich card types. */
   detail?: FeedItemDetail;
+  /** Who tipped a decided event correctly — from metadata.correct_pickers. */
+  correctPickers?: Array<{ participant_id?: number; participant_name: string }>;
 }
 
 /**

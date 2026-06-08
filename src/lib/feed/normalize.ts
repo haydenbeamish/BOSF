@@ -166,6 +166,17 @@ export function normalizeBackendFeedItem(raw: unknown): FeedItem | null {
       }
     : undefined;
 
+  // Correct tippers for decided-event cards (metadata.correct_pickers)
+  const correctPickers = Array.isArray(meta.correct_pickers)
+    ? (meta.correct_pickers as Array<Record<string, unknown>>)
+        .map((p) => ({
+          participant_id:
+            p.participant_id != null ? Number(p.participant_id) : undefined,
+          participant_name: String(p.participant_name ?? "").trim(),
+        }))
+        .filter((p) => p.participant_name.length > 0)
+    : undefined;
+
   const rawAccent = typeof item.accent === "string" ? (item.accent as FeedAccent) : undefined;
   const accent = rawAccent && ALLOWED_ACCENTS.has(rawAccent) ? rawAccent : undefined;
 
@@ -190,5 +201,6 @@ export function normalizeBackendFeedItem(raw: unknown): FeedItem | null {
     ...(odds ? { odds } : {}),
     ...(picks ? { picks } : {}),
     ...(detail ? { detail } : {}),
+    ...(correctPickers && correctPickers.length > 0 ? { correctPickers } : {}),
   };
 }

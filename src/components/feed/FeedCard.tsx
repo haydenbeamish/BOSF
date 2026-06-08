@@ -224,6 +224,15 @@ export function FeedCard({ item, index }: FeedCardProps) {
             </p>
           )}
 
+          {item.correctPickers && item.correctPickers.length > 0 && (
+            <p className="text-[12px] mt-1 leading-relaxed">
+              <span className="text-zinc-400">Tipped by </span>
+              <span className="font-semibold text-emerald-700">
+                {formatPickerNames(item.correctPickers.map((p) => p.participant_name))}
+              </span>
+            </p>
+          )}
+
           {/* Rich backend card shapes — render conditionally */}
           {item.detail?.market && <MarketBlock market={item.detail.market} />}
           {item.odds && !item.detail?.market && <OddsDisplay odds={item.odds} />}
@@ -247,6 +256,14 @@ export function FeedCard({ item, index }: FeedCardProps) {
 }
 
 // --- Sub-blocks -----------------------------------------------------------
+
+/** Join tipper names naturally: "A", "A & B", "A, B & C". */
+function formatPickerNames(names: string[]): string {
+  if (names.length === 0) return "";
+  if (names.length === 1) return names[0];
+  if (names.length === 2) return `${names[0]} & ${names[1]}`;
+  return `${names.slice(0, -1).join(", ")} & ${names[names.length - 1]}`;
+}
 
 function PicksDisplay({ picks }: { picks: NonNullable<FeedItem["picks"]> }) {
   return (

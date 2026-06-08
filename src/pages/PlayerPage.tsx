@@ -65,7 +65,17 @@ export function PlayerPage() {
 
     const decided = predictions
       .filter((p) => p.is_correct !== null && p.is_correct !== undefined)
-      .sort((a, b) => (b.event_id ?? 0) - (a.event_id ?? 0));
+      .sort((a, b) => {
+        const aKey = a.decided_at || a.event_end_date || a.event_date;
+        const bKey = b.decided_at || b.event_end_date || b.event_date;
+        if (aKey && bKey) {
+          const diff = new Date(bKey).getTime() - new Date(aKey).getTime();
+          if (diff !== 0) return diff;
+        } else if (aKey) return -1;
+        else if (bKey) return 1;
+        // Fall back to event_id (newest first) when no decision timestamps exist
+        return (b.event_id ?? 0) - (a.event_id ?? 0);
+      });
     const pendingList = predictions
       .filter((p) => p.is_correct === null || p.is_correct === undefined)
       .sort((a, b) => (a.event_id ?? 0) - (b.event_id ?? 0));
