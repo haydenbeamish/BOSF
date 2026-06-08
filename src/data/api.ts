@@ -204,6 +204,9 @@ export async function getParticipant(id: number): Promise<{
       correct_answer: p.correct_answer
         ? sanitizeText(p.correct_answer, 120)
         : null,
+      event_date: (p.event_date as string) ?? null,
+      event_end_date: (p.event_end_date as string) ?? null,
+      decided_at: (p.decided_at as string) ?? null,
     }));
     const participantObj = obj.participant as Record<string, unknown> | undefined;
     const total_points = toNum(
