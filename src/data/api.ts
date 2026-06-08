@@ -60,6 +60,9 @@ function normalizeEvent(e: Record<string, unknown>): CompetitionEvent {
     event_name: sanitizeText(e.event_name, 200),
     sport: sanitizeText(e.sport, 40),
     event_date: (e.event_date as string) ?? null,
+    event_end_date: (e.event_end_date as string) ?? null,
+    // Timestamp of when the event was decided (correct_answer set)
+    decided_at: (e.decided_at as string) ?? null,
     // API sends event_end_date; fall back to close_date if present
     close_date: (e.event_end_date as string) ?? (e.close_date as string) ?? null,
     points_value: toNum(e.available_points ?? e.points_value, 14),

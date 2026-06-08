@@ -110,13 +110,12 @@ export function EventsPage() {
       .sort(compareByDisplayDate);
 
     const decided = base
-      .filter((e) => e.status === "completed")
-      .sort((a, b) => {
-        if (a.event_date && b.event_date) return b.event_date.localeCompare(a.event_date);
-        if (a.event_date) return -1;
-        if (b.event_date) return 1;
-        return (b.display_order ?? 0) - (a.display_order ?? 0);
-      });
+      .filter((e) => e.status === "completed" && e.correct_answer)
+      .sort(
+        (a, b) =>
+          new Date(b.decided_at || b.event_end_date || b.event_date || 0).getTime() -
+          new Date(a.decided_at || a.event_end_date || a.event_date || 0).getTime(),
+      );
 
     const sevenDaysMs = startOfDay(new Date()) + 7 * 24 * 60 * 60 * 1000;
     const thisWeek = upcoming.filter((e) => {

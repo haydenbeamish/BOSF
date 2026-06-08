@@ -31,6 +31,8 @@ export interface CompetitionEvent {
   event_name: string;
   sport: string;
   event_date: string | null;
+  event_end_date?: string | null;
+  decided_at?: string | null;
   close_date: string | null;
   points_value: number;
   correct_answer: string | null;
