@@ -1,4 +1,5 @@
 import type { CompetitionEvent, Prediction, Participant } from "../../types";
+import { canonicalizePick } from "../canonicalizePick";
 
 const MAX_OUTLIERS = 4;
 
@@ -42,7 +43,7 @@ export function findOutliers(
     const counts: Record<string, number> = {};
     const originalCase: Record<string, string> = {};
     for (const p of eventPreds) {
-      const key = p.prediction.toLowerCase().trim();
+      const key = canonicalizePick(p.prediction);
       counts[key] = (counts[key] || 0) + 1;
       if (!originalCase[key]) originalCase[key] = p.prediction.trim();
     }
@@ -54,7 +55,7 @@ export function findOutliers(
     const groupHasConsensus = popularCount >= eventPreds.length - 2;
 
     for (const pred of eventPreds) {
-      const key = pred.prediction.toLowerCase().trim();
+      const key = canonicalizePick(pred.prediction);
       const count = counts[key] ?? 0;
       if (count <= 2 && key !== popularPick && groupHasConsensus) {
         const participant = participants.find((p) => Number(p.id) === Number(pred.participant_id));

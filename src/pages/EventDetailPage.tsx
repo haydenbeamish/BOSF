@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { useEvent } from "../hooks/useEvent";
 import { isCorrect } from "../lib/predictions";
+import { canonicalizePick } from "../lib/canonicalizePick";
 import { SportIcon } from "../components/ui/SportIcon";
 import { StatusPill } from "../components/ui/StatusPill";
 import { Avatar } from "../components/ui/Avatar";
@@ -55,7 +56,10 @@ function groupPredictions(
   const groups: Record<string, PredictionGroup> = {};
 
   for (const pred of predictions) {
-    const key = pred.prediction.toLowerCase().trim();
+    // Canonical key so sequence picks in different formats (e.g. "NSW-QLD-NSW"
+    // vs "NSW, QLD, NSW") group into one option instead of fragmenting into
+    // single-backer "outlier" rows.
+    const key = canonicalizePick(pred.prediction);
     if (!groups[key]) {
       groups[key] = {
         answer: pred.prediction,
