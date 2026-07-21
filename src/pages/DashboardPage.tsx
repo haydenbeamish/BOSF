@@ -72,8 +72,8 @@ export function DashboardPage() {
     .sort(compareByDisplayDate)
     .slice(0, 3);
 
-  // Pick the most-recent-in-memory feed item as the "hero" — users want
-  // the biggest news above the fold.
+  // Most-recent-in-memory feed item — the latest result / biggest news,
+  // surfaced as a single card between the standings and the Up Next list.
   const heroItem = feed[0];
   const restFeed = feed.slice(1);
 
@@ -107,13 +107,6 @@ export function DashboardPage() {
           delay={0.15}
         />
       </div>
-
-      {/* Hero feed item — biggest news of the moment */}
-      {heroItem && (
-        <div className="px-4 mb-5">
-          <FeedCard item={heroItem} index={0} />
-        </div>
-      )}
 
       {/* Podium - Top 3 */}
       {leaderboard.length >= 3 && (
@@ -204,6 +197,13 @@ export function DashboardPage() {
               </button>
             </div>
           </GlassCard>
+        </div>
+      )}
+
+      {/* Latest result / biggest news — sits below the standings and above Up Next */}
+      {heroItem && (
+        <div className="px-4 mb-6">
+          <FeedCard item={heroItem} index={0} />
         </div>
       )}
 
