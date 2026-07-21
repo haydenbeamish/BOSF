@@ -66,7 +66,13 @@ function dayKey(ts?: string): string {
   const d = new Date(safe);
   if (!Number.isFinite(d.getTime())) return "undated";
   d.setHours(0, 0, 0, 0);
-  return String(d.getTime());
+  // Defensive: a feed card should never be dated in the future. The backend now
+  // stamps result cards with the event's resolution time (not a season-long
+  // event's scheduled deadline), but clamp here too so any stray future
+  // timestamp groups under "Today" instead of sorting above the whole feed.
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  return String(Math.min(d.getTime(), today.getTime()));
 }
 
 function dayLabel(key: string): string {
