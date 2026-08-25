@@ -1,6 +1,7 @@
 import type { CompetitionEvent, Prediction, Participant } from "../../types";
 import type { FeedItem } from "./types";
 import { hashPick, CONTRARIAN_PICK_TEMPLATES, UNDERDOG_BACKER_TEMPLATES } from "./templates";
+import { bestFeedTimestamp } from "../dates";
 
 /** Maximum total odds-related items to include in the feed */
 const MAX_ODDS_ITEMS = 3;
@@ -60,7 +61,10 @@ export function generateOddsFeedItems(
 
   // --- Odds alerts: show actual odds for upcoming events ---
   for (const event of upcomingWithOdds) {
-    const eventDate = event.event_date ?? event.close_date;
+    const eventDate = bestFeedTimestamp({
+      event_end_date: event.close_date,
+      event_date: event.event_date,
+    });
     const picks = buildPickDistribution(event, allPredictions, participants);
     const favOdds = `$${event.favourite_odds!.toFixed(2)}`;
     const headline = event.underdog
@@ -76,7 +80,7 @@ export function generateOddsFeedItems(
       eventId: event.id,
       eventName: event.event_name,
       sport: event.sport,
-      timestamp: eventDate ?? undefined,
+      timestamp: eventDate,
       priority: 5,
       odds: {
         favourite: event.favourite!,

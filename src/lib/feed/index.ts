@@ -17,6 +17,7 @@ import {
 import { computeStreaks, STREAK_THRESHOLD } from "./streaks";
 import { findOutliers, MAX_OUTLIERS } from "./outliers";
 import { generateOddsFeedItems } from "./odds";
+import { bestFeedTimestamp, compareFeedRecency } from "../dates";
 
 export type { FeedItem, FeedItemType, BackendFeedItem } from "./types";
 export { normalizeBackendFeedItem } from "./normalize";
@@ -160,6 +161,12 @@ export function generateNewsFeed(
     const lastPlace = leaderboard[leaderboard.length - 1];
     const lastContribution = LUNCH_CONTRIBUTIONS[Math.min(leaderboard.length, LUNCH_CONTRIBUTIONS.length) - 1];
     const liability = `$${lastContribution?.contribution ?? 325}`;
+    let latestDecided: string | undefined;
+    for (const e of completedEvents) {
+      if (e.decided_at && (!latestDecided || e.decided_at > latestDecided)) {
+        latestDecided = e.decided_at;
+      }
+    }
 
     const lt = hashPick(LEADER_BANTER_TEMPLATES, `leader-${leader.id}`);
     const { headline: lh, subtext: ls } = lt(leader.name);
@@ -171,6 +178,7 @@ export function generateNewsFeed(
       subtext: ls,
       playerName: leader.name,
       playerId: leader.id,
+      timestamp: latestDecided,
       priority: 8,
     });
 
@@ -184,6 +192,7 @@ export function generateNewsFeed(
       subtext: bs,
       playerName: lastPlace.name,
       playerId: lastPlace.id,
+      timestamp: latestDecided,
       priority: 8,
     });
   }
@@ -328,7 +337,11 @@ export function generateNewsFeed(
           eventId: event.id,
           eventName: event.event_name,
           sport: event.sport,
-          timestamp: event.event_date ?? event.close_date ?? undefined,
+          timestamp: bestFeedTimestamp({
+            decided_at: event.decided_at,
+            event_end_date: event.event_end_date ?? event.close_date,
+            event_date: event.event_date,
+          }),
           priority: 8,
           odds: event.favourite && event.favourite_odds
             ? {
@@ -343,13 +356,10 @@ export function generateNewsFeed(
     }
   }
 
-  // Sort: newest first (chronological), then by priority as tiebreaker
+  // Sort: newest first (real decided/result time), then by priority as tiebreaker
   feed.sort((a, b) => {
-    if (a.timestamp && b.timestamp) {
-      const cmp = b.timestamp.localeCompare(a.timestamp);
-      if (cmp !== 0) return cmp;
-    } else if (a.timestamp) return -1;
-    else if (b.timestamp) return 1;
+    const cmp = compareFeedRecency(a.timestamp, b.timestamp);
+    if (cmp !== 0) return cmp;
     return b.priority - a.priority;
   });
 

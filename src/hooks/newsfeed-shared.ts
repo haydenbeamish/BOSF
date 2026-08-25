@@ -4,6 +4,7 @@ import { getResults, getLeaderboard, getEvents, getFeed } from "../data/api";
 import { generateNewsFeed, type FeedItem } from "../lib/newsfeed";
 import { normalizeBackendFeedItem } from "../lib/feed/normalize";
 import { enhanceBanter } from "../data/ai";
+import { bestFeedTimestamp, compareFeedRecency } from "../lib/dates";
 import type { CompetitionEvent, LeaderboardEntry, Prediction, Participant } from "../types";
 
 /**
@@ -135,9 +136,19 @@ async function fetchAndBuildFeed(options: BuildFeedOptions): Promise<FeedBuildRe
 
   const allPredictions = results.predictions ?? [];
 
+  const allById = new Map(allEvents.map((e) => [e.id, e]));
   const resultsEventIds = new Set((results.events ?? []).map((e) => e.id));
+  // /results omits decided_at; copy it from /events so feed sort can use it.
   const mergedEvents = [
-    ...(results.events ?? []),
+    ...(results.events ?? []).map((e) => {
+      const fromAll = allById.get(e.id);
+      if (!fromAll || e.decided_at) return e;
+      return {
+        ...e,
+        decided_at: fromAll.decided_at,
+        event_end_date: e.event_end_date ?? fromAll.event_end_date,
+      };
+    }),
     ...allEvents.filter((e) => !resultsEventIds.has(e.id)),
   ];
 
@@ -177,23 +188,32 @@ async function fetchAndBuildFeed(options: BuildFeedOptions): Promise<FeedBuildRe
     return !completedEventIds.has(Number(item.eventId));
   });
 
-  filtered.sort((a, b) => {
+  const eventsById = new Map(mergedEvents.map((e) => [Number(e.id), e]));
+  const stamped = filtered.map((item) => {
+    const event = item.eventId != null ? eventsById.get(Number(item.eventId)) : undefined;
+    const timestamp = bestFeedTimestamp({
+      decided_at: event?.decided_at,
+      event_end_date: event?.event_end_date ?? event?.close_date,
+      event_date: event?.event_date,
+      timestamp: item.timestamp,
+    });
+    return timestamp === item.timestamp ? item : { ...item, timestamp };
+  });
+
+  stamped.sort((a, b) => {
     if (options.resultsFirst) {
       const aIsResult = RESULT_TYPES.has(a.type) ? 1 : 0;
       const bIsResult = RESULT_TYPES.has(b.type) ? 1 : 0;
       if (aIsResult !== bIsResult) return bIsResult - aIsResult;
     }
-    if (a.timestamp && b.timestamp) {
-      const cmp = b.timestamp.localeCompare(a.timestamp);
-      if (cmp !== 0) return cmp;
-    } else if (a.timestamp) return -1;
-    else if (b.timestamp) return 1;
+    const cmp = compareFeedRecency(a.timestamp, b.timestamp);
+    if (cmp !== 0) return cmp;
     return b.priority - a.priority;
   });
 
   const MAX_PER_TYPE = 3;
   const typeCounts: Record<string, number> = {};
-  const capped = filtered.filter((item) => {
+  const capped = stamped.filter((item) => {
     if (UNCAPPED_TYPES.has(item.type)) return true;
     const count = typeCounts[item.type] ?? 0;
     if (count >= MAX_PER_TYPE) return false;
