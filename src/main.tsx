@@ -9,13 +9,13 @@ import App from "./App";
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 60_000,
-      gcTime: 24 * 60 * 60 * 1000,
+      staleTime: 60_000,                  // Treat data as fresh for 60s — cuts refetch storm on focus
+      gcTime: 24 * 60 * 60 * 1000,        // Keep cached data for 24 hours
       retry: 1,
-      refetchOnWindowFocus: true,
-      refetchOnReconnect: true,
-      refetchInterval: 5 * 60 * 1000,
-      refetchIntervalInBackground: false,
+      refetchOnWindowFocus: true,         // Refresh when user tabs back (respects staleTime)
+      refetchOnReconnect: true,           // Refresh when network reconnects
+      refetchInterval: 5 * 60 * 1000,     // Background poll every 5 minutes
+      refetchIntervalInBackground: false, // Only poll when tab is visible
     },
   },
 });
@@ -40,6 +40,7 @@ createRoot(root).render(
         client={queryClient}
         persistOptions={{
           persister,
+          // Persist for 6h — after that the user sees skeletons + fresh data on cold start.
           maxAge: 6 * 60 * 60 * 1000,
         }}
       >
