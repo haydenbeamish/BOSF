@@ -26,6 +26,7 @@ const FILTER_TYPES: Record<FeedFilter, (t: string) => boolean> = {
     t === "perfect_pick" ||
     t === "everyone_wrong" ||
     t === "upset_alert" ||
+    t === "winners_list" ||
     t === "result_commentary" ||
     t === "post_event_rubbing",
   odds: (t) =>
