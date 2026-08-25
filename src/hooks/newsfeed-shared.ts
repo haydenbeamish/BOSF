@@ -70,6 +70,34 @@ export function enrichFeedItemWithOddsAndPicks(
   return enriched;
 }
 
+/** Milliseconds since epoch for backend `created_at`. Missing/invalid → 0 (sorts last). */
+export function feedCreatedAtMs(item: FeedItem): number {
+  const raw = item.createdAt;
+  if (!raw) return 0;
+  const t = Date.parse(raw);
+  return Number.isFinite(t) ? t : 0;
+}
+
+/**
+ * Newest-first by `created_at`. Does not use event_date/`timestamp` or event_number —
+ * those invert the API order after results land (future event dates float to the top;
+ * missing timestamps fall through to priority).
+ */
+export function compareFeedNewestFirst(
+  a: FeedItem,
+  b: FeedItem,
+  resultsFirst = false
+): number {
+  if (resultsFirst) {
+    const aIsResult = RESULT_TYPES.has(a.type) ? 1 : 0;
+    const bIsResult = RESULT_TYPES.has(b.type) ? 1 : 0;
+    if (aIsResult !== bIsResult) return bIsResult - aIsResult;
+  }
+  const byCreated = feedCreatedAtMs(b) - feedCreatedAtMs(a);
+  if (byCreated !== 0) return byCreated;
+  return b.priority - a.priority;
+}
+
 /** Produce a dedup key for a feed item based on type + context */
 export function feedItemKey(item: FeedItem): string {
   if (item.eventId && item.playerId) return `${item.type}-e${item.eventId}-p${item.playerId}`;
@@ -177,19 +205,7 @@ async function fetchAndBuildFeed(options: BuildFeedOptions): Promise<FeedBuildRe
     return !completedEventIds.has(Number(item.eventId));
   });
 
-  filtered.sort((a, b) => {
-    if (options.resultsFirst) {
-      const aIsResult = RESULT_TYPES.has(a.type) ? 1 : 0;
-      const bIsResult = RESULT_TYPES.has(b.type) ? 1 : 0;
-      if (aIsResult !== bIsResult) return bIsResult - aIsResult;
-    }
-    if (a.timestamp && b.timestamp) {
-      const cmp = b.timestamp.localeCompare(a.timestamp);
-      if (cmp !== 0) return cmp;
-    } else if (a.timestamp) return -1;
-    else if (b.timestamp) return 1;
-    return b.priority - a.priority;
-  });
+  filtered.sort((a, b) => compareFeedNewestFirst(a, b, options.resultsFirst));
 
   const MAX_PER_TYPE = 3;
   const typeCounts: Record<string, number> = {};

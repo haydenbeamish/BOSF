@@ -141,6 +141,8 @@ export interface FeedItem {
   eventName?: string;
   sport?: string;
   timestamp?: string;
+  /** Backend `created_at` — the only key the News/Dashboard feed should sort by. */
+  createdAt?: string;
   priority: number;
   /** Backend hints so the UI doesn't have to pattern-match on `type`. */
   accent?: FeedAccent;

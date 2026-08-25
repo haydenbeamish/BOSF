@@ -1,8 +1,8 @@
 import { buildNewsFeedHook } from "./newsfeed-shared";
 
 /**
- * Full news feed (News page) — strictly chronological, no interleaving,
- * capped at 100 items.
+ * Full news feed (News page) — created_at descending (most recent first),
+ * no interleaving, capped at 100 items.
  */
 export const useFullNewsFeed = buildNewsFeedHook("full-newsfeed", {
   maxItems: 100,
