@@ -4,7 +4,7 @@ import { getResults, getLeaderboard, getEvents, getFeed } from "../data/api";
 import { generateNewsFeed, type FeedItem } from "../lib/newsfeed";
 import { normalizeBackendFeedItem } from "../lib/feed/normalize";
 import { enhanceBanter } from "../data/ai";
-import { bestFeedTimestamp, compareFeedRecency } from "../lib/dates";
+import { bestFeedTimestamp, compareFeedRecency, toEpochMs } from "../lib/dates";
 import type { CompetitionEvent, LeaderboardEntry, Prediction, Participant } from "../types";
 
 /**
@@ -110,6 +110,30 @@ export const STALE_WHEN_COMPLETED = new Set(["odds_alert", "contrarian_pick", "u
 export const RESULT_TYPES = new Set(["event_result", "perfect_pick", "everyone_wrong", "upset_alert"]);
 export const UNCAPPED_TYPES = new Set(["event_result"]);
 
+/**
+ * Newest-first comparator for the merged News/Dashboard feed.
+ * Recency uses the best real stamp (decided_at preferred; future dates ignored).
+ * `createdAt` breaks ties so same-second backend cards keep API order.
+ * Priority is last-resort only — never a substitute for recency.
+ */
+export function compareFeedNewestFirst(
+  a: FeedItem,
+  b: FeedItem,
+  resultsFirst = false
+): number {
+  if (resultsFirst) {
+    const aIsResult = RESULT_TYPES.has(a.type) ? 1 : 0;
+    const bIsResult = RESULT_TYPES.has(b.type) ? 1 : 0;
+    if (aIsResult !== bIsResult) return bIsResult - aIsResult;
+  }
+  const cmp = compareFeedRecency(a.timestamp, b.timestamp);
+  if (cmp !== 0) return cmp;
+  const aCreated = toEpochMs(a.createdAt) ?? 0;
+  const bCreated = toEpochMs(b.createdAt) ?? 0;
+  if (aCreated !== bCreated) return bCreated - aCreated;
+  return b.priority - a.priority;
+}
+
 // --- Shared feed-building logic --------------------------------------------
 
 interface BuildFeedOptions {
@@ -196,20 +220,12 @@ async function fetchAndBuildFeed(options: BuildFeedOptions): Promise<FeedBuildRe
       event_end_date: event?.event_end_date ?? event?.close_date,
       event_date: event?.event_date,
       timestamp: item.timestamp,
+      created_at: item.createdAt,
     });
     return timestamp === item.timestamp ? item : { ...item, timestamp };
   });
 
-  stamped.sort((a, b) => {
-    if (options.resultsFirst) {
-      const aIsResult = RESULT_TYPES.has(a.type) ? 1 : 0;
-      const bIsResult = RESULT_TYPES.has(b.type) ? 1 : 0;
-      if (aIsResult !== bIsResult) return bIsResult - aIsResult;
-    }
-    const cmp = compareFeedRecency(a.timestamp, b.timestamp);
-    if (cmp !== 0) return cmp;
-    return b.priority - a.priority;
-  });
+  stamped.sort((a, b) => compareFeedNewestFirst(a, b, options.resultsFirst));
 
   const MAX_PER_TYPE = 3;
   const typeCounts: Record<string, number> = {};
