@@ -5,6 +5,7 @@ import type {
   BackendFeedItem,
   FeedAccent,
 } from "./types";
+import { bestFeedTimestamp } from "../dates";
 
 /** Allowed accent values from the backend */
 const ALLOWED_ACCENTS: Set<FeedAccent> = new Set([
@@ -194,7 +195,16 @@ export function normalizeBackendFeedItem(raw: unknown): FeedItem | null {
     eventId: item.event_id ?? meta.event_id,
     eventName: item.event_name ?? meta.event_name,
     sport: item.sport ?? meta.sport,
-    timestamp: item.timestamp || item.created_at,
+    timestamp: bestFeedTimestamp({
+      decided_at: item.decided_at ?? (typeof meta.decided_at === "string" ? meta.decided_at : null),
+      result_at: item.result_at ?? (typeof meta.result_at === "string" ? meta.result_at : null),
+      published_at: item.published_at ?? (typeof meta.published_at === "string" ? meta.published_at : null),
+      updated_at: item.updated_at ?? (typeof meta.updated_at === "string" ? meta.updated_at : null),
+      event_end_date: item.event_end_date ?? (typeof meta.event_end_date === "string" ? meta.event_end_date : null),
+      event_date: item.event_date ?? (typeof meta.event_date === "string" ? meta.event_date : null),
+      timestamp: item.timestamp,
+      created_at: item.created_at,
+    }),
     priority: item.priority ?? TYPE_PRIORITY[type] ?? 5,
     accent,
     icon: typeof item.icon === "string" ? item.icon : undefined,

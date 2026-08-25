@@ -192,6 +192,12 @@ export interface BackendFeedItem {
   sport?: string;
   timestamp?: string;
   created_at?: string;
+  decided_at?: string;
+  result_at?: string;
+  published_at?: string;
+  updated_at?: string;
+  event_end_date?: string;
+  event_date?: string;
   priority?: number;
   /** Free-text detail string OR a structured object (rich card shapes). */
   detail?: string | Record<string, unknown>;

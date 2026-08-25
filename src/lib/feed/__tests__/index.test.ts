@@ -41,34 +41,7 @@ function makePred(participantId: number, eventId: number, isCorrect: boolean): P
 }
 
 describe("generateNewsFeed", () => {
-  it("generates event_result items for completed events", () => {
-    const events = [makeCompletedEvent(1, "Team A")];
-    const predictions = [
-      makePred(1, 1, true),
-      makePred(2, 1, false),
-      makePred(3, 1, true),
-    ];
-
-    const feed = generateNewsFeed(events, participants, predictions, leaderboard);
-    const results = feed.filter(f => f.type === "event_result");
-    expect(results).toHaveLength(1);
-    expect(results[0].eventId).toBe(1);
-  });
-
-  it("generates everyone_wrong when nobody is correct", () => {
-    const events = [makeCompletedEvent(1, "Team A")];
-    const predictions = [
-      makePred(1, 1, false),
-      makePred(2, 1, false),
-      makePred(3, 1, false),
-    ];
-
-    const feed = generateNewsFeed(events, participants, predictions, leaderboard);
-    const wrongItems = feed.filter(f => f.type === "everyone_wrong");
-    expect(wrongItems).toHaveLength(1);
-  });
-
-  it("generates perfect_pick when only one person is correct", () => {
+  it("does not generate result cards client-side (backend feed is the source)", () => {
     const events = [makeCompletedEvent(1, "Team A")];
     const predictions = [
       makePred(1, 1, true),
@@ -77,9 +50,9 @@ describe("generateNewsFeed", () => {
     ];
 
     const feed = generateNewsFeed(events, participants, predictions, leaderboard);
-    const perfectPicks = feed.filter(f => f.type === "perfect_pick");
-    expect(perfectPicks).toHaveLength(1);
-    expect(perfectPicks[0].playerName).toBe("Alice");
+    expect(feed.filter((f) => f.type === "event_result")).toHaveLength(0);
+    expect(feed.filter((f) => f.type === "everyone_wrong")).toHaveLength(0);
+    expect(feed.filter((f) => f.type === "perfect_pick")).toHaveLength(0);
   });
 
   it("generates close_race when top 2 are within 3 points", () => {
@@ -115,5 +88,19 @@ describe("generateNewsFeed", () => {
   it("returns empty feed when there is no data", () => {
     const feed = generateNewsFeed([], [], [], []);
     expect(feed).toHaveLength(0);
+  });
+
+  it("stamps leader/last-place banter with the latest decided_at", () => {
+    const events = [
+      { ...makeCompletedEvent(1, "A"), decided_at: "2026-06-01T00:00:00.000Z" },
+      { ...makeCompletedEvent(2, "B"), decided_at: "2026-08-25T12:08:33.773Z" },
+    ];
+    const feed = generateNewsFeed(events, participants, [], leaderboard);
+    const banter = feed.filter(
+      (f) => f.type === "leader_banter" || f.type === "last_place_banter"
+    );
+    expect(banter).toHaveLength(2);
+    expect(banter.every((f) => f.timestamp === "2026-08-25T12:08:33.773Z")).toBe(true);
+    expect(feed[0].timestamp).toBe("2026-08-25T12:08:33.773Z");
   });
 });
