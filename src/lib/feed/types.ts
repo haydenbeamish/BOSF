@@ -140,7 +140,10 @@ export interface FeedItem {
   eventId?: number;
   eventName?: string;
   sport?: string;
+  /** Best display/recency stamp (decided_at preferred; future dates dropped). */
   timestamp?: string;
+  /** Backend feed row time — used as a tiebreak so same-second cards keep API order. */
+  createdAt?: string;
   priority: number;
   /** Backend hints so the UI doesn't have to pattern-match on `type`. */
   accent?: FeedAccent;
