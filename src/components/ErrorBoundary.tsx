@@ -23,7 +23,7 @@ function reportToServer(entry: Record<string, unknown>) {
     });
   } catch {
     /* swallow */
-  }
+    }
 }
 
 export class ErrorBoundary extends Component<Props, State> {
@@ -34,9 +34,7 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, info: React.ErrorInfo) {
-    // Always log locally so devs see it in the browser console.
     console.error("ErrorBoundary caught:", error, info.componentStack);
-    // Ship a minimal report to the server for production visibility.
     reportToServer({
       message: error.message,
       stack: error.stack,
@@ -47,7 +45,18 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   handleReset = () => {
+    try {
+      const keys = Object.keys(window.localStorage);
+      for (const key of keys) {
+        if (key.startsWith("bosf-cache-")) window.localStorage.removeItem(key);
+      }
+    } catch {
+      /* ignore */
+    }
     this.setState({ hasError: false, error: null });
+    if (typeof window !== "undefined") {
+      window.location.reload();
+    }
   };
 
   render() {
