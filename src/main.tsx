@@ -24,7 +24,8 @@ let persister: ReturnType<typeof createSyncStoragePersister> | null = null;
 try {
   persister = createSyncStoragePersister({
     storage: window.localStorage,
-    key: "bosf-cache-v9",
+    // v10: force-drop any persisted query cache from the broken merge deploy
+    key: "bosf-cache-v10",
   });
 } catch {
   // localStorage unavailable (private browsing, etc.) — fall back to no persistence
