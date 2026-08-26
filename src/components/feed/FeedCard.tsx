@@ -236,12 +236,14 @@ export function FeedCard({ item, index }: FeedCardProps) {
           {/* Rich backend card shapes — render conditionally */}
           {item.detail?.market && <MarketBlock market={item.detail.market} />}
           {item.odds && !item.detail?.market && <OddsDisplay odds={item.odds} />}
-          {item.picks && item.picks.total > 0 && <PicksDisplay picks={item.picks} />}
-          {item.detail?.timeline && <TimelineBlock timeline={item.detail.timeline} />}
-          {item.detail?.ladder && <LadderBlock ladder={item.detail.ladder} />}
-          {item.detail?.momentum && <MomentumBlock momentum={item.detail.momentum} />}
-          {item.detail?.week_ahead && <WeekAheadBlock week={item.detail.week_ahead} />}
-          {item.detail?.h2h && <H2HBlock h2h={item.detail.h2h} />}
+          {item.picks && item.picks.total > 0 && Array.isArray(item.picks.options) && (
+            <PicksDisplay picks={item.picks} />
+          )}
+          {item.detail?.timeline?.results && <TimelineBlock timeline={item.detail.timeline} />}
+          {item.detail?.ladder?.rows && <LadderBlock ladder={item.detail.ladder} />}
+          {item.detail?.momentum?.bars && <MomentumBlock momentum={item.detail.momentum} />}
+          {item.detail?.week_ahead?.by_day && <WeekAheadBlock week={item.detail.week_ahead} />}
+          {item.detail?.h2h?.pair && <H2HBlock h2h={item.detail.h2h} />}
           {item.detail?.stat && <StatBlock stat={item.detail.stat} />}
 
           {item.sport && (
