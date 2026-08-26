@@ -108,7 +108,31 @@ export const BORING_TYPES = new Set(["pick_summary", "group_consensus", "pre_eve
 export const BORING_HEADLINE_PREFIXES = ["Date Check", "Odds vs picks:"];
 export const STALE_WHEN_COMPLETED = new Set(["odds_alert", "contrarian_pick", "underdog_backer", "picks_open"]);
 export const RESULT_TYPES = new Set(["event_result", "perfect_pick", "everyone_wrong", "upset_alert"]);
-export const UNCAPPED_TYPES = new Set(["event_result"]);
+
+/** Backend + client banter — show more of these; never shorten via frontend AI rewrite. */
+export const BANTER_TYPES = new Set([
+  "post_event_rubbing",
+  "result_commentary",
+  "leader_banter",
+  "last_place_banter",
+  "winning_streak",
+  "losing_streak",
+  "new_leader",
+  "new_spud",
+  "lunch_liability",
+  "ladder_leader",
+  "ladder_last",
+  "leaderboard_change",
+  "lunch_bill_climb",
+  "streak_spotlight",
+  "h2h_rivalry",
+  "hot_take",
+]);
+
+export const UNCAPPED_TYPES = new Set([
+  "event_result",
+  ...BANTER_TYPES,
+]);
 
 /**
  * Newest-first comparator for the merged News/Dashboard feed.
@@ -286,8 +310,10 @@ export function buildNewsFeedHook(
       if (!data?.feedItems.length || dataKey === banterKey) return;
 
       let cancelled = false;
+      // Skip items that already carry backend Grok banter or client roast templates —
+      // the frontend AI layer was shortening them to ~80 chars and killing the vibe.
       const toEnhance = data.feedItems
-        .filter((f) => f.type !== "odds_alert")
+        .filter((f) => f.type !== "odds_alert" && !BANTER_TYPES.has(f.type))
         .slice(0, 25);
 
       enhanceBanter(toEnhance).then((enhanced) => {
