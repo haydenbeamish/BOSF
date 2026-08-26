@@ -23,7 +23,7 @@ function reportToServer(entry: Record<string, unknown>) {
     });
   } catch {
     /* swallow */
-    }
+  }
 }
 
 export class ErrorBoundary extends Component<Props, State> {
