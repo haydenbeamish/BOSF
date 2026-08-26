@@ -205,6 +205,7 @@ export function normalizeBackendFeedItem(raw: unknown): FeedItem | null {
       timestamp: item.timestamp,
       created_at: item.created_at,
     }),
+    createdAt: item.created_at,
     priority: item.priority ?? TYPE_PRIORITY[type] ?? 5,
     accent,
     icon: typeof item.icon === "string" ? item.icon : undefined,
