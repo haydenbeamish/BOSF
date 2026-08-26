@@ -91,9 +91,6 @@ app.post("/api/ai/banter", async (req, res) => {
     return res.status(400).json({ error: "Too many feed items (max 50)" });
   }
 
-  // Build a compact summary of each feed item for the AI.
-  // Every interpolated field is sanitised — strips control chars, caps length,
-  // so a malicious player name can't steer the LLM or inject prompt segments.
   const itemSummaries = feedItems.map((item, i) => {
     const t = sanitizeForPrompt(item.type, 40);
     const h = sanitizeForPrompt(item.headline, 120);
@@ -146,7 +143,6 @@ ${itemSummaries.join("\n")}`;
     const data = await response.json();
     const content = data.choices?.[0]?.message?.content ?? "";
 
-    // Extract JSON array from response (may be wrapped in markdown code block)
     const jsonMatch = content.match(/\[[\s\S]*\]/);
     if (!jsonMatch) {
       console.error("Failed to parse AI response:", content);
@@ -154,7 +150,6 @@ ${itemSummaries.join("\n")}`;
     }
 
     const parsed = JSON.parse(jsonMatch[0]);
-    // Validate shape: must be an array of {headline, subtext} objects
     if (!Array.isArray(parsed)) {
       return res.status(502).json({ error: "Invalid AI response: expected array" });
     }
@@ -168,8 +163,6 @@ ${itemSummaries.join("\n")}`;
     return res.status(500).json({ error: "Failed to generate banter" });
   }
 });
-
-// --- Brave Web Search: Event context ---
 
 app.get("/api/ai/search", async (req, res) => {
   if (!BRAVE_API_KEY) {
@@ -188,7 +181,7 @@ app.get("/api/ai/search", async (req, res) => {
     const url = new URL("https://api.search.brave.com/res/v1/web/search");
     url.searchParams.set("q", query);
     url.searchParams.set("count", "5");
-    url.searchParams.set("freshness", "pw"); // past week
+    url.searchParams.set("freshness", "pw");
 
     const response = await fetch(url.toString(), {
       headers: {
@@ -219,8 +212,6 @@ app.get("/api/ai/search", async (req, res) => {
   }
 });
 
-// --- OpenRouter: General AI chat (for future enhancements) ---
-
 app.post("/api/ai/chat", async (req, res) => {
   if (!OPENROUTER_API_KEY) {
     return res.status(503).json({ error: "OpenRouter not configured" });
@@ -233,7 +224,6 @@ app.post("/api/ai/chat", async (req, res) => {
   if (message.length > 500) {
     return res.status(400).json({ error: "message too long (max 500 chars)" });
   }
-  // Sanitize context: strip control chars + collapse whitespace + truncate
   const safeContext = sanitizeForPrompt(context, 500);
   const safeMessage = sanitizeForPrompt(message, 500);
 
@@ -273,9 +263,6 @@ app.post("/api/ai/chat", async (req, res) => {
   }
 });
 
-// --- Health checks ---
-
-// Plain-text healthz for load balancers / uptime monitors
 app.get("/healthz", (_req, res) => {
   res.type("text/plain").send("ok");
 });
@@ -292,8 +279,6 @@ app.get("/api/health", (_req, res) => {
   });
 });
 
-// --- Client-side error telemetry ---
-// Capped at 10 req/min per IP to prevent log flooding.
 app.post("/api/log-error", rateLimit(10), (req, res) => {
   const { message, stack, url, userAgent, componentStack } = req.body ?? {};
   const entry = {
@@ -309,13 +294,10 @@ app.post("/api/log-error", rateLimit(10), (req, res) => {
   res.status(204).end();
 });
 
-// --- Static file serving (production) ---
 app.use(express.static(join(__dirname, "dist")));
-// API 404 handler — must come before the SPA catch-all
 app.use("/api", (_req, res) => {
   res.status(404).json({ error: "API endpoint not found" });
 });
-// SPA catch-all: serve index.html for all non-API routes (Express 5 syntax)
 app.use((req, res) => {
   res.sendFile(join(__dirname, "dist", "index.html"));
 });
