@@ -12,6 +12,19 @@ describe("normalizeBackendFeedItem timestamps", () => {
       event_date: "2099-10-23T16:00:00.000Z",
     });
     expect(item?.timestamp).toBe("2026-08-25T12:08:33.773Z");
+    expect(item?.createdAt).toBe("2099-10-18T18:51:40.989Z");
+  });
+
+  it("prefers backend created_at over a bare event-date timestamp", () => {
+    const item = normalizeBackendFeedItem({
+      id: 3,
+      type: "event_result",
+      title: "Today's result",
+      created_at: "2026-08-25T12:05:23.613Z",
+      timestamp: "2026-12-15T16:00:00.000Z",
+    });
+    expect(item?.timestamp).toBe("2026-08-25T12:05:23.613Z");
+    expect(item?.createdAt).toBe("2026-08-25T12:05:23.613Z");
   });
 
   it("drops a future-only created_at so the card cannot sort above real results", () => {
