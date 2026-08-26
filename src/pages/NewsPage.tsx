@@ -26,6 +26,7 @@ const FILTER_TYPES: Record<FeedFilter, (t: string) => boolean> = {
     t === "perfect_pick" ||
     t === "everyone_wrong" ||
     t === "upset_alert" ||
+    t === "winners_list" ||
     t === "result_commentary" ||
     t === "post_event_rubbing",
   odds: (t) =>
@@ -66,10 +67,6 @@ function dayKey(ts?: string): string {
   const d = new Date(safe);
   if (!Number.isFinite(d.getTime())) return "undated";
   d.setHours(0, 0, 0, 0);
-  // Defensive: a feed card should never be dated in the future. The backend now
-  // stamps result cards with the event's resolution time (not a season-long
-  // event's scheduled deadline), but clamp here too so any stray future
-  // timestamp groups under "Today" instead of sorting above the whole feed.
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   return String(Math.min(d.getTime(), today.getTime()));
@@ -85,11 +82,7 @@ function dayLabel(key: string): string {
   if (diff === 0) return "Today";
   if (diff === 1) return "Yesterday";
   if (diff < 7 && diff > 0) return `${diff} days ago`;
-  return d.toLocaleDateString("en-AU", {
-    weekday: "short",
-    day: "numeric",
-    month: "short",
-  });
+  return d.toLocaleDateString("en-AU", { weekday: "short", day: "numeric", month: "short" });
 }
 
 export function NewsPage() {
@@ -106,7 +99,6 @@ export function NewsPage() {
       if (arr) arr.push(item);
       else grouped.set(k, [item]);
     }
-    // Sort keys: numeric (newer) first, "undated" last
     const keys = [...grouped.keys()].sort((a, b) => {
       if (a === "undated") return 1;
       if (b === "undated") return -1;
@@ -117,12 +109,7 @@ export function NewsPage() {
 
   const counts = useMemo(() => {
     const out: Record<FeedFilter, number> = {
-      all: feed.length,
-      results: 0,
-      odds: 0,
-      streaks: 0,
-      ladder: 0,
-      players: 0,
+      all: feed.length, results: 0, odds: 0, streaks: 0, ladder: 0, players: 0,
     };
     for (const f of feed) {
       for (const key of Object.keys(FILTER_TYPES) as FeedFilter[]) {
@@ -156,13 +143,7 @@ export function NewsPage() {
   }
 
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 0.3 }}
-      className="pb-20"
-    >
-      {/* Filter chips */}
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.3 }} className="pb-20">
       <div className="px-4 pt-4 mb-3 sticky top-0 z-10 bg-surface-50/80 backdrop-blur-sm">
         <div className="relative">
           <div className="absolute left-0 top-0 bottom-0 w-4 bg-gradient-to-r from-surface-50 to-transparent z-10 pointer-events-none" />
@@ -185,14 +166,7 @@ export function NewsPage() {
                 >
                   {opt.label}
                   {count > 0 && (
-                    <span
-                      className={cn(
-                        "text-[10px] rounded-full px-1.5 py-0.5 font-bold",
-                        active
-                          ? "bg-emerald-100 text-emerald-700"
-                          : "bg-white text-zinc-500"
-                      )}
-                    >
+                    <span className={cn("text-[10px] rounded-full px-1.5 py-0.5 font-bold", active ? "bg-emerald-100 text-emerald-700" : "bg-white text-zinc-500")}>
                       {count}
                     </span>
                   )}
@@ -202,40 +176,20 @@ export function NewsPage() {
           </div>
         </div>
       </div>
-
       <div className="px-4 mb-6">
         <AnimatePresence mode="wait">
           {filteredGrouped.length === 0 ? (
-            <motion.div
-              key="empty"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="text-center py-10 text-zinc-400 text-sm"
-            >
-              {filter === "all"
-                ? "No news yet — check back when events start getting decided."
-                : "Nothing in this category right now. Try another filter."}
+            <motion.div key="empty" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="text-center py-10 text-zinc-400 text-sm">
+              {filter === "all" ? "No news yet — check back when events start getting decided." : "Nothing in this category right now. Try another filter."}
             </motion.div>
           ) : (
-            <motion.div
-              key={`grouped-${filter}`}
-              initial={{ opacity: 0, y: 4 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.2 }}
-              className="flex flex-col gap-5"
-            >
+            <motion.div key={`grouped-${filter}`} initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }} className="flex flex-col gap-5">
               {filteredGrouped.map((group) => (
                 <div key={group.key} className="flex flex-col gap-2.5">
                   <div className="flex items-center gap-2 px-1">
-                    <h3 className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">
-                      {group.label}
-                    </h3>
+                    <h3 className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">{group.label}</h3>
                     <span className="text-[10px] text-zinc-300">·</span>
-                    <span className="text-[10px] text-zinc-400">
-                      {group.items.length} item{group.items.length !== 1 ? "s" : ""}
-                    </span>
+                    <span className="text-[10px] text-zinc-400">{group.items.length} item{group.items.length !== 1 ? "s" : ""}</span>
                   </div>
                   {group.items.map((item, i) => (
                     <FeedCard key={item.id} item={item} index={i} />
