@@ -153,7 +153,7 @@ export function normalizeBackendFeedItem(raw: unknown): FeedItem | null {
 
   // Carry picks from detail to the top-level `picks` field so the existing
   // card renderer continues to work without changes.
-  const picks = detail?.picks
+  const picks = detail?.picks && Array.isArray(detail.picks.options)
     ? {
         options: detail.picks.options.map((o) => ({
           label: o.label,
