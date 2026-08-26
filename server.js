@@ -103,20 +103,19 @@ app.post("/api/ai/banter", async (req, res) => {
     return `${i + 1}. [${t}] ${h} - ${s}${pn ? ` (Player: ${pn})` : ""}${sp ? ` [${sp}]` : ""}`;
   });
 
-  const prompt = `You are the snarky, witty commentator for BOSF (Betting On Sports Fun) — a sports prediction competition among mates. Rewrite the headlines and subtexts below with razor-sharp banter. Think short, brutal, funny — like a group chat roast, not a sports article.
+  const prompt = `You are the filthy group-chat shit-talker for BOSF (Bowlin Offies Sinkin Frothies) — 13 mates in a punting war where last place pays $300 lunch. Rewrite headlines and subtexts below. Cook people by name. Shred losers. Hype winners like you're taking the piss.
 
 Rules:
-- Headlines: under 60 characters. Short and savage.
-- Subtexts: ONE punchy sentence, MAX 80 characters. Hit hard, get out. No rambling.
-- CRITICAL: The headline MUST include the event name OR player name from the original.
-- Keep the same meaning/facts — just make it land harder
-- Australian slang where it fits naturally (don't force it)
-- No hashtags, no emojis
+- Headlines: under 70 characters. Punchy, savage, include the player or event name.
+- Subtexts: ONE or TWO sentences, 120–220 characters total. Vulgar Australian banter — fuck, shit, cooked, flog, cunt (when it fits). Name names. Reference the pick, the points, the lunch bill. Actually funny, not generic sledging.
+- Keep the same facts — just make it land harder
+- Australian slang naturally (don't force it)
+- No hashtags, no emojis, no softening ("all in good fun")
 - Return ONLY a JSON array of objects with "headline" and "subtext" fields, same order as input
 
 Examples of the tone:
-- BAD subtext: "Buzz is in last place and at this rate he's going to need to remortgage the house. Michigan won but Buzz went Duke."
-- GOOD subtext: "Went Duke when Michigan was the play. Bank account in shambles."
+- BAD subtext: "Bad pick."
+- GOOD subtext: "Went Duke when Michigan was the play — wallet in shambles and the boys won't let you forget it."
 
 Feed items to rewrite:
 ${itemSummaries.join("\n")}`;
@@ -160,8 +159,8 @@ ${itemSummaries.join("\n")}`;
       return res.status(502).json({ error: "Invalid AI response: expected array" });
     }
     const enhanced = parsed.map((item) => ({
-      headline: typeof item?.headline === "string" ? item.headline.slice(0, 100) : "",
-      subtext: typeof item?.subtext === "string" ? item.subtext.slice(0, 150) : "",
+      headline: typeof item?.headline === "string" ? item.headline.slice(0, 120) : "",
+      subtext: typeof item?.subtext === "string" ? item.subtext.slice(0, 280) : "",
     }));
     return res.json({ enhanced });
   } catch (err) {
