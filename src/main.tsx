@@ -9,13 +9,13 @@ import App from "./App";
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 60_000,                  // Treat data as fresh for 60s — cuts refetch storm on focus
-      gcTime: 24 * 60 * 60 * 1000,        // Keep cached data for 24 hours
+      staleTime: 60_000,
+      gcTime: 24 * 60 * 60 * 1000,
       retry: 1,
-      refetchOnWindowFocus: true,         // Refresh when user tabs back (respects staleTime)
-      refetchOnReconnect: true,           // Refresh when network reconnects
-      refetchInterval: 5 * 60 * 1000,     // Background poll every 5 minutes
-      refetchIntervalInBackground: false, // Only poll when tab is visible
+      refetchOnWindowFocus: true,
+      refetchOnReconnect: true,
+      refetchInterval: 5 * 60 * 1000,
+      refetchIntervalInBackground: false,
     },
   },
 });
@@ -24,8 +24,8 @@ let persister: ReturnType<typeof createSyncStoragePersister> | null = null;
 try {
   persister = createSyncStoragePersister({
     storage: window.localStorage,
-    // v10: force-drop any persisted query cache from the broken merge deploy
-    key: "bosf-cache-v10",
+    // v11: restore vulgar banter display + skip AI rewrite on backend roast cards
+    key: "bosf-cache-v11",
   });
 } catch {
   // localStorage unavailable (private browsing, etc.) — fall back to no persistence
@@ -41,7 +41,6 @@ createRoot(root).render(
         client={queryClient}
         persistOptions={{
           persister,
-          // Persist for 6h — after that the user sees skeletons + fresh data on cold start.
           maxAge: 6 * 60 * 60 * 1000,
         }}
       >

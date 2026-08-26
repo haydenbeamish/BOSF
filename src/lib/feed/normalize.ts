@@ -39,6 +39,9 @@ const TYPE_EMOJI: Record<string, string> = {
   last_place_banter: "\u{1F4B8}",
   pick_summary: "\u{1F4CB}",
   result_commentary: "\u{1F3C6}",
+  post_event_rubbing: "\u{1F525}",
+  ladder_leader: "\u{1F451}",
+  ladder_last: "\u{1F4B8}",
   pre_event_odds: "\u{1F4CA}",
   upset_alert: "\u{1F4A5}",
   accuracy_check: "\u{1F4C8}",
@@ -56,6 +59,9 @@ const TYPE_PRIORITY: Record<string, number> = {
   leader_banter: 8,
   last_place_banter: 8,
   result_commentary: 8,
+  post_event_rubbing: 9,
+  ladder_leader: 9,
+  ladder_last: 9,
   new_leader: 9,
   new_spud: 9,
   winning_streak: 7,
@@ -111,7 +117,14 @@ export function normalizeBackendFeedItem(raw: unknown): FeedItem | null {
   if (!headline && !subtext) return null;
 
   const rawType = String(item.type ?? "result_commentary").toLowerCase().trim();
-  const type: FeedItemType = TYPE_ALIASES[rawType] ?? (rawType as FeedItemType);
+  const cardKind =
+    item.card && typeof item.card === "object"
+      ? String((item.card as Record<string, unknown>).kind ?? "").toLowerCase().trim()
+      : item.metadata?.card && typeof item.metadata.card === "object"
+      ? String((item.metadata.card as Record<string, unknown>).kind ?? "").toLowerCase().trim()
+      : "";
+  const resolvedType = TYPE_ALIASES[cardKind] ?? TYPE_ALIASES[rawType] ?? rawType;
+  const type: FeedItemType = resolvedType as FeedItemType;
 
   const meta = item.metadata ?? {};
 
