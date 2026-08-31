@@ -8,6 +8,10 @@ const PORT = process.env.PORT || 5000;
 
 const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
 const BRAVE_API_KEY = process.env.BRAVE_WEBSEARCH_API;
+// Grok 4.6 is a frontier reasoner ($2/$6 per 1M) and burns thinking tokens on
+// 70-char headlines. GLM 4.7 is cheap, uncensored enough for BOSF shit-talk,
+// and does not force reasoning. Override with OPENROUTER_BANTER_MODEL.
+const OPENROUTER_BANTER_MODEL = process.env.OPENROUTER_BANTER_MODEL || "z-ai/glm-4.7";
 
 // --- Security middleware ---
 app.use(express.json({ limit: "50kb" }));
@@ -130,7 +134,7 @@ ${itemSummaries.join("\n")}`;
         "X-Title": "BOSF Punting Leaderboard",
       },
       body: JSON.stringify({
-        model: "google/gemini-2.0-flash-001",
+        model: OPENROUTER_BANTER_MODEL,
         messages: [{ role: "user", content: prompt }],
         temperature: 0.9,
         max_tokens: 1500,
@@ -247,7 +251,7 @@ app.post("/api/ai/chat", async (req, res) => {
         "X-Title": "BOSF Punting Leaderboard",
       },
       body: JSON.stringify({
-        model: "google/gemini-2.0-flash-001",
+        model: OPENROUTER_BANTER_MODEL,
         messages: [
           {
             role: "system",
@@ -288,6 +292,7 @@ app.get("/api/health", (_req, res) => {
     services: {
       openrouter: Boolean(OPENROUTER_API_KEY),
       brave: Boolean(BRAVE_API_KEY),
+      model: OPENROUTER_BANTER_MODEL,
     },
   });
 });
@@ -322,6 +327,6 @@ app.use((req, res) => {
 
 app.listen(PORT, "0.0.0.0", () => {
   console.log(`BOSF server running on port ${PORT}`);
-  console.log(`  OpenRouter: ${OPENROUTER_API_KEY ? "configured" : "NOT configured"}`);
+  console.log(`  OpenRouter: ${OPENROUTER_API_KEY ? "configured" : "NOT configured"} (${OPENROUTER_BANTER_MODEL})`);
   console.log(`  Brave Search: ${BRAVE_API_KEY ? "configured" : "NOT configured"}`);
 });
