@@ -8,7 +8,7 @@ const PORT = process.env.PORT || 5000;
 
 const BRAVE_API_KEY = process.env.BRAVE_WEBSEARCH_API;
 const FIREWORKS_BASE = (process.env.FIREWORKS_BASE_URL || "https://api.fireworks.ai/inference/v1").replace(/\/$/, "");
-const FIREWORKS_MODEL = process.env.FIREWORKS_BANTER_MODEL || "accounts/fireworks/models/glm-5p2";
+const FIREWORKS_MODEL = process.env.FIREWORKS_BANTER_MODEL || "accounts/fireworks/models/deepseek-v4p1-flash";
 
 function fireworksKey() {
   return process.env.FIREWORKS_API_KEY || "";
