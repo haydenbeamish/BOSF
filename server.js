@@ -6,12 +6,13 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
 const BRAVE_API_KEY = process.env.BRAVE_WEBSEARCH_API;
-// Grok 4.6 is a frontier reasoner ($2/$6 per 1M) and burns thinking tokens on
-// 70-char headlines. GLM 4.7 is cheap, uncensored enough for BOSF shit-talk,
-// and does not force reasoning. Override with OPENROUTER_BANTER_MODEL.
-const OPENROUTER_BANTER_MODEL = process.env.OPENROUTER_BANTER_MODEL || "z-ai/glm-4.7";
+const FIREWORKS_BASE = (process.env.FIREWORKS_BASE_URL || "https://api.fireworks.ai/inference/v1").replace(/\/$/, "");
+const FIREWORKS_MODEL = process.env.FIREWORKS_BANTER_MODEL || "accounts/fireworks/models/glm-5p2";
+
+function fireworksKey() {
+  return process.env.FIREWORKS_API_KEY || "";
+}
 
 // --- Security middleware ---
 app.use(express.json({ limit: "50kb" }));
@@ -80,11 +81,11 @@ function sanitizeForPrompt(value, maxLen = 200) {
   return str.replace(PROMPT_CTRL_RE, " ").replace(/\s+/g, " ").trim().slice(0, maxLen);
 }
 
-// --- OpenRouter: AI Banter ---
+// --- Fireworks: AI Banter ---
 
 app.post("/api/ai/banter", async (req, res) => {
-  if (!OPENROUTER_API_KEY) {
-    return res.status(503).json({ error: "OpenRouter not configured" });
+  if (!fireworksKey()) {
+    return res.status(503).json({ error: "Fireworks not configured" });
   }
 
   const { feedItems } = req.body;
@@ -95,9 +96,6 @@ app.post("/api/ai/banter", async (req, res) => {
     return res.status(400).json({ error: "Too many feed items (max 50)" });
   }
 
-  // Build a compact summary of each feed item for the AI.
-  // Every interpolated field is sanitised — strips control chars, caps length,
-  // so a malicious player name can't steer the LLM or inject prompt segments.
   const itemSummaries = feedItems.map((item, i) => {
     const t = sanitizeForPrompt(item.type, 40);
     const h = sanitizeForPrompt(item.headline, 120);
@@ -125,16 +123,14 @@ Feed items to rewrite:
 ${itemSummaries.join("\n")}`;
 
   try {
-    const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+    const response = await fetch(`${FIREWORKS_BASE}/chat/completions`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${OPENROUTER_API_KEY}`,
-        "HTTP-Referer": "https://bosf.replit.app",
-        "X-Title": "BOSF Punting Leaderboard",
+        Authorization: `Bearer ${fireworksKey()}`,
       },
       body: JSON.stringify({
-        model: OPENROUTER_BANTER_MODEL,
+        model: FIREWORKS_MODEL,
         messages: [{ role: "user", content: prompt }],
         temperature: 0.9,
         max_tokens: 1500,
@@ -143,14 +139,13 @@ ${itemSummaries.join("\n")}`;
 
     if (!response.ok) {
       const text = await response.text();
-      console.error("OpenRouter error:", response.status, text);
-      return res.status(502).json({ error: "OpenRouter request failed" });
+      console.error("Fireworks error:", response.status, text);
+      return res.status(502).json({ error: "Fireworks request failed" });
     }
 
     const data = await response.json();
     const content = data.choices?.[0]?.message?.content ?? "";
 
-    // Extract JSON array from response (may be wrapped in markdown code block)
     const jsonMatch = content.match(/\[[\s\S]*\]/);
     if (!jsonMatch) {
       console.error("Failed to parse AI response:", content);
@@ -158,7 +153,6 @@ ${itemSummaries.join("\n")}`;
     }
 
     const parsed = JSON.parse(jsonMatch[0]);
-    // Validate shape: must be an array of {headline, subtext} objects
     if (!Array.isArray(parsed)) {
       return res.status(502).json({ error: "Invalid AI response: expected array" });
     }
@@ -172,8 +166,6 @@ ${itemSummaries.join("\n")}`;
     return res.status(500).json({ error: "Failed to generate banter" });
   }
 });
-
-// --- Brave Web Search: Event context ---
 
 app.get("/api/ai/search", async (req, res) => {
   if (!BRAVE_API_KEY) {
@@ -192,7 +184,7 @@ app.get("/api/ai/search", async (req, res) => {
     const url = new URL("https://api.search.brave.com/res/v1/web/search");
     url.searchParams.set("q", query);
     url.searchParams.set("count", "5");
-    url.searchParams.set("freshness", "pw"); // past week
+    url.searchParams.set("freshness", "pw");
 
     const response = await fetch(url.toString(), {
       headers: {
@@ -223,11 +215,9 @@ app.get("/api/ai/search", async (req, res) => {
   }
 });
 
-// --- OpenRouter: General AI chat (for future enhancements) ---
-
 app.post("/api/ai/chat", async (req, res) => {
-  if (!OPENROUTER_API_KEY) {
-    return res.status(503).json({ error: "OpenRouter not configured" });
+  if (!fireworksKey()) {
+    return res.status(503).json({ error: "Fireworks not configured" });
   }
 
   const { message, context } = req.body;
@@ -237,21 +227,18 @@ app.post("/api/ai/chat", async (req, res) => {
   if (message.length > 500) {
     return res.status(400).json({ error: "message too long (max 500 chars)" });
   }
-  // Sanitize context: strip control chars + collapse whitespace + truncate
   const safeContext = sanitizeForPrompt(context, 500);
   const safeMessage = sanitizeForPrompt(message, 500);
 
   try {
-    const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+    const response = await fetch(`${FIREWORKS_BASE}/chat/completions`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${OPENROUTER_API_KEY}`,
-        "HTTP-Referer": "https://bosf.replit.app",
-        "X-Title": "BOSF Punting Leaderboard",
+        Authorization: `Bearer ${fireworksKey()}`,
       },
       body: JSON.stringify({
-        model: OPENROUTER_BANTER_MODEL,
+        model: FIREWORKS_MODEL,
         messages: [
           {
             role: "system",
@@ -277,9 +264,6 @@ app.post("/api/ai/chat", async (req, res) => {
   }
 });
 
-// --- Health checks ---
-
-// Plain-text healthz for load balancers / uptime monitors
 app.get("/healthz", (_req, res) => {
   res.type("text/plain").send("ok");
 });
@@ -290,15 +274,13 @@ app.get("/api/health", (_req, res) => {
     timestamp: new Date().toISOString(),
     uptime: process.uptime(),
     services: {
-      openrouter: Boolean(OPENROUTER_API_KEY),
+      fireworks: Boolean(fireworksKey()),
       brave: Boolean(BRAVE_API_KEY),
-      model: OPENROUTER_BANTER_MODEL,
+      model: FIREWORKS_MODEL,
     },
   });
 });
 
-// --- Client-side error telemetry ---
-// Capped at 10 req/min per IP to prevent log flooding.
 app.post("/api/log-error", rateLimit(10), (req, res) => {
   const { message, stack, url, userAgent, componentStack } = req.body ?? {};
   const entry = {
@@ -314,19 +296,16 @@ app.post("/api/log-error", rateLimit(10), (req, res) => {
   res.status(204).end();
 });
 
-// --- Static file serving (production) ---
 app.use(express.static(join(__dirname, "dist")));
-// API 404 handler — must come before the SPA catch-all
 app.use("/api", (_req, res) => {
   res.status(404).json({ error: "API endpoint not found" });
 });
-// SPA catch-all: serve index.html for all non-API routes (Express 5 syntax)
 app.use((req, res) => {
   res.sendFile(join(__dirname, "dist", "index.html"));
 });
 
 app.listen(PORT, "0.0.0.0", () => {
   console.log(`BOSF server running on port ${PORT}`);
-  console.log(`  OpenRouter: ${OPENROUTER_API_KEY ? "configured" : "NOT configured"} (${OPENROUTER_BANTER_MODEL})`);
+  console.log(`  Fireworks: ${fireworksKey() ? "configured" : "NOT configured"} (${FIREWORKS_MODEL})`);
   console.log(`  Brave Search: ${BRAVE_API_KEY ? "configured" : "NOT configured"}`);
 });
