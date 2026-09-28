@@ -80,7 +80,7 @@ export function Header({ hidden = false }: { hidden?: boolean }) {
   return (
     <header
       className={cn(
-        "shrink-0 border-b bg-white/80 backdrop-blur-xl pt-safe will-change-transform",
+        "shrink-0 border-b bg-white/80 backdrop-blur-xl pt-safe",
         hidden && !isSubPage
           ? "header-hidden border-transparent"
           : "header-visible border-zinc-200/60"

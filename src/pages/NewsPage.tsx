@@ -168,7 +168,7 @@ export function NewsPage() {
       className="pb-20"
     >
       {/* Filter chips */}
-      <div className="px-4 pt-4 mb-3 sticky top-0 z-10 bg-surface-50/80 backdrop-blur-sm">
+      <div className="px-4 pt-2 pb-1 mb-2 sticky top-0 z-10 bg-surface-50">
         <div className="relative">
           <div className="absolute left-0 top-0 bottom-0 w-4 bg-gradient-to-r from-surface-50 to-transparent z-10 pointer-events-none" />
           <div className="absolute right-0 top-0 bottom-0 w-4 bg-gradient-to-l from-surface-50 to-transparent z-10 pointer-events-none" />
